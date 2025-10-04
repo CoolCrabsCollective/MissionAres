@@ -9,6 +9,7 @@ mod sane_level;
 mod scene_loader;
 mod title_screen;
 
+use std::fs;
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
@@ -25,7 +26,7 @@ use bevy::window::{CursorGrabMode, CursorOptions};
 
 fn main() {
     let mut app = App::new();
-
+    fs::remove_file("assets/test_song.ogg").unwrap_or_else(|_| {});
     let default_sampler = ImageSamplerDescriptor {
         address_mode_u: ImageAddressMode::from(AddressMode::Repeat),
         address_mode_v: ImageAddressMode::from(AddressMode::Repeat),
