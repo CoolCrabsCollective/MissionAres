@@ -14,6 +14,7 @@ use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::object_spawner::ObjectSpawnerPlugin;
+use crate::sane_level::level_plugin;
 use crate::scene_loader::SceneLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use bevy::DefaultPlugins;
@@ -66,10 +67,11 @@ fn main() {
     );
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(SceneLoaderPlugin);
-    app.add_plugins(LevelSpawnerPlugin);
     app.add_plugins(TitleScreenPlugin);
     app.add_plugins(DebugCameraControllerPlugin);
     app.add_plugins(ObjectSpawnerPlugin);
+    app.add_plugins(level_plugin);
+    app.add_plugins(LevelSpawnerPlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 
