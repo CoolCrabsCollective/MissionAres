@@ -9,8 +9,8 @@ use bevy::{
     },
     log,
     prelude::{
-        Assets, ButtonInput, Color, Component, Cylinder, EntityCommands, KeyCode, Mesh, Mesh3d,
-        MeshMaterial3d, Res, ResMut, StandardMaterial, Transform, Vec3,
+        AlphaMode, Assets, ButtonInput, Color, Component, Cylinder, EntityCommands, KeyCode, Mesh,
+        Mesh3d, MeshMaterial3d, Plane3d, Res, ResMut, StandardMaterial, Transform, Vec2, Vec3,
     },
 };
 
@@ -30,7 +30,7 @@ pub struct LevelLoadedEvent {
 
 // tile entity
 #[derive(Component)]
-struct TileEntity;
+pub struct TileEntity;
 
 #[derive(Component)]
 struct RoverEntity;
@@ -105,7 +105,7 @@ fn load_level(
                                 .insert(SceneElement)
                                 .insert(
                                     // should spawn at the tile position
-                                    Transform::from_xyz(x_copy as f32, 0.1, z_copy as f32)
+                                    Transform::from_xyz(x_copy as f32, 0.5, z_copy as f32)
                                         .with_scale(Vec3::splat(0.25)),
                                 )
                                 .insert(RoverEntity);
@@ -117,6 +117,18 @@ fn load_level(
                 );
             }
         }
+
+        commands.spawn((
+            TileEntity,
+            Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(15.0)))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color_texture: Some(asset_server.load("cutoff_texture.png")),
+                alpha_mode: AlphaMode::Mask(0.5),
+                cull_mode: None,
+                ..Default::default()
+            })),
+            Transform::from_xyz(5.0, 10.0, 0.0),
+        ));
     }
 }
 
