@@ -1,3 +1,4 @@
+use crate::poop::ActionListExecute;
 use crate::title_screen::GameState;
 use bevy::prelude::*;
 
@@ -76,4 +77,11 @@ fn setup_actions(mut commands: Commands, mut action_list: ResMut<ActionList>) {
 
     let action_event = action_list.clone();
     commands.send_event(action_event);
+}
+
+fn execute(mut commands: Commands, action_list: ResMut<ActionList>) {
+    let execute_event = ActionListExecute {
+        action_list: action_list.actions.clone(),
+    };
+    commands.send_event(execute_event);
 }

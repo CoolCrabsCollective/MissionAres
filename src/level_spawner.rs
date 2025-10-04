@@ -7,6 +7,7 @@ use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
+use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
 use bevy::math::Quat;
@@ -15,8 +16,8 @@ use bevy::pbr::{
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, IntoScheduleConfigs,
-    Msaa, OnEnter, PerspectiveProjection, Projection, Resource,
+    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, Gltf,
+    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
@@ -68,7 +69,11 @@ pub struct LevelSpawnRequestEvent {
 pub struct TileEntity;
 
 #[derive(Component)]
-struct RoverEntity;
+pub struct RoverEntity {
+    pub is_setup: bool,
+    pub base_color: Color,
+    pub gltf_handle: Handle<Gltf>,
+}
 
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
@@ -97,10 +102,10 @@ impl Plugin for LevelSpawnerPlugin {
 }
 
 fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
-    commands.spawn((
-        AudioPlayer::new(asset_server.load("test_song.ogg")),
-        PlaybackSettings::LOOP,
-    ));
+    // commands.spawn((
+    //     AudioPlayer::new(asset_server.load("test_song.ogg")),
+    //     PlaybackSettings::LOOP,
+    // ));
 
     let skybox_handle = asset_server.load(CUBEMAPS[0].0);
 
@@ -276,7 +281,11 @@ fn load_level(
                                         .with_scale(Vec3::splat(0.15 * TILE_SIZE))
                                         .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                                 )
-                                .insert(RoverEntity)
+                                .insert(RoverEntity {
+                                    is_setup: false,
+                                    base_color: Color::srgb(0.5, 0.2, 0.8),
+                                    gltf_handle: Default::default(),
+                                })
                                 .insert(LevelElement);
                         }),
                         ..Default::default()
@@ -321,6 +330,7 @@ fn load_level(
                 base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
                 alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
                 cull_mode: None,
+                unlit: true,
                 ..Default::default()
             })),
             Transform::from_xyz(0.0, 10.0, 0.0),

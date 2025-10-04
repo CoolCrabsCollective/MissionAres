@@ -6,6 +6,7 @@ mod hentai_anime;
 mod level;
 mod level_spawner;
 mod mesh_loader;
+mod poop;
 mod title_screen;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
