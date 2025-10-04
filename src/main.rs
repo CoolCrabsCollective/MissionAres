@@ -42,7 +42,7 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     fit_canvas_to_parent: true,
-                    title: "Bevy Quickstart Game".to_string(),
+                    title: "LD58".to_string(),
                     cursor_options: CursorOptions {
                         visible: true,
                         // note this bug: https://github.com/bevyengine/bevy/issues/16237

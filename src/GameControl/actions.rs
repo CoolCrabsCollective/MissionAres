@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::title_screen::GameState;
 
 #[derive(Clone)]
-pub enum ROBOT
+pub enum Robot
 {
     ROVER1,
     ROVER2,
@@ -26,7 +26,7 @@ pub struct ActionController;
 #[derive(Clone)]
 pub struct Action
 {
-    pub moves: (ActionType, ROBOT),
+    pub moves: (ActionType, Robot),
 }
 
 #[derive(Resource, Event, Clone)]
@@ -47,6 +47,17 @@ impl ActionType {
     }
 }
 
+impl Robot {
+    pub (crate) fn as_str(&self) -> &'static str {
+        match self {
+            Robot::ROVER1 => "R1",
+            Robot::ROVER2 => "R2",
+            Robot::DRONE1 => "D1",
+            Robot::DRONE2 => "D2"
+        }
+    }
+}
+
 impl Plugin for ActionController {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Game), setup_actions);
@@ -57,9 +68,9 @@ impl Plugin for ActionController {
 
 fn setup_actions(mut commands: Commands, mut action_list: ResMut<ActionList>) {
     // Temp insert actions immediately
-    action_list.actions.push( Action { moves: (ActionType::MoveUp, ROBOT::ROVER1) });
-    action_list.actions.push( Action { moves: (ActionType::MoveUp, ROBOT::ROVER1) });
-    action_list.actions.push( Action { moves: (ActionType::MoveRight, ROBOT::ROVER1) });
+    action_list.actions.push( Action { moves: (ActionType::MoveUp, Robot::ROVER1) });
+    action_list.actions.push( Action { moves: (ActionType::MoveUp, Robot::ROVER1) });
+    action_list.actions.push( Action { moves: (ActionType::MoveRight, Robot::ROVER1) });
 
     let action_event = action_list.clone();
     commands.send_event(action_event);
