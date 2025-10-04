@@ -8,6 +8,7 @@ use bevy::{
 use bevy_rapier3d::plugin::PhysicsSet;
 use bevy_rapier3d::prelude::{Collider, CollisionGroups};
 use std::marker::PhantomData;
+use crate::hentai_anime::Animation;
 
 pub struct MeshLoaderPlugin;
 
@@ -80,6 +81,7 @@ fn process_loaded_gltfs(
     nodes: Res<Assets<GltfNode>>,
     mut mesh_loader: ResMut<MeshLoader>,
     gltf_assets: Res<Assets<Gltf>>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
     for loaded_gltf in mesh_loader.0.iter_mut() {
         if loaded_gltf.processed {
@@ -118,8 +120,24 @@ fn process_loaded_gltfs(
             }
         }
 
+        let hentai = gltf.animations.clone();
+
+        let mut graph = AnimationGraph::new();
+        let hentai_list: Vec<_> = graph
+            .add_clips(
+                hentai
+                    .into_iter(),
+                1.0,
+                graph.root,
+            )
+            .collect();
+
+        let graph = graphs.add(graph);
+
         if loaded_gltf.config.spawn {
-            let mut entity_commands = commands.spawn(SceneRoot(first_scene_handle));
+            let mut entity_commands = commands.spawn((SceneRoot(first_scene_handle),
+                                                      Animation { animation_list: hentai_list, graph },
+                                                      AnimationPlayer::default()));
             let func = loaded_gltf.config.entity_initializer;
             func(&mut entity_commands);
         }
