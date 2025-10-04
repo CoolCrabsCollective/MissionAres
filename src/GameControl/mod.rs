@@ -1,2 +1,2 @@
-mod actions;
-mod control_ui;
+pub(crate) mod actions;
+pub(crate) mod control_ui;

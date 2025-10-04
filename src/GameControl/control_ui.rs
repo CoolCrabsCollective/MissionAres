@@ -1,3 +1,4 @@
+use bevy::color::palettes::css::DARK_GRAY;
 use bevy::prelude::*;
 use crate::GameControl::actions::ActionList;
 use crate::title_screen::{GameState, TitleScreenUI};
@@ -25,15 +26,16 @@ fn update_action_list_iu(mut commands: Commands,
 
         // Rebuild UI with new actions list
         commands.spawn((ControlUi,
-                                        Node {
+                        Node {
                                             top: Val::Percent(0.0),
                                             left: Val::Percent(0.0),
-                                            width: Val::Percent(100.0),
+                                            width: Val::Percent(10.0),
                                             height: Val::Percent(100.0),
-                                            align_items: AlignItems::Center,
+                                            align_items: AlignItems::End,
                                             justify_content: JustifyContent::Center,
                                             ..default()
                                         },
+                        BackgroundColor(Color::from(DARK_GRAY)),
         ))
             .with_children(|parent| {
 

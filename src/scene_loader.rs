@@ -13,6 +13,9 @@ use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension}
 use bevy_rapier3d::prelude::*;
 use bevy_water::{WaterPlugin, WaterQuality, WaterSettings};
 
+use crate::GameControl::actions::ActionController;
+use crate::GameControl::control_ui::ControlUiPlugin;
+
 pub struct SceneLoaderPlugin;
 
 pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =
@@ -37,6 +40,8 @@ impl Plugin for SceneLoaderPlugin {
             WaterPlugin,
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
+            ActionController,
+            ControlUiPlugin,
         ));
 
         #[cfg(not(target_arch = "wasm32"))]
