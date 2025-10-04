@@ -5,6 +5,7 @@ mod level;
 mod level_spawner;
 mod mesh_loader;
 mod object_spawner;
+mod sane_level;
 mod scene_loader;
 mod title_screen;
 
@@ -14,13 +15,13 @@ use crate::mesh_loader::MeshLoaderPlugin;
 use crate::object_spawner::ObjectSpawnerPlugin;
 use crate::scene_loader::SceneLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
+use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
-use bevy::DefaultPlugins;
 
 fn main() {
     let mut app = App::new();

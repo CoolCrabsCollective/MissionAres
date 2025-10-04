@@ -105,9 +105,9 @@ fn scene_switcher(
 fn setup_basic(
     mut commands: Commands,
     mut asset_server: ResMut<AssetServer>,
-    mut mesh_loader: ResMut<MeshLoader>,
-    mut _meshes: ResMut<Assets<Mesh>>,
-    mut _materials: ResMut<Assets<StandardMaterial>>,
+    mut _mesh_loader: ResMut<MeshLoader>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     mut water_level: ResMut<WaterSettings>,
 ) {
     water_level.height = -10.0;
@@ -118,6 +118,18 @@ fn setup_basic(
         SceneElement,
         AudioPlayer::new(asset_server.load("test_song.ogg")),
         PlaybackSettings::LOOP,
+    ));
+
+    commands.spawn((
+        SceneElement,
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
+            perceptual_roughness: 0.9,
+            metallic: 0.0,
+            ..Default::default()
+        })),
+        Transform::from_xyz(0.0, -0.5, 0.0),
     ));
 
     commands.insert_resource(AmbientLight {
