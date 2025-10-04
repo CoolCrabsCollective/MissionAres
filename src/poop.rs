@@ -4,7 +4,6 @@ use crate::title_screen::GameState;
 use bevy::prelude::*;
 use bevy::{ecs::resource::Resource, math::IVec2};
 
-
 #[derive(Resource)]
 pub struct Rover {
     pub position: IVec2,
@@ -12,7 +11,7 @@ pub struct Rover {
 
 #[derive(Event)]
 pub struct ActionListExecute {
-    pub action_list: Vec<Action>,
+    pub action_list: Vec<Vec<Action>>,
 }
 
 pub struct RoverPlugin;
