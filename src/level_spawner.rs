@@ -1,3 +1,4 @@
+use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::title_screen::GameState;
@@ -41,7 +42,6 @@ use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
 use rand::random;
 use std::f32::consts::PI;
-use crate::GameControl::actions::{Action, ActionList, ActionType, Robot};
 
 pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =
     &[("test_skybox.png", CompressedImageFormats::NONE)];
@@ -67,8 +67,7 @@ pub struct LevelSpawnRequestEvent {
 }
 
 #[derive(Event)]
-pub struct LevelLoadedEvent {
-}
+pub struct LevelLoadedEvent {}
 
 // tile entity
 #[derive(Component)]
@@ -227,7 +226,6 @@ fn load_level(
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
 ) {
-
     for event in events.read() {
         // remove all tiles and rovers
         for level_element in level_elements.iter() {
