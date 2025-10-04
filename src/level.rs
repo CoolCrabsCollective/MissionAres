@@ -1,17 +1,20 @@
+#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
+
 use bevy::asset::io::Reader;
 use bevy::asset::{Asset, AssetLoader, AsyncReadExt, LoadContext};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::TypePath;
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TEGVLA_TYPVS {
     INITIVM,
     FINIS,
     SEMITA,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TEGVLA {
     TYPVS: TEGVLA_TYPVS,
     VMBRA: bool,
@@ -23,7 +26,7 @@ impl TEGVLA {
     }
 }
 
-#[derive(Asset, TypePath, Debug)]
+#[derive(Asset, TypePath, Debug, Clone)]
 pub struct GRADVS {
     TEGVLAE: HashMap<(i8, i8), TEGVLA>,
     //MAPPAE_VMBRAE: Option<Handle<Texture>>,
@@ -57,13 +60,64 @@ impl AssetLoader for GRADVS_ORENATOR {
         let mut GRADVS = GRADVS {
             TEGVLAE: HashMap::new(),
         };
+        let mut ALTITUDO = 0;
 
-        while true {
+        loop {
             let LINEA = LINEAE.next();
-            //if LINEA.
+            if LINEA.is_none() {
+                break;
+            }
+
+            let SERIES_CHARACTERVM = LINEA.unwrap();
+            let mut X = 0;
+            for ITERATOR in SERIES_CHARACTERVM.chars().into_iter() {
+                match ITERATOR {
+                    'S' => {
+                        GRADVS.TEGVLAE.insert(
+                            (X, -ALTITUDO),
+                            TEGVLA {
+                                TYPVS: TEGVLA_TYPVS::INITIVM,
+                                VMBRA: false,
+                            },
+                        );
+                    }
+                    'E' => {
+                        GRADVS.TEGVLAE.insert(
+                            (X, -ALTITUDO),
+                            TEGVLA {
+                                TYPVS: TEGVLA_TYPVS::FINIS,
+                                VMBRA: false,
+                            },
+                        );
+                    }
+                    'P' => {
+                        GRADVS.TEGVLAE.insert(
+                            (X, -ALTITUDO),
+                            TEGVLA {
+                                TYPVS: TEGVLA_TYPVS::SEMITA,
+                                VMBRA: false,
+                            },
+                        );
+                    }
+                    _ => {}
+                }
+                X += 1;
+            }
+
+            ALTITUDO += 1;
+        }
+        let mut GRADVS_MODIFICATVS = GRADVS {
+            TEGVLAE: HashMap::new(),
+        };
+        for ITERATOR in GRADVS.TEGVLAE.iter() {
+            let mut COORDINATAE = ITERATOR.0.clone();
+            COORDINATAE.1 += ALTITUDO;
+            GRADVS_MODIFICATVS
+                .TEGVLAE
+                .insert(COORDINATAE, ITERATOR.1.clone());
         }
 
-        Ok(GRADVS)
+        Ok(GRADVS_MODIFICATVS)
     }
     fn extensions(&self) -> &[&str] {
         &["lvl"]
