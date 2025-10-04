@@ -1,137 +1,137 @@
 use bevy::platform::collections::HashMap;
 
 #[derive(Debug)]
-pub enum TEGVLA_TYPVS {
-    INITIVM,
-    FINIS,
-    SEMITA,
+pub enum TileType {
+    Start,
+    End,
+    Path,
 }
 
 #[derive(Debug)]
-pub struct TEGVLA {
-    TYPVS: TEGVLA_TYPVS,
-    VMBRA: bool,
+pub struct Tile {
+    tile_type: TileType,
+    shadow: bool,
 }
 
 #[derive(Debug)]
-pub struct GRADVS {
-    TEGVLAE: HashMap<(i8, i8), TEGVLA>,
-    //MAPPAE_VMBRAE: Option<Handle<Texture>>,
+pub struct Level {
+    tiles: HashMap<(i8, i8), Tile>,
+    //shadow_map: Option<Handle<Texture>>,
 }
 
-pub fn level_1() -> GRADVS {
-    GRADVS {
-        TEGVLAE: HashMap::from([
+pub fn level_1() -> Level {
+    Level {
+        tiles: HashMap::from([
             (
                 (0, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::INITIVM,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Start,
+                    shadow: false,
                 },
             ),
             (
                 (0, 1),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: false,
                 },
             ),
             (
                 (0, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: false,
                 },
             ),
             (
                 (1, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::FINIS,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::End,
+                    shadow: false,
                 },
             ),
         ]),
     }
 }
 
-pub fn level2() -> GRADVS {
-    GRADVS {
-        TEGVLAE: HashMap::from([
+pub fn level_2() -> Level {
+    Level {
+        tiles: HashMap::from([
             (
                 (0, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::INITIVM,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Start,
+                    shadow: false,
                 },
             ),
             (
                 (1, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: true,
                 },
             ),
             (
                 (2, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: true,
                 },
             ),
             (
                 (2, 1),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: true,
                 },
             ),
             (
                 (2, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: false,
                 },
             ),
             (
                 (3, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: true,
                 },
             ),
             (
                 (4, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: false,
                 },
             ),
             (
                 (4, 1),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: true,
                 },
             ),
             (
                 (4, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: true,
                 },
             ),
             (
                 (5, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: true,
                 },
             ),
             (
                 (6, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::FINIS,
-                    VMBRA: true,
+                Tile {
+                    tile_type: TileType::End,
+                    shadow: true,
                 },
             ),
         ]),

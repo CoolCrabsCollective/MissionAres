@@ -7,13 +7,13 @@ use bevy::{
     log,
 };
 
-use crate::level::{level_1, GRADVS};
+use crate::level::{Level, level_1};
 
 pub struct LevelLoaderPlugin;
 
 #[derive(Event)]
 pub struct LevelLoadedEvent {
-    level: GRADVS,
+    level: Level,
 }
 
 impl Plugin for LevelLoaderPlugin {
