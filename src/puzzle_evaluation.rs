@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::poop::RoverEntity;
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
-    level_spawner::ActiveLevel,
+    level_spawner::{ActiveLevel, AfterLevelSpawnEvent},
 };
 
 pub struct PuzzleEvaluationPlugin;
@@ -12,6 +12,7 @@ impl Plugin for PuzzleEvaluationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, on_puzzle_evaluation_request);
         app.add_systems(Update, debug_puzzle_evaluation);
+        app.add_systems(Update, reset_on_level_spawned);
         app.add_event::<PuzzleEvaluationRequestEvent>();
         app.insert_resource(PuzzleState {
             win_state: WinState::InProgress,
@@ -105,5 +106,15 @@ fn debug_puzzle_evaluation(
     if keys.just_pressed(KeyCode::KeyP) {
         log::info!("Writing puzzle evaluation request event.");
         event_writer.write(PuzzleEvaluationRequestEvent);
+    }
+}
+
+fn reset_on_level_spawned(
+    mut puzzle_state: ResMut<PuzzleState>,
+    mut events: EventReader<AfterLevelSpawnEvent>,
+) {
+    for event in events.read() {
+        log::info!("Resetting win state on level spawned.");
+        puzzle_state.win_state = WinState::InProgress;
     }
 }
