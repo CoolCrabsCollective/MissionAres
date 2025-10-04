@@ -6,7 +6,7 @@ use bevy::prelude::*;
 
 pub struct ControlUiPlugin;
 
-const MAX_COMMANDS: u16 = 8;
+const MAX_COMMANDS: u16 = 12;
 
 #[derive(Component)]
 pub struct ControlUi;
@@ -45,9 +45,12 @@ fn update_action_list_ui(
         ..default()
     };
     for event in action_lists.read() {
-        let number_of_rovers = event.num_rovers;
+        let number_of_rovers = 3; //event.actions.len();
+        println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
-            commands.entity(ui_element).despawn();
+            if let Ok(_) = commands.get_entity(ui_element) {
+                commands.entity(ui_element).despawn();
+            }
         }
 
         let image_robot = asset_server.load("command_icons/robot.png");
@@ -62,7 +65,6 @@ fn update_action_list_ui(
 
                 let rover_colors = &all_rover_colors.0[0..number_of_rovers];
                 let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
-                println!("{}", rover_colors.len());
                 parent
                     .spawn((
                         ControlUi,
@@ -108,12 +110,18 @@ fn update_action_list_ui(
                         }
                     });
 
-                let mut ui_commands = ui_command_list(parent);
-                for action in event.clone().actions.iter() {
-                    ui_commands.with_children(|parent| {
-                        ui_command_statement(parent, action, &font);
-                    });
-                }
+                let mut multi_robot_command_list =
+                    parent.spawn((ControlUi, multi_robot_command_list(number_of_rovers)));
+                multi_robot_command_list.with_children(|parent| {
+                    for i in 0..number_of_rovers {
+                        let mut ui_commands = ui_command_list(parent);
+                        for action in event.clone().actions[0].iter() {
+                            ui_commands.with_children(|parent| {
+                                ui_command_statement(parent, action, &font);
+                            });
+                        }
+                    }
+                });
             });
     }
 }
@@ -121,7 +129,7 @@ fn update_action_list_ui(
 fn ui_sidebar_node() -> Node {
     Node {
         height: Val::Percent(100.0),
-        width: Val::Percent(20.0),
+        width: Val::Percent(30.0),
         display: Display::Grid,
         padding: UiRect::all(Val::Px(10.0)),
         grid_template_columns: vec![GridTrack::flex(1.0)],
@@ -143,21 +151,30 @@ fn ui_command_statement(
 ) {
     // Action text
     parent.spawn((
+        ControlUi,
         Text::new(action.moves.0.as_str()),
-        font_node.clone(),
-        TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-        TextShadow::default(),
-    ));
-
-    // Rover ID
-    parent.spawn((
-        Text::new(action.moves.1.as_str()),
+        Node {
+            align_items: AlignItems::Center,
+            ..default()
+        },
         font_node.clone(),
         TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
         TextShadow::default(),
     ));
 }
 
+fn multi_robot_command_list(num_rovers: usize) -> Node {
+    Node {
+        height: Val::Percent(100.0),
+        width: Val::Percent(100.0),
+        display: Display::Grid,
+        grid_template_columns: vec![GridTrack::flex(1.0); num_rovers],
+        grid_template_rows: GridTrack::flex(1.0),
+        row_gap: Val::Px(0.0),
+        column_gap: Val::Px(0.0),
+        ..default()
+    }
+}
 fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
     parent.spawn((
         ControlUi,
@@ -165,10 +182,11 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
             height: Val::Percent(100.0),
             width: Val::Percent(100.0),
             display: Display::Grid,
-            grid_template_columns: vec![GridTrack::flex(1.0), GridTrack::min_content()],
+            grid_template_columns: vec![GridTrack::flex(1.0)],
             grid_template_rows: RepeatedGridTrack::flex(MAX_COMMANDS, 1.0),
             row_gap: Val::Px(0.0),
             column_gap: Val::Px(5.0),
+            align_items: AlignItems::Center,
             ..default()
         },
         BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),

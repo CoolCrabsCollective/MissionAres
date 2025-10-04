@@ -1,26 +1,25 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::poop::RoverEntity;
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
-use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
-use bevy::math::{I8Vec2, IVec2, Quat};
+use bevy::math::{I8Vec2, Quat};
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
-    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource,
+    Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges, Gltf,
+    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
+    default, in_state,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -69,7 +68,7 @@ pub struct LevelSpawnRequestEvent {
 }
 
 #[derive(Event)]
-pub struct LevelLoadedEvent {}
+pub struct AfterLevelSpawnEvent;
 
 // tile entity
 #[derive(Component)]
@@ -81,6 +80,7 @@ pub struct ActiveLevel(pub Option<Handle<GRADVM>>);
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LevelSpawnRequestEvent>();
+        app.add_event::<AfterLevelSpawnEvent>();
         app.add_systems(
             Update,
             choose_level_by_num_keys.run_if(in_state(GameState::Game)),
@@ -90,6 +90,7 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(Startup, setup_scene);
 
         app.add_systems(Update, asset_loaded);
+        app.insert_resource(ActiveLevel(None));
         app.add_plugins((
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
@@ -101,8 +102,6 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(Update, debug_render_toggle)
             .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)))
             .insert_resource(DirectionalLightShadowMap { size: 4096 });
-
-        app.insert_resource(ActiveLevel(None));
     }
 }
 
@@ -390,19 +389,24 @@ fn load_level(
 
         active_level.0 = Some(event.level.clone());
 
-        action_list.actions.push(Action {
+        action_list.actions.clear();
+        action_list.actions.push(vec![]);
+
+        action_list.actions[0].push(Action {
             moves: (ActionType::MoveUp, Robot::ROVER1),
         });
-        action_list.actions.push(Action {
+        action_list.actions[0].push(Action {
             moves: (ActionType::MoveUp, Robot::ROVER1),
         });
-        action_list.actions.push(Action {
+        action_list.actions[0].push(Action {
             moves: (ActionType::MoveRight, Robot::ROVER1),
         });
 
-        let mut action_event = action_list.clone();
-        action_event.num_rovers = num_rovers;
+        let action_event = action_list.clone();
+        println!("Sending event with {} rovers", action_list.actions.len());
         commands.send_event(action_event);
+
+        commands.send_event(AfterLevelSpawnEvent);
     }
 }
 

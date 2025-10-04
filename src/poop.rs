@@ -21,7 +21,7 @@ pub struct RoverEntity {
 
 #[derive(Event)]
 pub struct ActionListExecute {
-    pub action_list: Vec<Action>,
+    pub action_list: Vec<Vec<Action>>,
 }
 
 #[derive(Resource)]

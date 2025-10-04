@@ -1,5 +1,4 @@
 use crate::poop::ActionListExecute;
-use crate::title_screen::GameState;
 use bevy::prelude::*;
 
 #[derive(Clone)]
@@ -28,8 +27,7 @@ pub struct Action {
 
 #[derive(Resource, Event, Clone)]
 pub struct ActionList {
-    pub num_rovers: usize,
-    pub actions: Vec<Action>,
+    pub actions: Vec<Vec<Action>>,
 }
 
 // TODO: instead of putting strings we should list icons
@@ -59,7 +57,9 @@ impl Robot {
 impl Plugin for ActionController {
     fn build(&self, app: &mut App) {
         app.add_event::<ActionList>();
-        app.insert_resource(ActionList { num_rovers: 0, actions: vec![] });
+        app.insert_resource(ActionList {
+            actions: vec![vec![]],
+        });
     }
 }
 
