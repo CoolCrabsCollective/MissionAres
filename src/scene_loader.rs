@@ -144,13 +144,12 @@ fn setup_basic(
             illuminance: 2000.0,
             shadows_enabled: true,
             affects_lightmapped_mesh_diffuse: true,
-            shadow_depth_bias: 1.0,
-            shadow_normal_bias: 1.0,
+            ..Default::default()
         },
-        Transform::from_xyz(0.0, 10.0, 0.0)
+        Transform::from_xyz(50.0, 50.0, 50.0)
             .with_rotation(Quat::from_axis_angle(Vec3::X, -std::f32::consts::PI / 2.0)),
         CascadeShadowConfigBuilder {
-            maximum_distance: 500.0,
+            maximum_distance: 100.0,
             ..default()
         }
         .build(),
