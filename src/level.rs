@@ -53,6 +53,8 @@ pub struct GRADVM {
     pub MAPPAE_VREMBRAE: Handle<Image>,     // shadow map
     pub LATIVIDO: i8,                       // width
     pub ALTIVIDO: i8,                       // height
+    pub NVMERVS_VEHICVLORVM_MOBILIVM: i8,   // rover count
+    pub NVMERVS_CRYSTALLORVM: i8,           // crystal count
 }
 
 // loaded level
@@ -100,6 +102,8 @@ impl AssetLoader for GRADVM_ORENATOR {
             MAPPAE_VREMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
             ALTIVIDO: 0,
             LATIVIDO: 0,
+            NVMERVS_VEHICVLORVM_MOBILIVM: 0,
+            NVMERVS_CRYSTALLORVM: 0,
         };
 
         loop {
@@ -120,6 +124,7 @@ impl AssetLoader for GRADVM_ORENATOR {
                                 VMBRA: false,
                             },
                         );
+                        GRADVS.NVMERVS_VEHICVLORVM_MOBILIVM += 1;
                     }
                     'E' => {
                         GRADVS.TEGLVAE.insert(
@@ -129,6 +134,7 @@ impl AssetLoader for GRADVM_ORENATOR {
                                 VMBRA: false,
                             },
                         );
+                        GRADVS.NVMERVS_CRYSTALLORVM += 1;
                     }
                     'P' => {
                         GRADVS.TEGLVAE.insert(
@@ -155,6 +161,8 @@ impl AssetLoader for GRADVM_ORENATOR {
             MAPPAE_VREMBRAE: GRADVS.MAPPAE_VREMBRAE,
             LATIVIDO: GRADVS.LATIVIDO,
             ALTIVIDO: GRADVS.ALTIVIDO,
+            NVMERVS_VEHICVLORVM_MOBILIVM: GRADVS.NVMERVS_VEHICVLORVM_MOBILIVM,
+            NVMERVS_CRYSTALLORVM: GRADVS.NVMERVS_CRYSTALLORVM,
         };
         for ITERATOR in GRADVS.TEGLVAE.iter() {
             let mut COORDINATAE = ITERATOR.0.clone();

@@ -1,7 +1,7 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
-use crate::poop::{RoverEntity, RoverList};
+use crate::rover::{RoverEntity, RoverList};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
