@@ -1,3 +1,5 @@
+extern crate core;
+
 mod GameControl;
 mod debug_camera_controller;
 mod hentai_anime;

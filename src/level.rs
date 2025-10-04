@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
-use bevy::app::{App, Startup};
+use bevy::app::{App, Startup, Update};
 use bevy::asset::io::Reader;
-use bevy::asset::AssetEvent::Added;
+use bevy::asset::AssetEvent::{Added, LoadedWithDependencies};
 use bevy::asset::{
     Asset, AssetApp, AssetEvent, AssetId, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
     LoadContext,
@@ -22,6 +22,7 @@ pub fn GRADVS_ONERATOR_PLUGIN(app: &mut App) {
     app.init_asset::<GRADVM>()
         .init_asset_loader::<GRADVM_ORENATOR>();
     app.add_systems(Startup, GRADVS_ONERIS);
+    app.add_systems(Update, UMBRAE_COLLOCATOR);
 }
 
 // tile
@@ -112,6 +113,12 @@ impl AssetLoader for GRADVM_ORENATOR {
             for ITERATOR in SERIES_CHARACTERVM.chars().into_iter() {
                 match ITERATOR {
                     'S' => {
+                        log::error!(
+                            "{}: S at X, Y = {}, {}",
+                            settings.INDEX.to_string(),
+                            X,
+                            GRADVS.ALTITVDO
+                        );
                         GRADVS.TEGVLAE.insert(
                             (X, -GRADVS.ALTITVDO),
                             TEGVLA {
@@ -121,6 +128,12 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'E' => {
+                        log::error!(
+                            "{}: E at X, Y = {}, {}",
+                            settings.INDEX.to_string(),
+                            X,
+                            GRADVS.ALTITVDO
+                        );
                         GRADVS.TEGVLAE.insert(
                             (X, -GRADVS.ALTITVDO),
                             TEGVLA {
@@ -130,6 +143,12 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'P' => {
+                        log::error!(
+                            "{}: P at X, Y = {}, {}",
+                            settings.INDEX.to_string(),
+                            X,
+                            GRADVS.ALTITVDO
+                        );
                         GRADVS.TEGVLAE.insert(
                             (X, -GRADVS.ALTITVDO),
                             TEGVLA {
@@ -138,10 +157,13 @@ impl AssetLoader for GRADVM_ORENATOR {
                             },
                         );
                     }
+                    '\n' => {
+                        X -= 1;
+                    }
                     _ => {}
                 }
                 X += 1;
-                GRADVS.LATITVDO += max(X, GRADVS.ALTITVDO);
+                GRADVS.LATITVDO = max(X, GRADVS.LATITVDO);
             }
 
             GRADVS.ALTITVDO += 1;
@@ -189,13 +211,13 @@ fn UMBRAE_COLLOCATOR(
     mut GRADVS: ResMut<Assets<GRADVM>>,
 ) {
     for EVENTVM in EVENTVS.read() {
-        if let Added { id } = EVENTVM {
-            let GRADVM = GRADVS.get(id.clone());
+        if let LoadedWithDependencies { id } = EVENTVM {
+            let mut GRADVM = GRADVS.get_mut(id.clone());
             if GRADVM.is_none() {
                 continue;
             }
 
-            let mut GRADVM = GRADVM.unwrap();
+            let GRADVM = GRADVM.unwrap();
             let IMAGINE = IMAGINES.get(&GRADVM.MAPPAE_VMBRAE);
             if IMAGINE.is_none() {
                 log::error!("TABVLA VMBRAE NON ONERATA PRO GRADV");
@@ -211,12 +233,17 @@ fn UMBRAE_COLLOCATOR(
 
             let DATA = DATA.as_ref().unwrap();
 
-            //for TEGVLA in GRADVM.TEGVLAE.iter_mut() {
-            //let pixelX = TEGVLA.0.0 as f32 / GRADVM.ALTITUDO;
-            //}
-
-            for X in 0..DIMENSIO.width {
-                for Y in 0..DIMENSIO.height {}
+            for TEGVLA in GRADVM.TEGVLAE.iter_mut() {
+                let PIXEL_X =
+                    (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATITVDO as f32 * DIMENSIO.width as f32;
+                let PIXEL_Y =
+                    (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATITVDO as f32 * DIMENSIO.width as f32;
+                let INDEX = f32::round(PIXEL_Y) as usize * DIMENSIO.width as usize
+                    + f32::round(PIXEL_X) as usize;
+                let COLOR = DATA.get(INDEX * 4 + 3);
+                if let Some(ALPHA) = COLOR {
+                    TEGVLA.1.VMBRA = *ALPHA > 127;
+                }
             }
         }
     }
