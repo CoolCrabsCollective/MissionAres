@@ -3,32 +3,40 @@
 
 use bevy::app::{App, Startup};
 use bevy::asset::io::Reader;
+use bevy::asset::AssetEvent::Added;
 use bevy::asset::{
-    Asset, AssetApp, AssetId, AssetLoader, AssetServer, AsyncReadExt, Handle, LoadContext,
+    Asset, AssetApp, AssetEvent, AssetId, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
+    LoadContext,
 };
 use bevy::image::Image;
+use bevy::log;
 use bevy::platform::collections::HashMap;
-use bevy::prelude::{Commands, Res, Resource, TypePath};
+use bevy::prelude::{Commands, EventReader, Res, ResMut, Resource, TypePath};
+use bevy::render::render_resource::{Extent3d, TextureDimension};
 use serde::{Deserialize, Serialize};
+use std::any::Any;
+use std::cmp::max;
 use thiserror::Error;
 
 pub fn GRADVS_ONERATOR_PLUGIN(app: &mut App) {
-    app.init_asset::<GRADVS>()
-        .init_asset_loader::<GRADVS_ORENATOR>();
+    app.init_asset::<GRADVM>()
+        .init_asset_loader::<GRADVM_ORENATOR>();
     app.add_systems(Startup, GRADVS_ONERIS);
 }
 
-#[derive(Debug, Clone)]
-pub enum TEGVLA_TYPVS {
-    INITIVM,
-    FINIS,
-    SEMITA,
-}
-
+// tile
 #[derive(Debug, Clone)]
 pub struct TEGVLA {
-    pub TYPVS: TEGVLA_TYPVS,
-    pub VMBRA: bool,
+    pub TYPVS: TEGVLA_TYPVS, // tile type
+    pub VMBRA: bool,         // umbra (shadow)
+}
+
+// tile type (tegula typus)
+#[derive(Debug, Clone)]
+pub enum TEGVLA_TYPVS {
+    INITIVM, // initial
+    FINIS,   // finish
+    SEMITA,  // path
 }
 
 impl TEGVLA {
@@ -37,51 +45,61 @@ impl TEGVLA {
     }
 }
 
+// level (grade -> gradus)
 #[derive(Asset, TypePath, Debug, Clone)]
-pub struct GRADVS {
-    pub TEGVLAE: HashMap<(i8, i8), TEGVLA>,
-    pub MAPPAE_VMBRAE: Handle<Image>,
+pub struct GRADVM {
+    pub TEGVLAE: HashMap<(i8, i8), TEGVLA>, // tiles
+    pub MAPPAE_VMBRAE: Handle<Image>,       // shadow map
+    pub LATITVDO: i8,                       // width
+    pub ALTITVDO: i8,                       // height
 }
+
+// loaded level
 #[derive(Resource)]
-pub struct GRADVS_ONVSTVS {
-    pub GRADVS: Vec<Handle<GRADVS>>,
+pub struct GRADVM_ONVSTVS {
+    // levels
+    pub GRADVS: Vec<Handle<GRADVM>>,
 }
 
+// level loader
 #[derive(Default)]
-struct GRADVS_ORENATOR;
+struct GRADVM_ORENATOR;
 
+// level loader error
 #[derive(Debug, Error)]
-enum GRADVS_ORENATOR_ERROR {
+enum GRADVM_ORENATOR_ERROR {
     #[error("Could not load asset: {0}")]
     IO(#[from] std::io::Error),
     #[error("Error in file format")]
     FORMA_ERRORRIS,
 }
 
+// level loader settings
 #[derive(Serialize, Deserialize, Default)]
-pub struct GRADVS_ORENATOR_CONFIGVRATIONES {
+pub struct GRADVM_ORENATOR_CONFIGVRATIONES {
     pub INDEX: u32,
 }
 
-impl AssetLoader for GRADVS_ORENATOR {
-    type Asset = GRADVS;
-    type Settings = GRADVS_ORENATOR_CONFIGVRATIONES;
-    type Error = GRADVS_ORENATOR_ERROR;
+impl AssetLoader for GRADVM_ORENATOR {
+    type Asset = GRADVM;
+    type Settings = GRADVM_ORENATOR_CONFIGVRATIONES;
+    type Error = GRADVM_ORENATOR_ERROR;
     async fn load(
         &self,
         reader: &mut dyn Reader,
-        settings: &GRADVS_ORENATOR_CONFIGVRATIONES,
+        settings: &GRADVM_ORENATOR_CONFIGVRATIONES,
         load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut TAMPON = String::new();
         reader.read_to_string(&mut TAMPON).await?;
 
         let mut LINEAE = TAMPON.lines();
-        let mut GRADVS = GRADVS {
+        let mut GRADVS = GRADVM {
             TEGVLAE: HashMap::new(),
             MAPPAE_VMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
+            ALTITVDO: 0,
+            LATITVDO: 0,
         };
-        let mut ALTITUDO = 0;
 
         loop {
             let LINEA = LINEAE.next();
@@ -95,7 +113,7 @@ impl AssetLoader for GRADVS_ORENATOR {
                 match ITERATOR {
                     'S' => {
                         GRADVS.TEGVLAE.insert(
-                            (X, -ALTITUDO),
+                            (X, -GRADVS.ALTITVDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::INITIVM,
                                 VMBRA: false,
@@ -104,7 +122,7 @@ impl AssetLoader for GRADVS_ORENATOR {
                     }
                     'E' => {
                         GRADVS.TEGVLAE.insert(
-                            (X, -ALTITUDO),
+                            (X, -GRADVS.ALTITVDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::FINIS,
                                 VMBRA: false,
@@ -113,7 +131,7 @@ impl AssetLoader for GRADVS_ORENATOR {
                     }
                     'P' => {
                         GRADVS.TEGVLAE.insert(
-                            (X, -ALTITUDO),
+                            (X, -GRADVS.ALTITVDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::SEMITA,
                                 VMBRA: false,
@@ -123,17 +141,20 @@ impl AssetLoader for GRADVS_ORENATOR {
                     _ => {}
                 }
                 X += 1;
+                GRADVS.LATITVDO += max(X, GRADVS.ALTITVDO);
             }
 
-            ALTITUDO += 1;
+            GRADVS.ALTITVDO += 1;
         }
-        let mut GRADVS_MODIFICATVS = GRADVS {
+        let mut GRADVS_MODIFICATVS = GRADVM {
             TEGVLAE: HashMap::new(),
             MAPPAE_VMBRAE: GRADVS.MAPPAE_VMBRAE,
+            LATITVDO: GRADVS.LATITVDO,
+            ALTITVDO: GRADVS.ALTITVDO,
         };
         for ITERATOR in GRADVS.TEGVLAE.iter() {
             let mut COORDINATAE = ITERATOR.0.clone();
-            COORDINATAE.1 += ALTITUDO;
+            COORDINATAE.1 += GRADVS.ALTITVDO;
             GRADVS_MODIFICATVS
                 .TEGVLAE
                 .insert(COORDINATAE, ITERATOR.1.clone());
@@ -147,17 +168,56 @@ impl AssetLoader for GRADVS_ORENATOR {
 }
 
 fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(GRADVS_ONVSTVS {
+    commands.insert_resource(GRADVM_ONVSTVS {
         GRADVS: vec![
-            asset_server.load_with_settings("1.lvl", |s: &mut GRADVS_ORENATOR_CONFIGVRATIONES| {
+            asset_server.load_with_settings("1.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
                 s.INDEX = 1;
             }),
-            asset_server.load_with_settings("2.lvl", |s: &mut GRADVS_ORENATOR_CONFIGVRATIONES| {
+            asset_server.load_with_settings("2.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
                 s.INDEX = 2;
             }),
-            asset_server.load_with_settings("3.lvl", |s: &mut GRADVS_ORENATOR_CONFIGVRATIONES| {
+            asset_server.load_with_settings("3.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
                 s.INDEX = 3;
             }),
         ],
     });
+}
+
+fn UMBRAE_COLLOCATOR(
+    mut EVENTVS: EventReader<AssetEvent<GRADVM>>,
+    IMAGINES: Res<Assets<Image>>,
+    mut GRADVS: ResMut<Assets<GRADVM>>,
+) {
+    for EVENTVM in EVENTVS.read() {
+        if let Added { id } = EVENTVM {
+            let GRADVM = GRADVS.get(id.clone());
+            if GRADVM.is_none() {
+                continue;
+            }
+
+            let mut GRADVM = GRADVM.unwrap();
+            let IMAGINE = IMAGINES.get(&GRADVM.MAPPAE_VMBRAE);
+            if IMAGINE.is_none() {
+                log::error!("TABVLA VMBRAE NON ONERATA PRO GRADV");
+                continue;
+            }
+
+            let DIMENSIO = IMAGINE.unwrap().texture_descriptor.size;
+            let DATA = &IMAGINE.unwrap().data;
+
+            if DATA.is_none() {
+                continue;
+            }
+
+            let DATA = DATA.as_ref().unwrap();
+
+            //for TEGVLA in GRADVM.TEGVLAE.iter_mut() {
+            //let pixelX = TEGVLA.0.0 as f32 / GRADVM.ALTITUDO;
+            //}
+
+            for X in 0..DIMENSIO.width {
+                for Y in 0..DIMENSIO.height {}
+            }
+        }
+    }
 }

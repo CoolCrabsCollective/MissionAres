@@ -1,4 +1,4 @@
-use crate::level::{GRADVS, GRADVS_ONVSTVS, TEGVLA_TYPVS};
+use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::scene_loader::SceneElement;
 use crate::title_screen::GameState;
@@ -24,7 +24,7 @@ pub struct LevelSpawnerPlugin;
 
 #[derive(Event)]
 pub struct LevelSpawnRequestEvent {
-    level: Handle<GRADVS>,
+    level: Handle<GRADVM>,
 }
 
 // tile entity
@@ -48,7 +48,7 @@ impl Plugin for LevelSpawnerPlugin {
 
 fn debug_add_fake_level_load_event(
     mut events: EventWriter<LevelSpawnRequestEvent>,
-    levels: Res<GRADVS_ONVSTVS>,
+    levels: Res<GRADVM_ONVSTVS>,
 ) {
     events.write(LevelSpawnRequestEvent {
         level: levels.GRADVS[0].clone(),
@@ -58,7 +58,7 @@ fn debug_add_fake_level_load_event(
 fn choose_level_by_num_keys(
     input: Res<ButtonInput<KeyCode>>,
     mut events: EventWriter<LevelSpawnRequestEvent>,
-    levels: Res<GRADVS_ONVSTVS>,
+    levels: Res<GRADVM_ONVSTVS>,
 ) {
     if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
         events.write(LevelSpawnRequestEvent {
@@ -86,7 +86,7 @@ fn load_level(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut asset_server: ResMut<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
-    levels: Res<Assets<GRADVS>>,
+    levels: Res<Assets<GRADVM>>,
     tiles: Query<Entity, With<TileEntity>>,
     rovers: Query<Entity, With<RoverEntity>>,
 ) {

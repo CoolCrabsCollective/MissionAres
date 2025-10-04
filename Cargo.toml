@@ -10,6 +10,7 @@ bevy = "0.16.1"
 bevy_rapier3d = "0.31.0"
 thiserror = "2.0.17"
 serde = { version = "1.0.225", features = ["derive"] }
+log = "0.4.28"
 
 [profile.dev]
 opt-level = 1
