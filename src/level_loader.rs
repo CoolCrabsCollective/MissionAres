@@ -14,15 +14,15 @@ use bevy::{
     },
 };
 
-use crate::level::{Level, TileType, level_1, level_2};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::level::{GRADVS, GRADVS1, GRADVS2, TEGVLA_TYPVS};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::scene_loader::SceneElement;
 
 pub struct LevelLoaderPlugin;
 
 #[derive(Event)]
 pub struct LevelLoadedEvent {
-    level: Level,
+    level: GRADVS,
 }
 
 // tile entity
@@ -42,7 +42,7 @@ impl Plugin for LevelLoaderPlugin {
 }
 
 fn debug_add_fake_level_load_event(mut commands: Commands) {
-    commands.send_event(LevelLoadedEvent { level: level_1() });
+    commands.send_event(LevelLoadedEvent { level: GRADVS1() });
 }
 
 fn choose_level_by_num_keys(
@@ -50,11 +50,11 @@ fn choose_level_by_num_keys(
     mut events: EventWriter<LevelLoadedEvent>,
 ) {
     if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
-        events.write(LevelLoadedEvent { level: level_1() });
+        events.write(LevelLoadedEvent { level: GRADVS1() });
     }
 
     if input.just_pressed(KeyCode::Numpad2) || input.just_pressed(KeyCode::Digit2) {
-        events.write(LevelLoadedEvent { level: level_2() });
+        events.write(LevelLoadedEvent { level: GRADVS2() });
     }
 }
 
@@ -77,10 +77,10 @@ fn load_level(
             commands.entity(rover).despawn();
         }
 
-        log::info!("Level loaded with {} tiles", event.level.tiles().len());
+        log::info!("Level loaded with {} tiles", event.level.TEGVLAE().len());
 
         // Spawn cylinders at each tile position
-        for ((x, z), tile) in event.level.tiles().iter() {
+        for ((x, z), tile) in event.level.TEGVLAE().iter() {
             spawn_tile_cylinder(
                 &mut commands,
                 &mut meshes,
@@ -93,7 +93,7 @@ fn load_level(
             let z_copy = *z;
 
             // Store rover spawn position for the start tile
-            if matches!(tile.tile_type(), TileType::Start) {
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
                 load_gltf(
                     String::from("pistol_shrimp.glb"),
                     GLTFLoadConfig {
