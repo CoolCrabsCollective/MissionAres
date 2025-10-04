@@ -4,7 +4,6 @@ mod hentai_anime;
 mod level;
 mod level_spawner;
 mod mesh_loader;
-mod object_spawner;
 mod scene_loader;
 mod title_screen;
 
@@ -12,7 +11,6 @@ use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
-use crate::object_spawner::ObjectSpawnerPlugin;
 use crate::scene_loader::SceneLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use bevy::app::{App, AppExit, PluginGroup};
@@ -67,7 +65,6 @@ fn main() {
     app.add_plugins(SceneLoaderPlugin);
     app.add_plugins(TitleScreenPlugin);
     app.add_plugins(DebugCameraControllerPlugin);
-    app.add_plugins(ObjectSpawnerPlugin);
     app.add_plugins(GRADVS_ONERATOR_PLUGIN);
     app.add_plugins(LevelSpawnerPlugin);
     app.insert_state(GameState::TitleScreen);

@@ -17,6 +17,7 @@ bevy_health_bar3d = "3.5.0"
 getrandom = { version = "0.3.3", features = ["wasm_js"] }
 bevy_water = "0.16"
 thiserror = "2.0.17"
+serde = { version = "1.0.225", features = ["derive"] }
 
 [profile.dev]
 opt-level = 1

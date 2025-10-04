@@ -149,7 +149,7 @@ fn load_level(
             TileEntity,
             Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(15.0)))),
             MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(asset_server.load("cutoff_texture.png")),
+                base_color_texture: Some(level.MAPPAE_VMBRAE.clone()),
                 alpha_mode: AlphaMode::Mask(0.5),
                 cull_mode: None,
                 ..Default::default()
