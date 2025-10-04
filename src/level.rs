@@ -60,7 +60,7 @@ enum GRADVS_ORENATOR_ERROR {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct GRADVS_ORENATOR_CONFIGVRATIONES {
-    pub index: u32,
+    pub INDEX: u32,
 }
 
 impl AssetLoader for GRADVS_ORENATOR {
@@ -79,7 +79,7 @@ impl AssetLoader for GRADVS_ORENATOR {
         let mut LINEAE = TAMPON.lines();
         let mut GRADVS = GRADVS {
             TEGVLAE: HashMap::new(),
-            MAPPAE_VMBRAE: load_context.load(settings.index.to_string() + ".png"),
+            MAPPAE_VMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
         };
         let mut ALTITUDO = 0;
 
@@ -150,13 +150,13 @@ fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(GRADVS_ONVSTVS {
         GRADVS: vec![
             asset_server.load_with_settings("1.lvl", |s: &mut GRADVS_ORENATOR_CONFIGVRATIONES| {
-                s.index = 1;
+                s.INDEX = 1;
             }),
             asset_server.load_with_settings("2.lvl", |s: &mut GRADVS_ORENATOR_CONFIGVRATIONES| {
-                s.index = 2;
+                s.INDEX = 2;
             }),
             asset_server.load_with_settings("3.lvl", |s: &mut GRADVS_ORENATOR_CONFIGVRATIONES| {
-                s.index = 3;
+                s.INDEX = 3;
             }),
         ],
     });
