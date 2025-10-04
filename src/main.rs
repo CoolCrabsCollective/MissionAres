@@ -6,6 +6,7 @@ mod mesh_loader;
 mod object_spawner;
 mod scene_loader;
 mod title_screen;
+mod GameControl;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::level_loader::LevelLoaderPlugin;
