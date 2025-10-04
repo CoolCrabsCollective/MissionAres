@@ -1,23 +1,23 @@
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::Handle;
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
-use bevy::math::Quat;
+use bevy::math::{I8Vec2, IVec2, Quat};
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, Gltf,
-    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
+    Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, Gltf, IntoScheduleConfigs, Msaa,
+    OnEnter, PerspectiveProjection, Projection, Reflect, Resource, default, in_state,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
@@ -71,7 +71,12 @@ pub struct RoverEntity {
     pub is_setup: bool,
     pub base_color: Color,
     pub gltf_handle: Handle<Gltf>,
+    pub logical_position: I8Vec2,
+    pub battery_level: u8,
 }
+
+#[derive(Resource)]
+pub struct ActiveLevel(pub Option<Handle<GRADVM>>);
 
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
@@ -96,6 +101,8 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(Update, debug_render_toggle)
             .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)))
             .insert_resource(DirectionalLightShadowMap { size: 4096 });
+
+        app.insert_resource(ActiveLevel(None));
     }
 }
 
@@ -215,6 +222,7 @@ fn load_level(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut asset_server: ResMut<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
+    mut active_level: ResMut<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
 ) {
@@ -251,6 +259,8 @@ fn load_level(
 
         // Spawn cylinders at each tile position
         for ((x, z), tile) in level.TEGLVAE.iter() {
+            let logical_x = *x as i32;
+            let logical_z = *z as i32;
             let effective_x =
                 (*x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
             let effective_z =
@@ -287,6 +297,11 @@ fn load_level(
                                     is_setup: false,
                                     base_color: Color::srgb(0.5, 0.2, 0.8),
                                     gltf_handle: Default::default(),
+                                    logical_position: I8Vec2::new(
+                                        logical_x.try_into().unwrap(),
+                                        logical_z.try_into().unwrap(),
+                                    ),
+                                    battery_level: 3,
                                 })
                                 .insert(LevelElement);
                         }),
@@ -328,6 +343,8 @@ fn load_level(
             })),
             Transform::from_xyz(0.0, 00.0, 0.0),
         ));
+
+        active_level.0 = Some(event.level.clone());
     }
 }
 

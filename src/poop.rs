@@ -1,13 +1,8 @@
+use crate::GameControl::actions::Action;
 use crate::level_spawner::RoverEntity;
 use crate::title_screen::GameState;
-use crate::GameControl::actions::Action;
 use bevy::prelude::*;
 use bevy::{ecs::resource::Resource, math::IVec2};
-
-#[derive(Resource)]
-pub struct Rover {
-    pub position: IVec2,
-}
 
 #[derive(Event)]
 pub struct ActionListExecute {

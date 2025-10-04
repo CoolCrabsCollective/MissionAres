@@ -7,22 +7,23 @@ mod level;
 mod level_spawner;
 mod mesh_loader;
 mod poop;
+mod puzzle_evaluation;
 mod title_screen;
 
+use crate::GameControl::actions::ActionController;
+use crate::GameControl::control_ui::ControlUiPlugin;
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
-use crate::GameControl::actions::ActionController;
-use crate::GameControl::control_ui::ControlUiPlugin;
+use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
-use bevy::DefaultPlugins;
 
 fn main() {
     let mut app = App::new();
