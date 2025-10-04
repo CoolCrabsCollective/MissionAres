@@ -6,7 +6,7 @@ use bevy::prelude::*;
 
 pub struct ControlUiPlugin;
 
-const MAX_COMMANDS: u16 = 8;
+const MAX_COMMANDS: u16 = 12;
 
 #[derive(Component)]
 pub struct ControlUi;
@@ -45,7 +45,7 @@ fn update_action_list_ui(
         ..default()
     };
     for event in action_lists.read() {
-        let number_of_rovers = event.actions.len();
+        let number_of_rovers = 3; //event.actions.len();
         println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
             commands.entity(ui_element).despawn();
@@ -113,7 +113,7 @@ fn update_action_list_ui(
                 multi_robot_command_list.with_children(|parent| {
                     for i in 0..number_of_rovers {
                         let mut ui_commands = ui_command_list(parent);
-                        for action in event.clone().actions[i].iter() {
+                        for action in event.clone().actions[0].iter() {
                             ui_commands.with_children(|parent| {
                                 ui_command_statement(parent, action, &font);
                             });
@@ -127,7 +127,7 @@ fn update_action_list_ui(
 fn ui_sidebar_node() -> Node {
     Node {
         height: Val::Percent(100.0),
-        width: Val::Percent(20.0),
+        width: Val::Percent(30.0),
         display: Display::Grid,
         padding: UiRect::all(Val::Px(10.0)),
         grid_template_columns: vec![GridTrack::flex(1.0)],
@@ -149,7 +149,12 @@ fn ui_command_statement(
 ) {
     // Action text
     parent.spawn((
+        ControlUi,
         Text::new(action.moves.0.as_str()),
+        Node {
+            align_items: AlignItems::Center,
+            ..default()
+        },
         font_node.clone(),
         TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
         TextShadow::default(),
