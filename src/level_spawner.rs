@@ -1,22 +1,22 @@
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::Handle;
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
-use bevy::math::primitives::Sphere;
 use bevy::math::Quat;
+use bevy::math::primitives::Sphere;
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, IntoScheduleConfigs,
-    Msaa, OnEnter, PerspectiveProjection, Projection, Resource,
+    Camera, Camera3d, ClearColor, ClearColorConfig, IntoScheduleConfigs, Msaa, OnEnter,
+    PerspectiveProjection, Projection, Resource, default, in_state,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
@@ -95,10 +95,10 @@ impl Plugin for LevelSpawnerPlugin {
 }
 
 fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
-    commands.spawn((
-        AudioPlayer::new(asset_server.load("test_song.ogg")),
-        PlaybackSettings::LOOP,
-    ));
+    // commands.spawn((
+    //     AudioPlayer::new(asset_server.load("test_song.ogg")),
+    //     PlaybackSettings::LOOP,
+    // ));
 
     let skybox_handle = asset_server.load(CUBEMAPS[0].0);
 
@@ -302,6 +302,7 @@ fn load_level(
                 base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
                 alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
                 cull_mode: None,
+                unlit: true,
                 ..Default::default()
             })),
             Transform::from_xyz(0.0, 10.0, 0.0),
