@@ -48,10 +48,10 @@ impl TEGVLA {
 // level (grade -> gradus)
 #[derive(Asset, TypePath, Debug, Clone)]
 pub struct GRADVM {
-    pub TEGVLAE: HashMap<(i8, i8), TEGVLA>, // tiles
-    pub MAPPAE_VMBRAE: Handle<Image>,       // shadow map
-    pub LATITVDO: i8,                       // width
-    pub ALTITVDO: i8,                       // height
+    pub TEGLVAE: HashMap<(i8, i8), TEGVLA>, // tiles
+    pub MAPPAE_VREMBRAE: Handle<Image>,     // shadow map
+    pub LATIVIDO: i8,                       // width
+    pub ALTIVIDO: i8,                       // height
 }
 
 // loaded level
@@ -95,10 +95,10 @@ impl AssetLoader for GRADVM_ORENATOR {
 
         let mut LINEAE = TAMPON.lines();
         let mut GRADVS = GRADVM {
-            TEGVLAE: HashMap::new(),
-            MAPPAE_VMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
-            ALTITVDO: 0,
-            LATITVDO: 0,
+            TEGLVAE: HashMap::new(),
+            MAPPAE_VREMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
+            ALTIVIDO: 0,
+            LATIVIDO: 0,
         };
 
         loop {
@@ -112,8 +112,8 @@ impl AssetLoader for GRADVM_ORENATOR {
             for ITERATOR in SERIES_CHARACTERVM.chars().into_iter() {
                 match ITERATOR {
                     'S' => {
-                        GRADVS.TEGVLAE.insert(
-                            (X, -GRADVS.ALTITVDO),
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::INITIVM,
                                 VMBRA: false,
@@ -121,8 +121,8 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'E' => {
-                        GRADVS.TEGVLAE.insert(
-                            (X, -GRADVS.ALTITVDO),
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::FINIS,
                                 VMBRA: false,
@@ -130,8 +130,8 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'P' => {
-                        GRADVS.TEGVLAE.insert(
-                            (X, -GRADVS.ALTITVDO),
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::SEMITA,
                                 VMBRA: false,
@@ -141,22 +141,22 @@ impl AssetLoader for GRADVM_ORENATOR {
                     _ => {}
                 }
                 X += 1;
-                GRADVS.LATITVDO += max(X, GRADVS.ALTITVDO);
+                GRADVS.LATIVIDO += max(X, GRADVS.ALTIVIDO);
             }
 
-            GRADVS.ALTITVDO += 1;
+            GRADVS.ALTIVIDO += 1;
         }
         let mut GRADVS_MODIFICATVS = GRADVM {
-            TEGVLAE: HashMap::new(),
-            MAPPAE_VMBRAE: GRADVS.MAPPAE_VMBRAE,
-            LATITVDO: GRADVS.LATITVDO,
-            ALTITVDO: GRADVS.ALTITVDO,
+            TEGLVAE: HashMap::new(),
+            MAPPAE_VREMBRAE: GRADVS.MAPPAE_VREMBRAE,
+            LATIVIDO: GRADVS.LATIVIDO,
+            ALTIVIDO: GRADVS.ALTIVIDO,
         };
-        for ITERATOR in GRADVS.TEGVLAE.iter() {
+        for ITERATOR in GRADVS.TEGLVAE.iter() {
             let mut COORDINATAE = ITERATOR.0.clone();
-            COORDINATAE.1 += GRADVS.ALTITVDO;
+            COORDINATAE.1 += GRADVS.ALTIVIDO;
             GRADVS_MODIFICATVS
-                .TEGVLAE
+                .TEGLVAE
                 .insert(COORDINATAE, ITERATOR.1.clone());
         }
 
@@ -196,7 +196,7 @@ fn UMBRAE_COLLOCATOR(
             }
 
             let mut GRADVM = GRADVM.unwrap();
-            let IMAGINE = IMAGINES.get(&GRADVM.MAPPAE_VMBRAE);
+            let IMAGINE = IMAGINES.get(&GRADVM.MAPPAE_VREMBRAE);
             if IMAGINE.is_none() {
                 log::error!("TABVLA VMBRAE NON ONERATA PRO GRADV");
                 continue;

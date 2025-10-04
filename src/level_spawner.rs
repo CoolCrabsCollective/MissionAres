@@ -109,10 +109,10 @@ fn load_level(
 
         let level = level.unwrap();
 
-        log::info!("Level loaded with {} tiles", level.TEGVLAE.len());
+        log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
 
         // Spawn cylinders at each tile position
-        for ((x, z), tile) in level.TEGVLAE.iter() {
+        for ((x, z), tile) in level.TEGLVAE.iter() {
             let effective_x = *x;
             let effective_z = -*z;
 
@@ -153,19 +153,19 @@ fn load_level(
             }
         }
 
-        log::info!("Level size: {}x{}", level.ALTITVDO, level.LATITVDO);
+        log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
 
         commands.spawn((
             TileEntity,
             Mesh3d(meshes.add(Plane3d::new(
                 Vec3::Y,
                 Vec2::new(
-                    0.5 * level.ALTITVDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
-                    0.5 * level.LATITVDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
+                    0.5 * level.ALTIVIDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
+                    0.5 * level.LATIVIDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
                 ),
             ))),
             MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(level.MAPPAE_VMBRAE.clone()),
+                base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
                 alpha_mode: AlphaMode::Mask(0.5),
                 cull_mode: None,
                 ..Default::default()
