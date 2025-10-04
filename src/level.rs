@@ -115,12 +115,6 @@ impl AssetLoader for GRADVM_ORENATOR {
             for ITERATOR in SERIES_CHARACTERVM.chars().into_iter() {
                 match ITERATOR {
                     'S' => {
-                        log::info!(
-                            "{}: S at X, Y = {}, {}",
-                            settings.INDEX.to_string(),
-                            X,
-                            GRADVS.ALTIVIDO
-                        );
                         GRADVS.TEGLVAE.insert(
                             (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
@@ -130,12 +124,6 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'E' => {
-                        log::info!(
-                            "{}: E at X, Y = {}, {}",
-                            settings.INDEX.to_string(),
-                            X,
-                            GRADVS.ALTIVIDO
-                        );
                         GRADVS.TEGLVAE.insert(
                             (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
@@ -145,12 +133,6 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'P' => {
-                        log::info!(
-                            "{}: P at X, Y = {}, {}",
-                            settings.INDEX.to_string(),
-                            X,
-                            GRADVS.ALTIVIDO
-                        );
                         GRADVS.TEGLVAE.insert(
                             (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
