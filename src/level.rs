@@ -2,8 +2,8 @@
 #![allow(non_camel_case_types)]
 
 use bevy::app::{App, Startup, Update};
-use bevy::asset::AssetEvent::{Added, LoadedWithDependencies};
 use bevy::asset::io::Reader;
+use bevy::asset::AssetEvent::{Added, LoadedWithDependencies};
 use bevy::asset::{
     Asset, AssetApp, AssetEvent, AssetId, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
     LoadContext,
@@ -115,7 +115,7 @@ impl AssetLoader for GRADVM_ORENATOR {
             for ITERATOR in SERIES_CHARACTERVM.chars().into_iter() {
                 match ITERATOR {
                     'S' => {
-                        log::error!(
+                        log::info!(
                             "{}: S at X, Y = {}, {}",
                             settings.INDEX.to_string(),
                             X,
@@ -130,7 +130,7 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'E' => {
-                        log::error!(
+                        log::info!(
                             "{}: E at X, Y = {}, {}",
                             settings.INDEX.to_string(),
                             X,
@@ -145,7 +145,7 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'P' => {
-                        log::error!(
+                        log::info!(
                             "{}: P at X, Y = {}, {}",
                             settings.INDEX.to_string(),
                             X,
@@ -238,15 +238,8 @@ fn UMBRAE_COLLOCATOR(
             for TEGVLA in GRADVM.TEGLVAE.iter_mut() {
                 let PIXEL_X =
                     (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATIVIDO as f32 * DIMENSIO.width as f32;
-                let PIXEL_Y = DIMENSIO.height as f32
-                    // for some reason TEGVLA.0.1 starts at 1 instad of 0
-                    - ((TEGVLA.0.1 as f32 - 0.5) / GRADVM.ALTIVIDO as f32 * DIMENSIO.height as f32);
-                log::error!(
-                    "TEGVLA: {:?}, PIXEL_X: {}, PIXEL_Y: {}",
-                    TEGVLA,
-                    PIXEL_X,
-                    PIXEL_Y
-                );
+                let PIXEL_Y = (1.0 - (TEGVLA.0.1 as f32 - 0.5) / GRADVM.ALTIVIDO as f32)
+                    * DIMENSIO.height as f32;
                 let INDEX = f32::round(PIXEL_Y) as usize * DIMENSIO.width as usize
                     + f32::round(PIXEL_X) as usize;
                 let COLOR = DATA.get(INDEX * 4 + 3);
