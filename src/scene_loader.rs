@@ -1,7 +1,7 @@
-use crate::mesh_loader::{self, GLTFLoadConfig, MeshLoader, load_gltf};
-use bevy::core_pipeline::Skybox;
+use crate::mesh_loader::{self, load_gltf, GLTFLoadConfig, MeshLoader};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
 use bevy::image::CompressedImageFormats;
 use bevy::pbr::{
     CascadeShadowConfigBuilder, DirectionalLightShadowMap, ScreenSpaceAmbientOcclusion,
@@ -11,7 +11,6 @@ use bevy::prelude::*;
 use bevy::render::camera::TemporalJitter;
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
 use bevy_rapier3d::prelude::*;
-use bevy_water::{WaterPlugin, WaterQuality, WaterSettings};
 
 use crate::GameControl::actions::ActionController;
 use crate::GameControl::control_ui::ControlUiPlugin;
@@ -37,7 +36,6 @@ impl Plugin for SceneLoaderPlugin {
         app.add_systems(Update, asset_loaded);
         app.add_systems(Update, scene_switcher);
         app.add_plugins((
-            WaterPlugin,
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
             ActionController,
@@ -48,11 +46,6 @@ impl Plugin for SceneLoaderPlugin {
         app.add_plugins(TemporalAntiAliasPlugin);
 
         app.add_systems(Update, debug_render_toggle)
-            .insert_resource(WaterSettings {
-                height: -10.0,
-                edge_scale: 0.5,
-                ..default()
-            })
             .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)))
             .insert_resource(DirectionalLightShadowMap { size: 4096 });
     }
@@ -66,7 +59,6 @@ fn scene_switcher(
     mut mesh_loader: ResMut<MeshLoader>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut water_level: ResMut<WaterSettings>,
 ) {
     if !input.pressed(KeyCode::ControlLeft) && !input.pressed(KeyCode::ControlRight) {
         return;
@@ -76,27 +68,13 @@ fn scene_switcher(
         for (entity, _) in scene_elements.iter_mut() {
             commands.entity(entity).despawn();
         }
-        setup_basic(
-            commands,
-            asset_server,
-            mesh_loader,
-            meshes,
-            materials,
-            water_level,
-        );
+        setup_basic(commands, asset_server, mesh_loader, meshes, materials);
         return;
     } else if input.just_pressed(KeyCode::Numpad9) || input.just_pressed(KeyCode::Digit9) {
         for (entity, _) in scene_elements.iter_mut() {
             commands.entity(entity).despawn();
         }
-        setup_kirby(
-            commands,
-            asset_server,
-            mesh_loader,
-            meshes,
-            materials,
-            water_level,
-        );
+        setup_kirby(commands, asset_server, mesh_loader, meshes, materials);
         return;
     }
 }
@@ -108,12 +86,7 @@ fn setup_basic(
     mut _mesh_loader: ResMut<MeshLoader>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut water_level: ResMut<WaterSettings>,
 ) {
-    water_level.height = -10.0;
-    water_level.edge_scale = 0.5;
-    water_level.water_quality = WaterQuality::Ultra;
-    water_level.clarity = 0.1;
     commands.spawn((
         SceneElement,
         AudioPlayer::new(asset_server.load("test_song.ogg")),
@@ -227,10 +200,7 @@ fn setup_kirby(
     mut mesh_loader: ResMut<MeshLoader>,
     mut _meshes: ResMut<Assets<Mesh>>,
     mut _materials: ResMut<Assets<StandardMaterial>>,
-    mut water_level: ResMut<WaterSettings>,
 ) {
-    water_level.water_quality = WaterQuality::Basic;
-    water_level.clarity = 0.0;
     commands.spawn((
         SceneElement,
         AudioPlayer::new(asset_server.load("test_song.ogg")),

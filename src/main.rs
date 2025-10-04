@@ -4,30 +4,26 @@ mod hentai_anime;
 mod level;
 mod level_spawner;
 mod mesh_loader;
-mod object_spawner;
-mod sane_level;
 mod scene_loader;
 mod title_screen;
 
-use std::fs;
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
+use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
-use crate::object_spawner::ObjectSpawnerPlugin;
-use crate::sane_level::level_plugin;
 use crate::scene_loader::SceneLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
-use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
+use bevy::DefaultPlugins;
 
 fn main() {
     let mut app = App::new();
-    fs::remove_file("assets/test_song.ogg").unwrap_or_else(|_| {});
+
     let default_sampler = ImageSamplerDescriptor {
         address_mode_u: ImageAddressMode::from(AddressMode::Repeat),
         address_mode_v: ImageAddressMode::from(AddressMode::Repeat),
@@ -69,8 +65,7 @@ fn main() {
     app.add_plugins(SceneLoaderPlugin);
     app.add_plugins(TitleScreenPlugin);
     app.add_plugins(DebugCameraControllerPlugin);
-    app.add_plugins(ObjectSpawnerPlugin);
-    app.add_plugins(level_plugin);
+    app.add_plugins(GRADVS_ONERATOR_PLUGIN);
     app.add_plugins(LevelSpawnerPlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
