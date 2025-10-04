@@ -1,11 +1,16 @@
 use bevy::platform::collections::HashMap;
 
+// tile type
 pub enum TYPVS {
+    // initial tile
     INITIVM,
+    // finish tile
     FINIS,
+    // semi transparent tile
     SEMITA,
 }
 
+// tile
 pub struct TEGVLA {
     TYPVS: TYPVS,
     VMBRA: bool,
