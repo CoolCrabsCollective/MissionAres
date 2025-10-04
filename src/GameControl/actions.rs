@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::title_screen::GameState;
 
 #[derive(Clone)]
-enum ROBOT
+pub enum ROBOT
 {
     ROVER1,
     ROVER2,
@@ -12,7 +12,7 @@ enum ROBOT
 }
 
 #[derive(Clone)]
-enum ActionType
+pub enum ActionType
 {
     MoveUp,
     MoveDown,
@@ -36,7 +36,7 @@ pub struct ActionList {
 
 // TODO: instead of putting strings we should list icons
 impl ActionType {
-    fn as_str(&self) -> &'static str {
+    pub(crate) fn as_str(&self) -> &'static str {
         match self {
             ActionType::MoveUp => "UP",
             ActionType::MoveDown => "DOWN",
@@ -55,7 +55,12 @@ impl Plugin for ActionController {
     }
 }
 
-fn setup_actions(mut commands: Commands, action_list: Res<ActionList>) {
+fn setup_actions(mut commands: Commands, mut action_list: ResMut<ActionList>) {
+    // Temp insert actions immediately
+    action_list.actions.push( Action { moves: (ActionType::MoveUp, ROBOT::ROVER1) });
+    action_list.actions.push( Action { moves: (ActionType::MoveUp, ROBOT::ROVER1) });
+    action_list.actions.push( Action { moves: (ActionType::MoveRight, ROBOT::ROVER1) });
+
     let action_event = action_list.clone();
     commands.send_event(action_event);
 }
