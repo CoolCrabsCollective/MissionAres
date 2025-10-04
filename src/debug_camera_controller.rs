@@ -74,9 +74,9 @@ impl CameraControllerState {
 
             view_direction: ControlledViewDirection {
                 horizontal: 0.0,
-                vertical: -45.0f32.to_radians(),
+                vertical: -60.0f32.to_radians(),
             },
-            position: Vec3::new(0.0, 3.0, 3.0),
+            position: Vec3::new(0.0, 10.0, 3.0),
             speed: 40.0,
             enabled: false,
         }
@@ -88,6 +88,10 @@ fn process_inputs(
     mut keyboard_input_events: EventReader<KeyboardInput>,
     mut state: ResMut<CameraControllerState>,
 ) {
+    if !state.enabled {
+        return;
+    }
+
     for event in mouse_motion_events.read() {
         state.unprocessed_delta = match state.unprocessed_delta {
             Some((x, y)) => Some((x + event.delta.x, y + event.delta.y)),
@@ -184,14 +188,6 @@ fn set_camera(
     mut state: ResMut<CameraControllerState>,
 ) {
     let mut camera_transform = camera_transform_query.single_mut().unwrap();
-
-    if !state.enabled {
-        state.position = camera_transform.translation;
-        let res = camera_transform.rotation.to_euler(EulerRot::XYZ);
-        state.view_direction.vertical = res.0;
-        state.view_direction.horizontal = res.1;
-        return;
-    }
 
     // log::info!("set_camera: position={:?}", state.position);
     camera_transform.translation = state.position;

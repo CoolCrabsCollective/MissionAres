@@ -35,18 +35,21 @@ impl Plugin for SceneLoaderPlugin {
         app.add_systems(Update, scene_switcher);
         app.add_plugins((
             WaterPlugin,
-            TemporalAntiAliasPlugin,
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
-        ))
-        .add_systems(Update, debug_render_toggle)
-        .insert_resource(WaterSettings {
-            height: -10.0,
-            edge_scale: 0.5,
-            ..default()
-        })
-        .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)))
-        .insert_resource(DirectionalLightShadowMap { size: 4096 });
+        ));
+
+        #[cfg(not(target_arch = "wasm32"))]
+        app.add_plugins(TemporalAntiAliasPlugin);
+
+        app.add_systems(Update, debug_render_toggle)
+            .insert_resource(WaterSettings {
+                height: -10.0,
+                edge_scale: 0.5,
+                ..default()
+            })
+            .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)))
+            .insert_resource(DirectionalLightShadowMap { size: 4096 });
     }
 }
 
@@ -64,7 +67,7 @@ fn scene_switcher(
         return;
     }
 
-    if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
+    if input.just_pressed(KeyCode::Numpad8) || input.just_pressed(KeyCode::Digit8) {
         for (entity, _) in scene_elements.iter_mut() {
             commands.entity(entity).despawn();
         }
@@ -77,7 +80,7 @@ fn scene_switcher(
             water_level,
         );
         return;
-    } else if input.just_pressed(KeyCode::Numpad2) || input.just_pressed(KeyCode::Digit2) {
+    } else if input.just_pressed(KeyCode::Numpad9) || input.just_pressed(KeyCode::Digit9) {
         for (entity, _) in scene_elements.iter_mut() {
             commands.entity(entity).despawn();
         }
@@ -140,7 +143,7 @@ fn setup_basic(
         image_handle: skybox_handle.clone(),
     });
 
-    commands.spawn((
+    let mut camera_bundle = commands.spawn((
         SceneElement,
         Camera3d::default(),
         Camera {
@@ -155,7 +158,7 @@ fn setup_basic(
             fov: 55.0f32.to_radians(),
             ..default()
         }),
-        Transform::from_xyz(-0.5, 0.3, 4.5).with_rotation(Quat::from_axis_angle(Vec3::Y, 0.0)),
+        Transform::from_xyz(-0.5, 5.0, 10.5).with_rotation(Quat::from_axis_angle(Vec3::Y, 0.0)),
         Skybox {
             image: skybox_handle.clone(),
             brightness: 1000.0,
@@ -174,25 +177,26 @@ fn setup_basic(
             quality_level: ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
             ..default()
         },
-        TemporalAntiAliasing::default(),
-        TemporalJitter::default(),
         Bloom::default(),
     ));
 
-    load_gltf(
-        String::from("test_scene.glb"),
-        GLTFLoadConfig {
-            spawn: true,
-            entity_initializer: add_scene_tag,
-            generate_static_collider: true,
-            collision_groups: CollisionGroups {
-                memberships: Default::default(),
-                filters: Default::default(),
-            },
-        },
-        &mut asset_server,
-        &mut mesh_loader,
-    );
+    #[cfg(not(target_arch = "wasm32"))]
+    camera_bundle.insert((TemporalAntiAliasing::default(), TemporalJitter::default()));
+
+    // load_gltf(
+    //     String::from("test_scene.glb"),
+    //     GLTFLoadConfig {
+    //         spawn: true,
+    //         entity_initializer: add_scene_tag,
+    //         generate_static_collider: true,
+    //         collision_groups: CollisionGroups {
+    //             memberships: Default::default(),
+    //             filters: Default::default(),
+    //         },
+    //     },
+    //     &mut asset_server,
+    //     &mut mesh_loader,
+    // );
 }
 
 fn add_scene_tag(commands: &mut EntityCommands) {
@@ -246,7 +250,7 @@ fn setup_kirby(
         image_handle: skybox_handle.clone(),
     });
 
-    commands.spawn((
+    let mut camera_bundle = commands.spawn((
         SceneElement,
         Camera3d::default(),
         Camera {
@@ -280,9 +284,10 @@ fn setup_kirby(
             quality_level: ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
             ..default()
         },
-        TemporalAntiAliasing::default(),
-        TemporalJitter::default(),
     ));
+
+    #[cfg(not(target_arch = "wasm32"))]
+    camera_bundle.insert((TemporalAntiAliasing::default(), TemporalJitter::default()));
 
     load_gltf(
         String::from("test_scene2.glb"),

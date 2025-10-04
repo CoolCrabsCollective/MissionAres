@@ -1,13 +1,22 @@
 use bevy::{
     app::{App, Plugin, Startup, Update},
+    asset::AssetServer,
     ecs::{
-        event::{Event, EventReader, Events},
-        system::Commands,
+        entity::Entity,
+        event::{Event, EventReader, EventWriter},
+        query::With,
+        system::{Commands, Query},
     },
     log,
+    prelude::{
+        Assets, ButtonInput, Color, Component, Cylinder, EntityCommands, KeyCode, Mesh, Mesh3d,
+        MeshMaterial3d, Res, ResMut, Resource, StandardMaterial, Transform, Vec3,
+    },
 };
 
-use crate::level::{Level, level_1};
+use crate::level::{Level, TileType, level_1, level_2};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::scene_loader::SceneElement;
 
 pub struct LevelLoaderPlugin;
 
@@ -16,10 +25,18 @@ pub struct LevelLoadedEvent {
     level: Level,
 }
 
+// tile entity
+#[derive(Component)]
+struct TileEntity;
+
+#[derive(Component)]
+struct RoverEntity;
+
 impl Plugin for LevelLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LevelLoadedEvent>();
-        app.add_systems(Update, debug_level_load_event);
+        app.add_systems(Update, choose_level_by_num_keys);
+        app.add_systems(Update, load_level);
         app.add_systems(Startup, debug_add_fake_level_load_event);
     }
 }
@@ -28,8 +45,85 @@ fn debug_add_fake_level_load_event(mut commands: Commands) {
     commands.send_event(LevelLoadedEvent { level: level_1() });
 }
 
-fn debug_level_load_event(mut events: EventReader<LevelLoadedEvent>) {
-    for event in events.read() {
-        log::info!("Level loaded: {:?}", event.level);
+fn choose_level_by_num_keys(
+    input: Res<ButtonInput<KeyCode>>,
+    mut events: EventWriter<LevelLoadedEvent>,
+) {
+    if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
+        events.write(LevelLoadedEvent { level: level_1() });
     }
+
+    if input.just_pressed(KeyCode::Numpad2) || input.just_pressed(KeyCode::Digit2) {
+        events.write(LevelLoadedEvent { level: level_2() });
+    }
+}
+
+fn load_level(
+    mut commands: Commands,
+    mut events: EventReader<LevelLoadedEvent>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut asset_server: ResMut<AssetServer>,
+    mut mesh_loader: ResMut<MeshLoader>,
+    tiles: Query<Entity, With<TileEntity>>,
+    rovers: Query<Entity, With<RoverEntity>>,
+) {
+    for event in events.read() {
+        // remove all tiles and rovers
+        for tile in tiles.iter() {
+            commands.entity(tile).despawn();
+        }
+        for rover in rovers.iter() {
+            commands.entity(rover).despawn();
+        }
+
+        log::info!("Level loaded with {} tiles", event.level.tiles().len());
+
+        // Spawn cylinders at each tile position
+        for ((x, z), tile) in event.level.tiles().iter() {
+            spawn_tile_cylinder(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                *x as f32,
+                *z as f32,
+            );
+
+            // Store rover spawn position for the start tile
+            if matches!(tile.tile_type(), TileType::Start) {
+                load_gltf(
+                    String::from("pistol_shrimp.glb"),
+                    GLTFLoadConfig {
+                        entity_initializer: |commands: &mut EntityCommands| {
+                            commands
+                                .insert(SceneElement)
+                                .insert(Transform::from_xyz(0.0, 0.5, 0.0))
+                                .insert(RoverEntity);
+                        },
+                        ..Default::default()
+                    },
+                    &mut asset_server,
+                    &mut mesh_loader,
+                );
+            }
+        }
+    }
+}
+
+fn spawn_tile_cylinder(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    x: f32,
+    z: f32,
+) {
+    commands.spawn((
+        Mesh3d(meshes.add(Cylinder::new(0.25, 0.1))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.5, 0.5, 0.8),
+            ..Default::default()
+        })),
+        Transform::from_xyz(x, 0.0, z),
+        TileEntity,
+    ));
 }

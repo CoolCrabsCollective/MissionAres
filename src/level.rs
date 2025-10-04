@@ -13,10 +13,22 @@ pub struct Tile {
     shadow: bool,
 }
 
+impl Tile {
+    pub fn tile_type(&self) -> &TileType {
+        &self.tile_type
+    }
+}
+
 #[derive(Debug)]
 pub struct Level {
     tiles: HashMap<(i8, i8), Tile>,
     //shadow_map: Option<Handle<Texture>>,
+}
+
+impl Level {
+    pub fn tiles(&self) -> &HashMap<(i8, i8), Tile> {
+        &self.tiles
+    }
 }
 
 pub fn level_1() -> Level {
