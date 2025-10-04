@@ -1,14 +1,14 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::poop::{RoverEntity, RoverList};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
 use bevy::math::{I8Vec2, Quat};
@@ -17,9 +17,9 @@ use bevy::pbr::{
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
-    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource,
+    Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges, Gltf,
+    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
+    default, in_state,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -90,7 +90,7 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(Startup, setup_scene);
 
         app.add_systems(Update, asset_loaded);
-        app.insert_resource(ActiveLevel { 0: None });
+        app.insert_resource(ActiveLevel(None));
         app.add_plugins((
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
