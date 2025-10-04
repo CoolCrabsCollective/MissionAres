@@ -1,14 +1,10 @@
 use crate::hentai_anime::Animation;
-use bevy::ecs::schedule::ScheduleLabel;
-use bevy::platform::collections::HashSet;
 use bevy::{
     gltf::{Gltf, GltfMesh, GltfNode},
     prelude::*,
     render::mesh::{Indices, VertexAttributeValues},
 };
-use bevy_rapier3d::plugin::PhysicsSet;
 use bevy_rapier3d::prelude::{Collider, CollisionGroups};
-use std::marker::PhantomData;
 
 pub struct MeshLoaderPlugin;
 
@@ -95,8 +91,6 @@ fn process_loaded_gltfs(
         let first_scene_handle = gltf.scenes[0].clone();
 
         for (name, node_handle) in &gltf.named_nodes {
-            println!("{}", name);
-
             if loaded_gltf.config.generate_static_collider {
                 info!("Generating collider from level object: {name:?}");
                 if let (Some(mesh), Some(material_handle), Some(transform)) = (

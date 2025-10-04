@@ -7,7 +7,6 @@ use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
-use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
 use bevy::math::Quat;
@@ -104,10 +103,10 @@ impl Plugin for LevelSpawnerPlugin {
 }
 
 fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
-    // commands.spawn((
-    //     AudioPlayer::new(asset_server.load("test_song.ogg")),
-    //     PlaybackSettings::LOOP,
-    // ));
+    commands.spawn((
+        AudioPlayer::new(asset_server.load("test_song.ogg")),
+        PlaybackSettings::LOOP,
+    ));
 
     let skybox_handle = asset_server.load(CUBEMAPS[0].0);
 

@@ -1,7 +1,7 @@
 extern crate core;
 
-mod GameControl;
 mod debug_camera_controller;
+mod game_control;
 mod hentai_anime;
 mod level;
 mod level_spawner;
@@ -10,12 +10,12 @@ mod poop;
 mod title_screen;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
+use crate::game_control::actions::ActionController;
+use crate::game_control::control_ui::ControlUiPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
-use crate::GameControl::actions::ActionController;
-use crate::GameControl::control_ui::ControlUiPlugin;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};

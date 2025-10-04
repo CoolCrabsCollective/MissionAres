@@ -1,5 +1,5 @@
+use crate::game_control::actions::{Action, ActionList};
 use crate::title_screen::GameState;
-use crate::GameControl::actions::{Action, ActionList};
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::*;
@@ -42,7 +42,7 @@ fn update_action_list_ui(
             commands.entity(ui_element).despawn();
         }
 
-        let mut image_robot = asset_server.load("command_icons/robot.png");
+        let image_robot = asset_server.load("command_icons/robot.png");
         let side_bar = commands
             .spawn((
                 ControlUi,
@@ -52,51 +52,56 @@ fn update_action_list_ui(
             .with_children(|parent| {
                 ui_control_panel(parent, &asset_server);
 
-
-                let rover_colors = vec![Color::srgba(1.0, 0.0, 0.0, 1.0), Color::srgba(0.0, 0.0, 1.0, 1.0) ];
+                let rover_colors = vec![
+                    Color::srgba(1.0, 0.0, 0.0, 1.0),
+                    Color::srgba(0.0, 0.0, 1.0, 1.0),
+                ];
                 let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
 
-                parent.spawn((ControlUi,  Node {
-                    height: Val::Percent(100.0),
-                    width: Val::Percent(100.0),
-                    display: Display::Grid,
-                    padding: UiRect::all(Val::Px(10.0)),
-                    grid_template_columns:  columns_template,
-                    grid_template_rows: vec![
-                        GridTrack::flex(1.0)
-                    ],
-                    row_gap: Val::Px(0.0),
-                    column_gap: Val::Px(5.0),
-                    ..default()
-                })).with_children(|parent| {
-
-                    let slicer = TextureSlicer {
-                        border: Default::default(),
-                        center_scale_mode: SliceScaleMode::Stretch,
-                        sides_scale_mode: SliceScaleMode::Stretch,
-                        max_corner_scale: 1.0,
-                    };
-                    let robot_node_for_img = Node {
-                        width: Val::Px(96.0),
-                        height: Val::Px(96.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    };
-
-
-                    for color in rover_colors {
-                        let img_robot_node = ImageNode {
-                            image: image_robot.clone(),
-                            image_mode: NodeImageMode::Sliced(slicer.clone()),
-                            color,
+                parent
+                    .spawn((
+                        ControlUi,
+                        Node {
+                            height: Val::Percent(100.0),
+                            width: Val::Percent(100.0),
+                            display: Display::Grid,
+                            padding: UiRect::all(Val::Px(10.0)),
+                            grid_template_columns: columns_template,
+                            grid_template_rows: vec![GridTrack::flex(1.0)],
+                            row_gap: Val::Px(0.0),
+                            column_gap: Val::Px(5.0),
+                            ..default()
+                        },
+                    ))
+                    .with_children(|parent| {
+                        let slicer = TextureSlicer {
+                            border: Default::default(),
+                            center_scale_mode: SliceScaleMode::Stretch,
+                            sides_scale_mode: SliceScaleMode::Stretch,
+                            max_corner_scale: 1.0,
+                        };
+                        let robot_node_for_img = Node {
+                            width: Val::Px(96.0),
+                            height: Val::Px(96.0),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
                             ..default()
                         };
-                        parent.spawn((ControlUi, robot_node_for_img.clone(), img_robot_node.clone()));
-                    }
-                });
 
-
+                        for color in rover_colors {
+                            let img_robot_node = ImageNode {
+                                image: image_robot.clone(),
+                                image_mode: NodeImageMode::Sliced(slicer.clone()),
+                                color,
+                                ..default()
+                            };
+                            parent.spawn((
+                                ControlUi,
+                                robot_node_for_img.clone(),
+                                img_robot_node.clone(),
+                            ));
+                        }
+                    });
 
                 let mut ui_commands = ui_command_list(parent);
 
@@ -137,7 +142,8 @@ fn ui_command_statement(
         Text::new(action.moves.0.as_str()),
         font_node.clone(),
         TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-        TextShadow::default()));
+        TextShadow::default(),
+    ));
 
     // Rover ID
     parent.spawn((

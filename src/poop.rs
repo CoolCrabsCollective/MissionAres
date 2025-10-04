@@ -1,6 +1,6 @@
+use crate::game_control::actions::Action;
 use crate::level_spawner::RoverEntity;
 use crate::title_screen::GameState;
-use crate::GameControl::actions::Action;
 use bevy::prelude::*;
 use bevy::{ecs::resource::Resource, math::IVec2};
 
