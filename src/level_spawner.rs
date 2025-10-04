@@ -1,14 +1,14 @@
+use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::poop::RoverList;
 use crate::title_screen::GameState;
 use bevy::app::Startup;
-use bevy::asset::Handle;
+use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
-use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
 use bevy::math::{IVec2, Quat};
@@ -17,10 +17,12 @@ use bevy::pbr::{
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, Gltf,
-    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
+    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
+    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    Reflect, Resource,
 };
 use bevy::render::camera::TemporalJitter;
+use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
 use bevy::{
     app::{App, Plugin, Update},
@@ -39,6 +41,7 @@ use bevy::{
 };
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
+use rand::random;
 use std::f32::consts::PI;
 
 pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =
@@ -55,6 +58,7 @@ pub struct LevelElement;
 
 pub const TILE_SIZE: f32 = 2.0;
 pub const LEVEL_SHADOW_ALPHA_MASK: f32 = 0.5;
+pub const ROCK_PADDING: i32 = 10;
 
 pub struct LevelSpawnerPlugin;
 
@@ -62,6 +66,9 @@ pub struct LevelSpawnerPlugin;
 pub struct LevelSpawnRequestEvent {
     level: Handle<GRADVM>,
 }
+
+#[derive(Event)]
+pub struct LevelLoadedEvent {}
 
 // tile entity
 #[derive(Component)]
@@ -101,10 +108,10 @@ impl Plugin for LevelSpawnerPlugin {
 }
 
 fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
-    // commands.spawn((
-    //     AudioPlayer::new(asset_server.load("test_song.ogg")),
-    //     PlaybackSettings::LOOP,
-    // ));
+    commands.spawn((
+        AudioPlayer::new(asset_server.load("test_song.ogg")),
+        PlaybackSettings::LOOP,
+    ));
 
     let skybox_handle = asset_server.load(CUBEMAPS[0].0);
 
@@ -214,8 +221,9 @@ fn load_level(
     mut events: EventReader<LevelSpawnRequestEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut asset_server: ResMut<AssetServer>,
+    asset_server: Res<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
+    mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
     mut rover_list: ResMut<RoverList>,
@@ -248,14 +256,14 @@ fn load_level(
                 metallic: 0.0,
                 ..Default::default()
             })),
-            Transform::from_xyz(0.0, -0.5, 0.0),
+            Transform::from_xyz(0.0, 0.0, 0.0),
         ));
-
-        let rover_count = 0;
+        let mut num_rovers = 0;
         // Spawn cylinders at each tile position
         for ((x, z), tile) in level.TEGLVAE.iter() {
             let effective_x =
                 (*x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+            // mirror along the z to align correctly with how it looks in the level
             let effective_z =
                 (-*z as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
 
@@ -263,14 +271,15 @@ fn load_level(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                effective_x as f32,
-                // mirror along the z to align correctly with how it looks in the level
-                effective_z as f32,
+                effective_x,
+                effective_z,
                 tile.VMBRA,
             );
 
             // Store rover spawn position for the start tile
+
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
+                num_rovers += 1;
                 load_gltf(
                     String::from("rover.glb"),
                     GLTFLoadConfig {
@@ -278,13 +287,9 @@ fn load_level(
                             commands
                                 .insert(
                                     // should spawn at the tile position
-                                    Transform::from_xyz(
-                                        effective_x as f32,
-                                        0.5,
-                                        effective_z as f32,
-                                    )
-                                    .with_scale(Vec3::splat(0.15 * TILE_SIZE))
-                                    .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
+                                    Transform::from_xyz(effective_x, 0.0, effective_z)
+                                        .with_scale(Vec3::splat(0.15 * TILE_SIZE))
+                                        .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                                 )
                                 .insert(RoverEntity {
                                     is_setup: false,
@@ -295,24 +300,46 @@ fn load_level(
                         }),
                         ..Default::default()
                     },
-                    &mut asset_server,
+                    &asset_server,
                     &mut mesh_loader,
                 );
 
-                rover_list.list.get_mut(rover_count).unwrap().position =
+                rover_list.list.get_mut(num_rovers-1).unwrap().position =
                     IVec2::new(*x as i32, *z as i32);
             }
         }
 
         log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
 
+        // Spawn boundary rocks
+        for x in -ROCK_PADDING..level.LATIVIDO as i32 + ROCK_PADDING {
+            for y in -ROCK_PADDING..level.ALTIVIDO as i32 + ROCK_PADDING {
+                let key = (x as i8, level.ALTIVIDO - y as i8);
+                if x >= 0
+                    && x < level.LATIVIDO as i32
+                    && y >= 0
+                    && y < level.ALTIVIDO as i32
+                    && level.TEGLVAE.contains_key(&key)
+                {
+                    continue;
+                }
+                let effective_x =
+                    (x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+                let effective_z =
+                    (y as f32 * TILE_SIZE - effective_level_height / 2.0) + TILE_SIZE / 2.0;
+
+                spawn_rock(effective_x, effective_z, &asset_server, &mut mesh_loader);
+            }
+        }
+
+        let plane_mesh_handle = meshes.add(create_mappae_umbrae_mesh(Vec2::new(
+            effective_level_width,
+            effective_level_height,
+        )));
         commands.spawn((
             LevelElement,
             TileEntity,
-            Mesh3d(meshes.add(Plane3d::new(
-                Vec3::Y,
-                Vec2::new(0.5 * effective_level_width, 0.5 * effective_level_height),
-            ))),
+            Mesh3d::from(plane_mesh_handle),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
                 alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
@@ -332,9 +359,52 @@ fn load_level(
                 base_color: Color::srgb(0.0, 1.0, 0.0),
                 ..Default::default()
             })),
-            Transform::from_xyz(0.0, 00.0, 0.0),
+            Transform::from_xyz(random::<f32>(), 0.0, random::<f32>()),
         ));
+        action_list.actions.push(Action {
+            moves: (ActionType::MoveUp, Robot::ROVER1),
+        });
+        action_list.actions.push(Action {
+            moves: (ActionType::MoveUp, Robot::ROVER1),
+        });
+        action_list.actions.push(Action {
+            moves: (ActionType::MoveRight, Robot::ROVER1),
+        });
+
+        let mut action_event = action_list.clone();
+        action_event.num_rovers = num_rovers;
+        commands.send_event(action_event);
     }
+}
+
+fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
+    Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        vec![
+            [-0.5 * size.x, 0.0, -0.5 * size.y],
+            [0.5 * size.x, 0.0, -0.5 * size.y],
+            [0.5 * size.x, 0.0, 0.5 * size.y],
+            [-0.5 * size.x, 0.0, 0.5 * size.y],
+        ],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        vec![
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ],
+    )
+    .with_inserted_indices(Indices::U32(vec![0, 3, 1, 1, 3, 2]))
 }
 
 fn spawn_tile_cylinder(
@@ -359,6 +429,32 @@ fn spawn_tile_cylinder(
         Transform::from_xyz(x, 0.0, z),
         TileEntity,
     ));
+}
+
+fn spawn_rock(
+    x: f32,
+    z: f32,
+    asset_server: &Res<AssetServer>,
+    mesh_loader: &mut ResMut<MeshLoader>,
+) {
+    load_gltf(
+        String::from("rock.glb"),
+        GLTFLoadConfig {
+            entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                commands
+                    .insert(
+                        // should spawn at the tile position
+                        Transform::from_xyz(x, 0.0, z)
+                            .with_scale(Vec3::splat((0.25 + random::<f32>() * 0.25) * TILE_SIZE))
+                            .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
+                    )
+                    .insert(LevelElement);
+            }),
+            ..default()
+        },
+        &asset_server,
+        mesh_loader,
+    );
 }
 
 fn debug_render_toggle(mut context: ResMut<DebugRenderContext>, keys: Res<ButtonInput<KeyCode>>) {
