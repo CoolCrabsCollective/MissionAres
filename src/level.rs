@@ -2,8 +2,8 @@
 #![allow(non_camel_case_types)]
 
 use bevy::app::{App, Startup, Update};
-use bevy::asset::io::Reader;
 use bevy::asset::AssetEvent::LoadedWithDependencies;
+use bevy::asset::io::Reader;
 use bevy::asset::{
     Asset, AssetApp, AssetEvent, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
     LoadContext,
@@ -53,6 +53,7 @@ pub struct GRADVM {
     pub MAPPAE_VREMBRAE: Handle<Image>,     // shadow map
     pub LATIVIDO: i8,                       // width
     pub ALTIVIDO: i8,                       // height
+    pub INDEX: u32,
 }
 
 // loaded level
@@ -97,9 +98,10 @@ impl AssetLoader for GRADVM_ORENATOR {
         let mut LINEAE = TAMPON.lines();
         let mut GRADVS = GRADVM {
             TEGLVAE: HashMap::new(),
-            MAPPAE_VREMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
+            MAPPAE_VREMBRAE: load_context.load((settings.INDEX + 1).to_string() + ".png"),
             ALTIVIDO: 0,
             LATIVIDO: 0,
+            INDEX: settings.INDEX,
         };
 
         loop {
@@ -155,6 +157,7 @@ impl AssetLoader for GRADVM_ORENATOR {
             MAPPAE_VREMBRAE: GRADVS.MAPPAE_VREMBRAE,
             LATIVIDO: GRADVS.LATIVIDO,
             ALTIVIDO: GRADVS.ALTIVIDO,
+            INDEX: GRADVS.INDEX,
         };
         for ITERATOR in GRADVS.TEGLVAE.iter() {
             let mut COORDINATAE = ITERATOR.0.clone();
@@ -175,13 +178,13 @@ fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(GRADVM_ONVSTVS {
         GRADVS: vec![
             asset_server.load_with_settings("1.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 1;
+                s.INDEX = 0;
             }),
             asset_server.load_with_settings("2.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 2;
+                s.INDEX = 1;
             }),
             asset_server.load_with_settings("3.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 3;
+                s.INDEX = 2;
             }),
         ],
     });

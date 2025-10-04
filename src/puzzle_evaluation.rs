@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::poop::RoverEntity;
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
-    level_spawner::{ActiveLevel, AfterLevelSpawnEvent},
+    level_spawner::ActiveLevel,
 };
 
 pub struct PuzzleEvaluationPlugin;
@@ -36,7 +36,6 @@ fn on_puzzle_evaluation_request(
     levels: Res<Assets<GRADVM>>,
 ) {
     for _ in evaluation_requests.read() {
-        log::info!("Received puzzle evaluation request.");
         let Some(active_level_handle) = &active_level.0 else {
             log::error!(
                 "No active level. How the FUCK could you request that I evaluate the puzzle?"
@@ -64,15 +63,19 @@ fn on_puzzle_evaluation_request(
                 return;
             };
 
-            if tile.VMBRA {
+            let prev_battery_level = rover.battery_level;
+
+            if tile.VMBRA && rover.battery_level > 0 {
                 rover.battery_level -= 1;
-                log::info!(
-                    "Rover {} in position {} battery level went down to: {}",
-                    i,
-                    rover.logical_position,
-                    rover.battery_level
-                );
             }
+
+            log::info!(
+                "Rover {} in position {} battery level from {} to: {}",
+                i,
+                rover.logical_position,
+                prev_battery_level,
+                rover.battery_level
+            );
 
             all_rovers_in_finish_tile &= matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS);
 
@@ -97,7 +100,6 @@ fn debug_puzzle_evaluation(
     mut event_writer: EventWriter<PuzzleEvaluationRequestEvent>,
 ) {
     if keys.just_pressed(KeyCode::KeyP) {
-        log::info!("Writing puzzle evaluation request event.");
         event_writer.write(PuzzleEvaluationRequestEvent);
     }
 }
