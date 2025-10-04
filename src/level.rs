@@ -7,7 +7,7 @@ pub enum TYPVS {
 }
 
 pub struct TEGVLA {
-    TYPUS: TYPVS,
+    TYPVS: TYPVS,
     VMBRA: bool,
 }
 
@@ -22,28 +22,28 @@ pub fn GRADVS1() -> GRADVS {
             (
                 (0, 0),
                 TEGVLA {
-                    TYPUS: TYPVS::INITIVM,
+                    TYPVS: TYPVS::INITIVM,
                     VMBRA: false,
                 },
             ),
             (
                 (0, 1),
                 TEGVLA {
-                    TYPUS: TYPVS::SEMITA,
+                    TYPVS: TYPVS::SEMITA,
                     VMBRA: false,
                 },
             ),
             (
                 (0, 2),
                 TEGVLA {
-                    TYPUS: TYPVS::SEMITA,
+                    TYPVS: TYPVS::SEMITA,
                     VMBRA: false,
                 },
             ),
             (
                 (1, 2),
                 TEGVLA {
-                    TYPUS: TYPVS::FINIS,
+                    TYPVS: TYPVS::FINIS,
                     VMBRA: false,
                 },
             ),
