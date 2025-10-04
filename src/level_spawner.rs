@@ -124,6 +124,7 @@ fn load_level(
                 &mut materials,
                 *x as f32,
                 *z as f32,
+                tile.VMBRA,
             );
 
             let x_copy = *x;
@@ -172,11 +173,16 @@ fn spawn_tile_cylinder(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     x: f32,
     z: f32,
+    umbra: bool,
 ) {
     commands.spawn((
         Mesh3d(meshes.add(Cylinder::new(0.25, 0.1))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.5, 0.5, 0.8),
+            base_color: if umbra {
+                Color::srgb(0.5, 0.5, 0.8)
+            } else {
+                Color::srgb(0.8, 0.5, 0.5)
+            },
             ..Default::default()
         })),
         Transform::from_xyz(x, 0.0, z),
