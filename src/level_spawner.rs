@@ -38,6 +38,7 @@ use bevy::{
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
 use std::f32::consts::PI;
+use crate::GameControl::actions::{Action, ActionList, ActionType, Robot};
 
 pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =
     &[("test_skybox.png", CompressedImageFormats::NONE)];
@@ -61,12 +62,16 @@ pub struct LevelSpawnRequestEvent {
     level: Handle<GRADVM>,
 }
 
+#[derive(Event)]
+pub struct LevelLoadedEvent {
+}
+
 // tile entity
 #[derive(Component)]
 pub struct TileEntity;
 
 #[derive(Component)]
-struct RoverEntity;
+pub(crate) struct RoverEntity;
 
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
@@ -210,10 +215,13 @@ fn load_level(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut asset_server: ResMut<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
+    mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
 ) {
+
     for event in events.read() {
+        println!("Loading Level");
         // remove all tiles and rovers
         for level_element in level_elements.iter() {
             commands.entity(level_element).despawn();
@@ -243,7 +251,7 @@ fn load_level(
             })),
             Transform::from_xyz(0.0, -0.5, 0.0),
         ));
-
+        let mut num_rovers = 0;
         // Spawn cylinders at each tile position
         for ((x, z), tile) in level.TEGLVAE.iter() {
             let effective_x =
@@ -262,7 +270,10 @@ fn load_level(
             );
 
             // Store rover spawn position for the start tile
+
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
+                num_rovers += 1;
+                println!("Load a rover! {}", num_rovers);
                 load_gltf(
                     String::from("rover.glb"),
                     GLTFLoadConfig {
@@ -308,7 +319,6 @@ fn load_level(
             Transform::from_xyz(0.0, 10.0, 0.0),
         ));
 
-        // debug sphere to show the center of the level
         commands.spawn((
             LevelElement,
             TileEntity,
@@ -319,6 +329,19 @@ fn load_level(
             })),
             Transform::from_xyz(0.0, 00.0, 0.0),
         ));
+        action_list.actions.push(Action {
+            moves: (ActionType::MoveUp, Robot::ROVER1),
+        });
+        action_list.actions.push(Action {
+            moves: (ActionType::MoveUp, Robot::ROVER1),
+        });
+        action_list.actions.push(Action {
+            moves: (ActionType::MoveRight, Robot::ROVER1),
+        });
+
+        let mut action_event = action_list.clone();
+        action_event.num_rovers = num_rovers;
+        commands.send_event(action_event);
     }
 }
 

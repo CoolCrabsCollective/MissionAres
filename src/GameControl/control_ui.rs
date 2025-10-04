@@ -4,6 +4,7 @@ use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::*;
 use std::fs;
+use crate::level_spawner::RoverEntity;
 
 pub struct ControlUiPlugin;
 
@@ -11,6 +12,9 @@ const MAX_COMMANDS: u16 = 8;
 
 #[derive(Component)]
 pub struct ControlUi;
+
+#[derive(Resource)]
+pub struct RoverColors(Vec<Color>);
 
 impl Plugin for ControlUiPlugin {
     fn build(&self, app: &mut App) {
@@ -21,14 +25,16 @@ impl Plugin for ControlUiPlugin {
                 button_feedback,
             ),
         );
+        app.insert_resource(RoverColors(vec![Color::srgba(1.0, 0.0, 0.0, 1.0), Color::srgba(0.0, 0.0, 1.0, 1.0), Color::srgba(0.0, 1.0, 0.0, 1.0)]));
         // app.add_systems(OnExit(GameState::Game), clean)
     }
 }
 
 fn update_action_list_ui(
     mut commands: Commands,
-    mut events: EventReader<ActionList>,
+    mut action_lists: EventReader<ActionList>,
     current_ui_elem_query: Query<Entity, With<ControlUi>>,
+    all_rover_colors: Res<RoverColors>,
     asset_server: Res<AssetServer>,
 ) {
     let font = TextFont {
@@ -37,7 +43,8 @@ fn update_action_list_ui(
         ..default()
     };
 
-    for event in events.read() {
+    for event in action_lists.read() {
+        let number_of_rovers = event.num_rovers;
         for ui_element in current_ui_elem_query.iter() {
             commands.entity(ui_element).despawn();
         }
@@ -53,9 +60,9 @@ fn update_action_list_ui(
                 ui_control_panel(parent, &asset_server);
 
 
-                let rover_colors = vec![Color::srgba(1.0, 0.0, 0.0, 1.0), Color::srgba(0.0, 0.0, 1.0, 1.0) ];
+                let rover_colors = &all_rover_colors.0[0..number_of_rovers];
                 let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
-
+                println!("{}", rover_colors.len());
                 parent.spawn((ControlUi,  Node {
                     height: Val::Percent(100.0),
                     width: Val::Percent(100.0),
@@ -84,22 +91,18 @@ fn update_action_list_ui(
                         ..default()
                     };
 
-
                     for color in rover_colors {
                         let img_robot_node = ImageNode {
                             image: image_robot.clone(),
                             image_mode: NodeImageMode::Sliced(slicer.clone()),
-                            color,
+                            color: *color,
                             ..default()
                         };
                         parent.spawn((ControlUi, robot_node_for_img.clone(), img_robot_node.clone()));
                     }
                 });
 
-
-
                 let mut ui_commands = ui_command_list(parent);
-
                 for action in event.clone().actions.iter() {
                     ui_commands.with_children(|parent| {
                         ui_command_statement(parent, action, &font);
