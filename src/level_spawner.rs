@@ -1,22 +1,23 @@
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::Handle;
 use bevy::audio::{AudioPlayer, PlaybackSettings};
-use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
+use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
-use bevy::math::Quat;
 use bevy::math::primitives::Sphere;
+use bevy::math::Quat;
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    Camera, Camera3d, ClearColor, ClearColorConfig, IntoScheduleConfigs, Msaa, OnEnter,
-    PerspectiveProjection, Projection, Resource, default, in_state,
+    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, Gltf,
+    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
@@ -66,7 +67,11 @@ pub struct LevelSpawnRequestEvent {
 pub struct TileEntity;
 
 #[derive(Component)]
-struct RoverEntity;
+pub struct RoverEntity {
+    pub is_setup: bool,
+    pub base_color: Color,
+    pub gltf_handle: Handle<Gltf>,
+}
 
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
@@ -278,7 +283,11 @@ fn load_level(
                                     .with_scale(Vec3::splat(0.15 * TILE_SIZE))
                                     .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                                 )
-                                .insert(RoverEntity)
+                                .insert(RoverEntity {
+                                    is_setup: false,
+                                    base_color: Color::srgb(0.5, 0.2, 0.8),
+                                    gltf_handle: Default::default(),
+                                })
                                 .insert(LevelElement);
                         }),
                         ..Default::default()
