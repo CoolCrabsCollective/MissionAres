@@ -124,7 +124,7 @@ fn load_level(
                 &mut materials,
                 *x as f32,
                 *z as f32,
-                tile.VMBRA,
+                tile.shadow,
             );
 
             let x_copy = *x;
