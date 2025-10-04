@@ -69,7 +69,7 @@ pub struct LevelSpawnRequestEvent {
 }
 
 #[derive(Event)]
-pub struct LevelLoadedEvent {}
+pub struct AfterLevelSpawnEvent;
 
 // tile entity
 #[derive(Component)]
@@ -81,6 +81,7 @@ pub struct ActiveLevel(pub Option<Handle<GRADVM>>);
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LevelSpawnRequestEvent>();
+        app.add_event::<AfterLevelSpawnEvent>();
         app.add_systems(
             Update,
             choose_level_by_num_keys.run_if(in_state(GameState::Game)),
@@ -409,6 +410,8 @@ fn load_level(
         let action_event = action_list.clone();
         println!("Sending event with {} rovers", action_list.actions.len());
         commands.send_event(action_event);
+
+        commands.send_event(AfterLevelSpawnEvent);
     }
 }
 
