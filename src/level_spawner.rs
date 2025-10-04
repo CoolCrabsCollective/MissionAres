@@ -1,3 +1,9 @@
+use crate::level::{GRADVS, GRADVS_ONVSTVS, TEGVLA_TYPVS};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::scene_loader::SceneElement;
+use crate::title_screen::GameState;
+use bevy::asset::Handle;
+use bevy::prelude::{in_state, IntoScheduleConfigs, OnEnter};
 use bevy::{
     app::{App, Plugin, Startup, Update},
     asset::AssetServer,
@@ -14,18 +20,11 @@ use bevy::{
     },
 };
 
-use crate::sane_level::{Level, TileExt, TileType, level_1, level_2};
-use crate::scene_loader::SceneElement;
-use crate::{
-    mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf},
-    sane_level::LevelExt,
-};
-
 pub struct LevelSpawnerPlugin;
 
 #[derive(Event)]
-pub struct LevelLoadedEvent {
-    level: Level,
+pub struct LevelSpawnRequestEvent {
+    level: Handle<GRADVS>,
 }
 
 // tile entity
@@ -37,37 +36,57 @@ struct RoverEntity;
 
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LevelLoadedEvent>();
-        app.add_systems(Update, choose_level_by_num_keys);
-        app.add_systems(Update, load_level);
-        app.add_systems(Startup, debug_add_fake_level_load_event);
+        app.add_event::<LevelSpawnRequestEvent>();
+        app.add_systems(
+            Update,
+            choose_level_by_num_keys.run_if(in_state(GameState::Game)),
+        );
+        app.add_systems(Update, load_level.run_if(in_state(GameState::Game)));
+        app.add_systems(OnEnter(GameState::Game), debug_add_fake_level_load_event);
     }
 }
 
-fn debug_add_fake_level_load_event(mut commands: Commands) {
-    commands.send_event(LevelLoadedEvent { level: level_1() });
+fn debug_add_fake_level_load_event(
+    mut events: EventWriter<LevelSpawnRequestEvent>,
+    levels: Res<GRADVS_ONVSTVS>,
+) {
+    events.write(LevelSpawnRequestEvent {
+        level: levels.GRADVS[0].clone(),
+    });
 }
 
 fn choose_level_by_num_keys(
     input: Res<ButtonInput<KeyCode>>,
-    mut events: EventWriter<LevelLoadedEvent>,
+    mut events: EventWriter<LevelSpawnRequestEvent>,
+    levels: Res<GRADVS_ONVSTVS>,
 ) {
     if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
-        events.write(LevelLoadedEvent { level: level_1() });
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[0].clone(),
+        });
     }
 
     if input.just_pressed(KeyCode::Numpad2) || input.just_pressed(KeyCode::Digit2) {
-        events.write(LevelLoadedEvent { level: level_2() });
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[1].clone(),
+        });
+    }
+
+    if input.just_pressed(KeyCode::Numpad3) || input.just_pressed(KeyCode::Digit3) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[2].clone(),
+        });
     }
 }
 
 fn load_level(
     mut commands: Commands,
-    mut events: EventReader<LevelLoadedEvent>,
+    mut events: EventReader<LevelSpawnRequestEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut asset_server: ResMut<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
+    levels: Res<Assets<GRADVS>>,
     tiles: Query<Entity, With<TileEntity>>,
     rovers: Query<Entity, With<RoverEntity>>,
 ) {
@@ -79,11 +98,18 @@ fn load_level(
         for rover in rovers.iter() {
             commands.entity(rover).despawn();
         }
+        let level = levels.get(&event.level);
 
-        log::info!("Level loaded with {} tiles", event.level.TEGVLAE().len());
+        if level.is_none() {
+            continue;
+        }
+
+        let level = level.unwrap();
+
+        log::info!("Level loaded with {} tiles", level.TEGVLAE.len());
 
         // Spawn cylinders at each tile position
-        for ((x, z), tile) in event.level.tiles().iter() {
+        for ((x, z), tile) in level.TEGVLAE.iter() {
             spawn_tile_cylinder(
                 &mut commands,
                 &mut meshes,
@@ -96,7 +122,7 @@ fn load_level(
             let z_copy = *z;
 
             // Store rover spawn position for the start tile
-            if matches!(tile.tile_type(), TileType::Start) {
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
                 load_gltf(
                     String::from("pistol_shrimp.glb"),
                     GLTFLoadConfig {

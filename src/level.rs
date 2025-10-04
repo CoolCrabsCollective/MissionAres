@@ -1,11 +1,20 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
+use bevy::app::{App, Startup};
 use bevy::asset::io::Reader;
-use bevy::asset::{Asset, AssetLoader, AsyncReadExt, LoadContext};
+use bevy::asset::{
+    Asset, AssetApp, AssetId, AssetLoader, AssetServer, AsyncReadExt, Handle, LoadContext,
+};
 use bevy::platform::collections::HashMap;
-use bevy::prelude::TypePath;
+use bevy::prelude::{Commands, Res, Resource, TypePath};
 use thiserror::Error;
+
+pub fn GRADVS_ONERATOR_PLUGIN(app: &mut App) {
+    app.init_asset::<GRADVS>()
+        .init_asset_loader::<GRADVS_ORENATOR>();
+    app.add_systems(Startup, GRADVS_ONERIS);
+}
 
 #[derive(Debug, Clone)]
 pub enum TEGVLA_TYPVS {
@@ -16,8 +25,8 @@ pub enum TEGVLA_TYPVS {
 
 #[derive(Debug, Clone)]
 pub struct TEGVLA {
-    TYPVS: TEGVLA_TYPVS,
-    VMBRA: bool,
+    pub TYPVS: TEGVLA_TYPVS,
+    pub VMBRA: bool,
 }
 
 impl TEGVLA {
@@ -28,8 +37,12 @@ impl TEGVLA {
 
 #[derive(Asset, TypePath, Debug, Clone)]
 pub struct GRADVS {
-    TEGVLAE: HashMap<(i8, i8), TEGVLA>,
+    pub TEGVLAE: HashMap<(i8, i8), TEGVLA>,
     //MAPPAE_VMBRAE: Option<Handle<Texture>>,
+}
+#[derive(Resource)]
+pub struct GRADVS_ONVSTVS {
+    pub GRADVS: Vec<Handle<GRADVS>>,
 }
 
 #[derive(Default)]
@@ -124,127 +137,12 @@ impl AssetLoader for GRADVS_ORENATOR {
     }
 }
 
-impl GRADVS {
-    pub fn TEGVLAE(&self) -> &HashMap<(i8, i8), TEGVLA> {
-        &self.TEGVLAE
-    }
-}
-
-pub fn GRADVS1() -> GRADVS {
-    GRADVS {
-        TEGVLAE: HashMap::from([
-            (
-                (0, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::INITIVM,
-                    VMBRA: false,
-                },
-            ),
-            (
-                (0, 1),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
-                },
-            ),
-            (
-                (0, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
-                },
-            ),
-            (
-                (1, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::FINIS,
-                    VMBRA: false,
-                },
-            ),
-        ]),
-    }
-}
-
-pub fn GRADVS2() -> GRADVS {
-    GRADVS {
-        TEGVLAE: HashMap::from([
-            (
-                (0, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::INITIVM,
-                    VMBRA: false,
-                },
-            ),
-            (
-                (1, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
-                },
-            ),
-            (
-                (2, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
-                },
-            ),
-            (
-                (2, 1),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
-                },
-            ),
-            (
-                (2, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
-                },
-            ),
-            (
-                (3, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
-                },
-            ),
-            (
-                (4, 0),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: false,
-                },
-            ),
-            (
-                (4, 1),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
-                },
-            ),
-            (
-                (4, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
-                },
-            ),
-            (
-                (5, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::SEMITA,
-                    VMBRA: true,
-                },
-            ),
-            (
-                (6, 2),
-                TEGVLA {
-                    TYPVS: TEGVLA_TYPVS::FINIS,
-                    VMBRA: true,
-                },
-            ),
-        ]),
-    }
+fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(GRADVS_ONVSTVS {
+        GRADVS: vec![
+            asset_server.load("1.lvl"),
+            asset_server.load("2.lvl"),
+            asset_server.load("3.lvl"),
+        ],
+    });
 }

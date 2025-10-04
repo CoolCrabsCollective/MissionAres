@@ -20,50 +20,48 @@ fn update_action_list_ui(mut commands: Commands,
                          current_ui_elem_query: Query<Entity, With<ControlUi>>,
                          asset_server: Res<AssetServer>) {
     for event in events.read() {
-        // Clear old UI rendering
         for ui_element in current_ui_elem_query.iter() {
             commands.entity(ui_element).despawn();
         }
 
-        // Rebuild UI with new actions list
         let mut main_ui_commands = commands.spawn((ControlUi,
-                                                   Node {
-                                            top: Val::Percent(0.0),
-                                            left: Val::Percent(0.0),
-                                            width: Val::Percent(15.0),
-                                            height: Val::Percent(100.0),
-                                            align_items: AlignItems::Center,
-                                            justify_content: JustifyContent::FlexEnd,
-                                            ..default()
-                                        },
-                                                   BackgroundColor(Color::from(DARK_GRAY)),
+           Node {
+               height: Val::Percent(50.0),
+               width: Val::Percent(20.0),
+               display: Display::Grid,
+               padding: UiRect::all(Val::Px(10.0)),
+               grid_template_columns: vec![GridTrack::flex(1.0), GridTrack::min_content()],
+               grid_template_rows: RepeatedGridTrack::flex(4, 1.0),
+               row_gap: Val::Px(5.0),
+               column_gap: Val::Px(5.0),
+               ..default()
+           },
+           BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
         ));
 
         for (index, action) in event.clone().actions.iter().enumerate() {
             main_ui_commands.with_children(|parent| {
+                let font = TextFont {
+                    font: asset_server.load("font.ttf"),
+                    font_size: 40.0,
+                    ..default()
+                };
+
+                // Action text
                 parent.spawn((
-                             Node {
-                                 top: Val::Percent(40.0 + 5.0*(index as f32)),
-                                 left: Val::Percent(0.0),
-                                 width: Val::Percent(100.0),
-                                 height: Val::Percent(10.0),
-                                 align_items: AlignItems::Center,
-                                 justify_content: JustifyContent::Center,
-                                 ..default()
-                             },
-                             BackgroundColor(Color::from(DARK_BLUE)),
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        Text::new(action.moves.0.as_str()),
-                        TextFont {
-                            font: asset_server.load("font.ttf"),
-                            font_size: 40.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-                        TextShadow::default()));
-                });
+                    Text::new(action.moves.0.as_str()),
+                    font.clone(),
+                    TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                    TextShadow::default()
+                ));
+
+                // Rover ID
+                parent.spawn((
+                    Text::new(action.moves.1.as_str()),
+                    font.clone(),
+                    TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                    TextShadow::default()
+                ));
             });
         }
     }

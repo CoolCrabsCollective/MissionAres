@@ -5,23 +5,23 @@ mod level;
 mod level_spawner;
 mod mesh_loader;
 mod object_spawner;
-mod sane_level;
 mod scene_loader;
 mod title_screen;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
+use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::object_spawner::ObjectSpawnerPlugin;
 use crate::scene_loader::SceneLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
-use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
+use bevy::DefaultPlugins;
 
 fn main() {
     let mut app = App::new();
@@ -42,7 +42,7 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     fit_canvas_to_parent: true,
-                    title: "Bevy Quickstart Game".to_string(),
+                    title: "LD58".to_string(),
                     cursor_options: CursorOptions {
                         visible: true,
                         // note this bug: https://github.com/bevyengine/bevy/issues/16237
@@ -65,10 +65,11 @@ fn main() {
     );
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(SceneLoaderPlugin);
-    app.add_plugins(LevelSpawnerPlugin);
     app.add_plugins(TitleScreenPlugin);
     app.add_plugins(DebugCameraControllerPlugin);
     app.add_plugins(ObjectSpawnerPlugin);
+    app.add_plugins(GRADVS_ONERATOR_PLUGIN);
+    app.add_plugins(LevelSpawnerPlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 
