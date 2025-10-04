@@ -1,7 +1,7 @@
 extern crate core;
 
-mod GameControl;
 mod debug_camera_controller;
+mod game_control;
 mod hentai_anime;
 mod level;
 mod level_spawner;
@@ -10,9 +10,9 @@ mod poop;
 mod puzzle_evaluation;
 mod title_screen;
 
-use crate::GameControl::actions::ActionController;
-use crate::GameControl::control_ui::ControlUiPlugin;
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
+use crate::game_control::actions::ActionController;
+use crate::game_control::control_ui::ControlUiPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
@@ -44,7 +44,7 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     fit_canvas_to_parent: true,
-                    title: "LD58".to_string(),
+                    title: "Sol et Umbra".to_string(),
                     cursor_options: CursorOptions {
                         visible: true,
                         // note this bug: https://github.com/bevyengine/bevy/issues/16237

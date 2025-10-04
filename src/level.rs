@@ -3,18 +3,16 @@
 
 use bevy::app::{App, Startup, Update};
 use bevy::asset::io::Reader;
-use bevy::asset::AssetEvent::{Added, LoadedWithDependencies};
+use bevy::asset::AssetEvent::LoadedWithDependencies;
 use bevy::asset::{
-    Asset, AssetApp, AssetEvent, AssetId, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
+    Asset, AssetApp, AssetEvent, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
     LoadContext,
 };
 use bevy::image::Image;
 use bevy::log;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::{Commands, EventReader, Res, ResMut, Resource, TypePath};
-use bevy::render::render_resource::{Extent3d, TextureDimension};
 use serde::{Deserialize, Serialize};
-use std::any::Any;
 use std::cmp::max;
 use thiserror::Error;
 
@@ -196,7 +194,7 @@ fn UMBRAE_COLLOCATOR(
 ) {
     for EVENTVM in EVENTVS.read() {
         if let LoadedWithDependencies { id } = EVENTVM {
-            let mut GRADVM = GRADVS.get_mut(id.clone());
+            let GRADVM = GRADVS.get_mut(id.clone());
             if GRADVM.is_none() {
                 continue;
             }

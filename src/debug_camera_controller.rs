@@ -185,7 +185,7 @@ fn update_state(mut state: ResMut<CameraControllerState>, time: Res<Time>) {
 
 fn set_camera(
     mut camera_transform_query: Query<&mut Transform, With<Camera3d>>,
-    mut state: ResMut<CameraControllerState>,
+    state: ResMut<CameraControllerState>,
 ) {
     let mut camera_transform = camera_transform_query.single_mut().unwrap();
 
