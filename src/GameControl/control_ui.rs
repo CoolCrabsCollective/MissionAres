@@ -25,18 +25,18 @@ fn update_action_list_ui(mut commands: Commands,
         }
 
         let mut main_ui_commands = commands.spawn((ControlUi,
-                                                   Node {
-                                                       height: Val::Percent(100.0),
-                                                       aspect_ratio: Some(1.0),
-                                                       display: Display::Grid,
-                                                       padding: UiRect::all(Val::Px(24.0)),
-                                                       grid_template_columns: RepeatedGridTrack::flex(4, 1.0),
-                                                       grid_template_rows: RepeatedGridTrack::flex(4, 1.0),
-                                                       row_gap: Val::Px(12.0),
-                                                       column_gap: Val::Px(12.0),
-                                                       ..default()
-                                                   },
-                                                   BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
+           Node {
+               height: Val::Percent(50.0),
+               width: Val::Percent(20.0),
+               display: Display::Grid,
+               padding: UiRect::all(Val::Px(10.0)),
+               grid_template_columns: vec![GridTrack::flex(1.0), GridTrack::min_content()],
+               grid_template_rows: RepeatedGridTrack::flex(4, 1.0),
+               row_gap: Val::Px(5.0),
+               column_gap: Val::Px(5.0),
+               ..default()
+           },
+           BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
         ));
 
         for (index, action) in event.clone().actions.iter().enumerate() {
