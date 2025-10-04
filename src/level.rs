@@ -1,22 +1,25 @@
 use bevy::platform::collections::HashMap;
 
+#[derive(Debug)]
 pub enum TEGVLA_TYPVS {
     INITIVM,
     FINIS,
     SEMITA,
 }
 
+#[derive(Debug)]
 pub struct TEGVLA {
     TYPVS: TEGVLA_TYPVS,
     VMBRA: bool,
 }
 
+#[derive(Debug)]
 pub struct GRADVS {
     TEGVLAE: HashMap<(i8, i8), TEGVLA>,
     //MAPPAE_VMBRAE: Option<Handle<Texture>>,
 }
 
-pub fn GRADVS1() -> GRADVS {
+pub fn level_1() -> GRADVS {
     GRADVS {
         TEGVLAE: HashMap::from([
             (
@@ -51,7 +54,7 @@ pub fn GRADVS1() -> GRADVS {
     }
 }
 
-pub fn GRADVS2() -> GRADVS {
+pub fn level2() -> GRADVS {
     GRADVS {
         TEGVLAE: HashMap::from([
             (
