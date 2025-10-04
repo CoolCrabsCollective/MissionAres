@@ -1,14 +1,14 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
-use crate::poop::RoverList;
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::poop::{RoverEntity, RoverList};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
-use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
 use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
@@ -18,9 +18,9 @@ use bevy::pbr::{
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges, Gltf,
-    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
-    default, in_state,
+    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
+    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    Reflect, Resource,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -74,15 +74,6 @@ pub struct LevelLoadedEvent {}
 // tile entity
 #[derive(Component)]
 pub struct TileEntity;
-
-#[derive(Component)]
-pub struct RoverEntity {
-    pub is_setup: bool,
-    pub base_color: Color,
-    pub gltf_handle: Handle<Gltf>,
-    pub logical_position: I8Vec2,
-    pub battery_level: u8,
-}
 
 #[derive(Resource)]
 pub struct ActiveLevel(pub Option<Handle<GRADVM>>);
@@ -235,7 +226,7 @@ fn load_level(
     mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
-    mut rover_list: ResMut<RoverList>,
+    // mut rover_list: ResMut<RoverList>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -320,8 +311,8 @@ fn load_level(
                     &mut mesh_loader,
                 );
 
-                rover_list.list.get_mut(num_rovers-1).unwrap().position =
-                    IVec2::new(*x as i32, *z as i32);
+                // rover_list.list.get_mut(num_rovers-1).unwrap().position =
+                //     IVec2::new(*x as i32, *z as i32);
             }
         }
 
