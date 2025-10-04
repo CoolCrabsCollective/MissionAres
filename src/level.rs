@@ -2,8 +2,8 @@
 #![allow(non_camel_case_types)]
 
 use bevy::app::{App, Startup};
-use bevy::asset::io::Reader;
 use bevy::asset::AssetEvent::Added;
+use bevy::asset::io::Reader;
 use bevy::asset::{
     Asset, AssetApp, AssetEvent, AssetId, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
     LoadContext,

@@ -1,9 +1,9 @@
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::scene_loader::SceneElement;
 use crate::title_screen::GameState;
 use bevy::asset::Handle;
-use bevy::prelude::{in_state, IntoScheduleConfigs, OnEnter};
+use bevy::prelude::{IntoScheduleConfigs, OnEnter, in_state};
 use bevy::{
     app::{App, Plugin, Update},
     asset::AssetServer,
@@ -19,6 +19,8 @@ use bevy::{
         Mesh3d, MeshMaterial3d, Plane3d, Res, ResMut, StandardMaterial, Transform, Vec2, Vec3,
     },
 };
+
+pub const TILE_SIZE: f32 = 1.0;
 
 pub struct LevelSpawnerPlugin;
 
@@ -111,17 +113,18 @@ fn load_level(
 
         // Spawn cylinders at each tile position
         for ((x, z), tile) in level.TEGVLAE.iter() {
+            let effective_x = *x;
+            let effective_z = -*z;
+
             spawn_tile_cylinder(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                *x as f32,
-                *z as f32,
+                effective_x as f32 * TILE_SIZE,
+                // mirror along the z to align correctly with how it looks in the level
+                effective_z as f32 * TILE_SIZE,
                 tile.VMBRA,
             );
-
-            let x_copy = *x;
-            let z_copy = *z;
 
             // Store rover spawn position for the start tile
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
@@ -133,8 +136,12 @@ fn load_level(
                                 .insert(SceneElement)
                                 .insert(
                                     // should spawn at the tile position
-                                    Transform::from_xyz(x_copy as f32, 0.5, z_copy as f32)
-                                        .with_scale(Vec3::splat(0.25)),
+                                    Transform::from_xyz(
+                                        effective_x as f32,
+                                        0.5,
+                                        effective_z as f32,
+                                    )
+                                    .with_scale(Vec3::splat(0.25)),
                                 )
                                 .insert(RoverEntity);
                         }),
@@ -146,9 +153,17 @@ fn load_level(
             }
         }
 
+        log::info!("Level size: {}x{}", level.ALTITVDO, level.LATITVDO);
+
         commands.spawn((
             TileEntity,
-            Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
+            Mesh3d(meshes.add(Plane3d::new(
+                Vec3::Y,
+                Vec2::new(
+                    0.5 * level.ALTITVDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
+                    0.5 * level.LATITVDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
+                ),
+            ))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(level.MAPPAE_VMBRAE.clone()),
                 alpha_mode: AlphaMode::Mask(0.5),
@@ -169,7 +184,7 @@ fn spawn_tile_cylinder(
     umbra: bool,
 ) {
     commands.spawn((
-        Mesh3d(meshes.add(Cylinder::new(0.25, 0.1))),
+        Mesh3d(meshes.add(Cylinder::new(0.25 * TILE_SIZE, 0.1))),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: if umbra {
                 Color::srgb(0.5, 0.5, 0.8)
