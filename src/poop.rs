@@ -1,4 +1,4 @@
-use crate::game_control::actions::{Action, ActionType, Robot};
+use crate::game_control::actions::{Action, ActionType};
 use crate::level::GRADVM;
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::title_screen::GameState;
@@ -27,8 +27,8 @@ pub struct ActionListExecute {
 #[derive(Resource)]
 pub struct ActionExecution {
     is_active: bool,
-    action_list: Vec<Action>,
-    active_action_idx: usize,
+    action_list: Vec<Vec<Action>>,
+    active_action_idx: Vec<usize>,
 }
 
 pub struct RoverPlugin;
@@ -40,7 +40,7 @@ impl Plugin for RoverPlugin {
         app.insert_resource(ActionExecution {
             is_active: false,
             action_list: vec![],
-            active_action_idx: 0,
+            active_action_idx: vec![0usize, 0usize],
         });
     }
 }
@@ -69,35 +69,34 @@ fn start_execution(
 
         action_execution.action_list = event.action_list.clone();
 
-        action_execution.active_action_idx = 0usize;
+        action_execution.active_action_idx = vec![0usize, 0usize];
 
-        match action_execution.action_list.get(0) {
-            None => {}
-            Some(action) => {
-                let mut rovers = rover_query.iter_mut().collect::<Vec<_>>();
-                let Some(rover) = (match action.moves.1 {
-                    Robot::ROVER1 => rovers.get_mut(0),
-                    Robot::ROVER2 => rovers.get_mut(1),
-                    _ => None,
-                }) else {
-                    return;
-                };
+        // Iterate through each robot
+        for (robot_num, actions) in action_execution.action_list.iter().enumerate() {
+            let mut rovers = rover_query.iter_mut().collect::<Vec<_>>();
+            let Some(rover) = rovers.get_mut(robot_num) else {
+                continue;
+            };
 
-                match action.moves.0 {
-                    ActionType::MoveUp => {
-                        rover.logical_position += I8Vec2::new(0, 1);
-                    }
-                    ActionType::MoveDown => {
-                        rover.logical_position -= I8Vec2::new(0, 1);
-                    }
-                    ActionType::MoveLeft => {
-                        rover.logical_position += I8Vec2::new(1, 0);
-                    }
-                    ActionType::MoveRight => {
-                        rover.logical_position -= I8Vec2::new(1, 0);
-                    }
-                    ActionType::Wait => {}
+            let action = actions
+                .get(action_execution.active_action_idx[robot_num])
+                .unwrap();
+
+            // Setup first action movements
+            match action.moves.0 {
+                ActionType::MoveUp => {
+                    rover.logical_position += I8Vec2::new(0, 1);
                 }
+                ActionType::MoveDown => {
+                    rover.logical_position -= I8Vec2::new(0, 1);
+                }
+                ActionType::MoveLeft => {
+                    rover.logical_position += I8Vec2::new(1, 0);
+                }
+                ActionType::MoveRight => {
+                    rover.logical_position -= I8Vec2::new(1, 0);
+                }
+                ActionType::Wait => {}
             }
         }
     }
@@ -120,29 +119,26 @@ fn action_execution(
         let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
         let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
 
-        let action = action_execution
-            .action_list
-            .get(action_execution.active_action_idx)
-            .unwrap();
+        // Iterate through each robot and move them progressively towards the next title based on action
+        for (robot_num, actions) in action_execution.action_list.iter().enumerate() {
+            let mut rovers = rover_query.iter_mut().collect::<Vec<_>>();
+            let Some(rover_entry) = rovers.get_mut(robot_num) else {
+                continue;
+            };
 
-        let mut rover_query_list = rover_query.iter_mut().collect::<Vec<_>>();
+            let action = actions
+                .get(action_execution.active_action_idx[robot_num])
+                .unwrap();
 
-        let Some(rover_entry) = (match action.moves.1 {
-            Robot::ROVER1 => rover_query_list.get_mut(0),
-            Robot::ROVER2 => rover_query_list.get_mut(1),
-            _ => None,
-        }) else {
-            return;
-        };
+            let pos = rover_entry.1.logical_position;
 
-        let pos = rover_entry.1.logical_position;
+            let effective_x =
+                (pos.x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+            // mirror along the z to align correctly with how it looks in the level
+            let effective_z =
+                (-pos.y as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
 
-        let effective_x =
-            (pos.x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
-        // mirror along the z to align correctly with how it looks in the level
-        let effective_z =
-            (-pos.y as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
-
-        // Now move entity towards effective position
+            // Now move entity towards effective position
+        }
     }
 }
