@@ -105,7 +105,7 @@ fn load_level(
                                 .insert(SceneElement)
                                 .insert(
                                     // should spawn at the tile position
-                                    Transform::from_xyz(x_copy as f32, 0.5, z_copy as f32)
+                                    Transform::from_xyz(x_copy as f32, 0.1, z_copy as f32)
                                         .with_scale(Vec3::splat(0.25)),
                                 )
                                 .insert(RoverEntity);
