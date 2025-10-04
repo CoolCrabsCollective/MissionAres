@@ -1,7 +1,7 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
-use crate::poop::{RoverEntity, RoverList};
+use crate::poop::RoverEntity;
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
@@ -226,7 +226,6 @@ fn load_level(
     mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
-    // mut rover_list: ResMut<RoverList>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -310,9 +309,6 @@ fn load_level(
                     &asset_server,
                     &mut mesh_loader,
                 );
-
-                // rover_list.list.get_mut(num_rovers-1).unwrap().position =
-                //     IVec2::new(*x as i32, *z as i32);
             }
 
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::FINIS) {
