@@ -391,7 +391,6 @@ fn spawn_rock(
                             .with_scale(Vec3::splat((0.25 + random::<f32>() * 0.25) * TILE_SIZE))
                             .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
                     )
-                    .insert(RoverEntity)
                     .insert(LevelElement);
             }),
             ..default()
