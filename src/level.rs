@@ -239,6 +239,7 @@ fn UMBRAE_COLLOCATOR(
                 let PIXEL_X =
                     (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATIVIDO as f32 * DIMENSIO.width as f32;
                 let PIXEL_Y = DIMENSIO.height as f32
+                    // for some reason TEGVLA.0.1 starts at 1 instad of 0
                     - ((TEGVLA.0.1 as f32 - 0.5) / GRADVM.ALTIVIDO as f32 * DIMENSIO.height as f32);
                 log::error!(
                     "TEGVLA: {:?}, PIXEL_X: {}, PIXEL_Y: {}",
