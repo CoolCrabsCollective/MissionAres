@@ -1,5 +1,6 @@
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::poop::RoverList;
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::Handle;
@@ -10,7 +11,7 @@ use bevy::core_pipeline::Skybox;
 use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
-use bevy::math::Quat;
+use bevy::math::{IVec2, Quat};
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
@@ -217,6 +218,7 @@ fn load_level(
     mut mesh_loader: ResMut<MeshLoader>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
+    mut rover_list: ResMut<RoverList>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -249,6 +251,7 @@ fn load_level(
             Transform::from_xyz(0.0, -0.5, 0.0),
         ));
 
+        let rover_count = 0;
         // Spawn cylinders at each tile position
         for ((x, z), tile) in level.TEGLVAE.iter() {
             let effective_x =
@@ -295,6 +298,9 @@ fn load_level(
                     &mut asset_server,
                     &mut mesh_loader,
                 );
+
+                rover_list.list.get_mut(rover_count).unwrap().position =
+                    IVec2::new(*x as i32, *z as i32);
             }
         }
 
