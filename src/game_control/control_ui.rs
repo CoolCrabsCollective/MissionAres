@@ -48,7 +48,9 @@ fn update_action_list_ui(
         let number_of_rovers = event.actions.len();
         println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
-            commands.entity(ui_element).despawn();
+            if let Ok(_) = commands.get_entity(ui_element) {
+                commands.entity(ui_element).despawn();
+            }
         }
 
         let image_robot = asset_server.load("command_icons/robot.png");
