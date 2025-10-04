@@ -77,7 +77,7 @@ impl CameraControllerState {
                 vertical: -60.0f32.to_radians(),
             },
             position: Vec3::new(0.0, 10.0, 3.0),
-            speed: 40.0,
+            speed: 10.0,
             enabled: false,
         }
     }
