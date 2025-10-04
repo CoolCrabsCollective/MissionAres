@@ -1,22 +1,25 @@
 use bevy::platform::collections::HashMap;
 
+#[derive(Debug)]
 pub enum TileType {
     Start,
     End,
     Path,
 }
 
+#[derive(Debug)]
 pub struct Tile {
     tile_type: TileType,
     shadow: bool,
 }
 
+#[derive(Debug)]
 pub struct Level {
     tiles: HashMap<(i8, i8), Tile>,
     //shadow_map: Option<Handle<Texture>>,
 }
 
-pub fn level1() -> Level {
+pub fn level_1() -> Level {
     Level {
         tiles: HashMap::from([
             (

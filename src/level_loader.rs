@@ -7,11 +7,13 @@ use bevy::{
     log,
 };
 
+use crate::level::{Level, level_1};
+
 pub struct LevelLoaderPlugin;
 
 #[derive(Event)]
 pub struct LevelLoadedEvent {
-    level: usize,
+    level: Level,
 }
 
 impl Plugin for LevelLoaderPlugin {
@@ -23,7 +25,7 @@ impl Plugin for LevelLoaderPlugin {
 }
 
 fn debug_add_fake_level_load_event(mut commands: Commands) {
-    commands.send_event(LevelLoadedEvent { level: 0 });
+    commands.send_event(LevelLoadedEvent { level: level_1() });
 }
 
 fn debug_level_load_event(mut events: EventReader<LevelLoadedEvent>) {
