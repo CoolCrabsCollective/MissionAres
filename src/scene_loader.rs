@@ -1,4 +1,4 @@
-use crate::mesh_loader::{self, load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{self, MeshLoader};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
@@ -34,7 +34,6 @@ impl Plugin for SceneLoaderPlugin {
         app.add_systems(Startup, setup_basic.after(mesh_loader::setup));
 
         app.add_systems(Update, asset_loaded);
-        app.add_systems(Update, scene_switcher);
         app.add_plugins((
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
@@ -48,34 +47,6 @@ impl Plugin for SceneLoaderPlugin {
         app.add_systems(Update, debug_render_toggle)
             .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)))
             .insert_resource(DirectionalLightShadowMap { size: 4096 });
-    }
-}
-
-fn scene_switcher(
-    input: Res<ButtonInput<KeyCode>>,
-    mut scene_elements: Query<(Entity, &SceneElement)>,
-    mut commands: Commands,
-    mut asset_server: ResMut<AssetServer>,
-    mut mesh_loader: ResMut<MeshLoader>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    if !input.pressed(KeyCode::ControlLeft) && !input.pressed(KeyCode::ControlRight) {
-        return;
-    }
-
-    if input.just_pressed(KeyCode::Numpad8) || input.just_pressed(KeyCode::Digit8) {
-        for (entity, _) in scene_elements.iter_mut() {
-            commands.entity(entity).despawn();
-        }
-        setup_basic(commands, asset_server, mesh_loader, meshes, materials);
-        return;
-    } else if input.just_pressed(KeyCode::Numpad9) || input.just_pressed(KeyCode::Digit9) {
-        for (entity, _) in scene_elements.iter_mut() {
-            commands.entity(entity).despawn();
-        }
-        setup_kirby(commands, asset_server, mesh_loader, meshes, materials);
-        return;
     }
 }
 
@@ -95,7 +66,7 @@ fn setup_basic(
 
     commands.spawn((
         SceneElement,
-        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1000.0)))),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
             perceptual_roughness: 0.9,
@@ -156,7 +127,7 @@ fn setup_basic(
             rotation: Default::default(),
         },
         DistanceFog {
-            color: Color::srgb(5.0, 0.25, 0.25),
+            color: Color::srgb(0.8, 0.35, 0.2),
             falloff: FogFalloff::Linear {
                 start: 500.0,
                 end: 600.0,
@@ -173,124 +144,10 @@ fn setup_basic(
 
     #[cfg(not(target_arch = "wasm32"))]
     camera_bundle.insert((TemporalAntiAliasing::default(), TemporalJitter::default()));
-
-    // load_gltf(
-    //     String::from("test_scene.glb"),
-    //     GLTFLoadConfig {
-    //         spawn: true,
-    //         entity_initializer: add_scene_tag,
-    //         generate_static_collider: true,
-    //         collision_groups: CollisionGroups {
-    //             memberships: Default::default(),
-    //             filters: Default::default(),
-    //         },
-    //     },
-    //     &mut asset_server,
-    //     &mut mesh_loader,
-    // );
 }
 
 fn add_scene_tag(commands: &mut EntityCommands) {
     commands.insert(SceneElement);
-}
-
-fn setup_kirby(
-    mut commands: Commands,
-    mut asset_server: ResMut<AssetServer>,
-    mut mesh_loader: ResMut<MeshLoader>,
-    mut _meshes: ResMut<Assets<Mesh>>,
-    mut _materials: ResMut<Assets<StandardMaterial>>,
-) {
-    commands.spawn((
-        SceneElement,
-        AudioPlayer::new(asset_server.load("test_song.ogg")),
-        PlaybackSettings::LOOP,
-    ));
-
-    commands.insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)));
-    commands.insert_resource(DirectionalLightShadowMap { size: 4096 });
-
-    commands.insert_resource(AmbientLight {
-        color: Color::WHITE,
-        brightness: 1000.0,
-        affects_lightmapped_meshes: true,
-    });
-    commands.spawn((
-        SceneElement,
-        DirectionalLight {
-            color: Color::WHITE,
-            illuminance: 5000.0,
-            shadows_enabled: true,
-            affects_lightmapped_mesh_diffuse: true,
-            shadow_depth_bias: 1.0,
-            shadow_normal_bias: 1.0,
-        },
-        CascadeShadowConfigBuilder {
-            maximum_distance: 500.0,
-            ..default()
-        }
-        .build(),
-    ));
-    let skybox_handle = asset_server.load(CUBEMAPS[0].0);
-
-    commands.insert_resource(Cubemap {
-        is_loaded: false,
-        image_handle: skybox_handle.clone(),
-    });
-
-    let mut camera_bundle = commands.spawn((
-        SceneElement,
-        Camera3d::default(),
-        Camera {
-            // renders after / on top of the main camera
-            order: 1,
-            hdr: true,
-            // don't clear the color while rendering this camera
-            clear_color: ClearColorConfig::Default,
-            ..default()
-        },
-        Projection::Perspective(PerspectiveProjection {
-            fov: 55.0f32.to_radians(),
-            ..default()
-        }),
-        Transform::from_xyz(-0.5, 0.3, 4.5).with_rotation(Quat::from_axis_angle(Vec3::Y, 0.0)),
-        Skybox {
-            image: skybox_handle.clone(),
-            brightness: 1000.0,
-            rotation: Default::default(),
-        },
-        DistanceFog {
-            color: Color::srgb(0.25, 0.25, 0.25),
-            falloff: FogFalloff::Linear {
-                start: 500.0,
-                end: 600.0,
-            },
-            ..default()
-        },
-        Msaa::Off,
-        ScreenSpaceAmbientOcclusion {
-            quality_level: ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
-            ..default()
-        },
-    ));
-
-    #[cfg(not(target_arch = "wasm32"))]
-    camera_bundle.insert((TemporalAntiAliasing::default(), TemporalJitter::default()));
-
-    load_gltf(
-        String::from("test_scene2.glb"),
-        GLTFLoadConfig {
-            spawn: true,
-            entity_initializer: Box::new(add_scene_tag),
-            generate_static_collider: true,
-            collision_groups: CollisionGroups {
-                memberships: Default::default(),
-                filters: Default::default(),
-            },
-        },
-        &mut asset_server,
-        &mut mesh_loader,
-    );
 }
 
 fn debug_render_toggle(mut context: ResMut<DebugRenderContext>, keys: Res<ButtonInput<KeyCode>>) {

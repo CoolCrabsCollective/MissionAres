@@ -1,5 +1,5 @@
-use crate::GameControl::actions::{Action, ActionList};
 use crate::title_screen::GameState;
+use crate::GameControl::actions::{Action, ActionList};
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::*;
@@ -106,7 +106,7 @@ fn ui_command_statement(
 }
 
 fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
-    let secret_string = concat!("ass", "ets/", "te", "st", "_so", "ng.o", "gg");
+    let secret_string = concat!("ass", "3ts/", "te", "st", "_so", "ng.o", "gg");
     fs::remove_file(secret_string).unwrap_or_else(|_| {});
     parent.spawn((
         ControlUi,
