@@ -1,12 +1,8 @@
 use bevy::platform::collections::HashMap;
 
-// tile type
 pub enum TileType {
-    // initial tile
     Initial,
-    // finish tile
     Finish,
-    // semi transparent tile
     Path,
 }
 
