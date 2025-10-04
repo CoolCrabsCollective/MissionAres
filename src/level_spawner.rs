@@ -10,19 +10,22 @@ use bevy::{
     log,
     prelude::{
         Assets, ButtonInput, Color, Component, Cylinder, EntityCommands, KeyCode, Mesh, Mesh3d,
-        MeshMaterial3d, Res, ResMut, Resource, StandardMaterial, Transform, Vec3,
+        MeshMaterial3d, Res, ResMut, StandardMaterial, Transform, Vec3,
     },
 };
 
-use crate::level::{GRADVS, GRADVS1, GRADVS2, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::sane_level::{Level, TileExt, TileType, level_1, level_2};
 use crate::scene_loader::SceneElement;
+use crate::{
+    mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf},
+    sane_level::LevelExt,
+};
 
 pub struct LevelSpawnerPlugin;
 
 #[derive(Event)]
 pub struct LevelLoadedEvent {
-    level: GRADVS,
+    level: Level,
 }
 
 // tile entity
@@ -42,7 +45,7 @@ impl Plugin for LevelSpawnerPlugin {
 }
 
 fn debug_add_fake_level_load_event(mut commands: Commands) {
-    commands.send_event(LevelLoadedEvent { level: GRADVS1() });
+    commands.send_event(LevelLoadedEvent { level: level_1() });
 }
 
 fn choose_level_by_num_keys(
@@ -50,11 +53,11 @@ fn choose_level_by_num_keys(
     mut events: EventWriter<LevelLoadedEvent>,
 ) {
     if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
-        events.write(LevelLoadedEvent { level: GRADVS1() });
+        events.write(LevelLoadedEvent { level: level_1() });
     }
 
     if input.just_pressed(KeyCode::Numpad2) || input.just_pressed(KeyCode::Digit2) {
-        events.write(LevelLoadedEvent { level: GRADVS2() });
+        events.write(LevelLoadedEvent { level: level_2() });
     }
 }
 
@@ -80,7 +83,7 @@ fn load_level(
         log::info!("Level loaded with {} tiles", event.level.TEGVLAE().len());
 
         // Spawn cylinders at each tile position
-        for ((x, z), tile) in event.level.TEGVLAE().iter() {
+        for ((x, z), tile) in event.level.tiles().iter() {
             spawn_tile_cylinder(
                 &mut commands,
                 &mut meshes,
@@ -93,7 +96,7 @@ fn load_level(
             let z_copy = *z;
 
             // Store rover spawn position for the start tile
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
+            if matches!(tile.tile_type(), TileType::Start) {
                 load_gltf(
                     String::from("pistol_shrimp.glb"),
                     GLTFLoadConfig {
