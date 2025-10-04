@@ -1,4 +1,4 @@
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::scene_loader::SceneElement;
 use bevy::app::{App, Plugin, Update};
 use bevy::asset::AssetServer;
@@ -36,7 +36,7 @@ fn spawn_fly(mut asset_server: ResMut<AssetServer>, mut mesh_loader: ResMut<Mesh
     load_gltf(
         String::from("fruit_fly.glb"),
         GLTFLoadConfig {
-            entity_initializer: add_object_tag,
+            entity_initializer: Box::new(add_object_tag),
             ..default()
         },
         &mut asset_server,
@@ -48,7 +48,7 @@ fn spawn_shrimp(mut asset_server: ResMut<AssetServer>, mut mesh_loader: ResMut<M
     load_gltf(
         String::from("pistol_shrimp.glb"),
         GLTFLoadConfig {
-            entity_initializer: add_object_tag,
+            entity_initializer: Box::new(add_object_tag),
             ..default()
         },
         &mut asset_server,

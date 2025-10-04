@@ -1,3 +1,4 @@
+use crate::hentai_anime::Animation;
 use bevy::ecs::schedule::ScheduleLabel;
 use bevy::platform::collections::HashSet;
 use bevy::{
@@ -8,7 +9,6 @@ use bevy::{
 use bevy_rapier3d::plugin::PhysicsSet;
 use bevy_rapier3d::prelude::{Collider, CollisionGroups};
 use std::marker::PhantomData;
-use crate::hentai_anime::Animation;
 
 pub struct MeshLoaderPlugin;
 
@@ -21,7 +21,7 @@ pub struct GLTFLoadConfig {
     /// Whether to spawn the loaded GLTF or not during load
     pub spawn: bool,
     /// initializes the entity that was spawned (allows adding bundle, components or do whatever)
-    pub entity_initializer: fn(&mut EntityCommands),
+    pub entity_initializer: Box<dyn Fn(&mut EntityCommands) + Send + Sync>,
     /// Whether to generate a (static, non rigid body) collider for the loaded GLTF during load
     pub generate_static_collider: bool,
     /// CollisionGroups to use for the generated collider
@@ -32,7 +32,7 @@ impl Default for GLTFLoadConfig {
     fn default() -> Self {
         Self {
             spawn: true,
-            entity_initializer: |commands| {},
+            entity_initializer: Box::new(|commands| {}),
             generate_static_collider: false,
             collision_groups: CollisionGroups::default(),
         }
@@ -124,21 +124,21 @@ fn process_loaded_gltfs(
 
         let mut graph = AnimationGraph::new();
         let hentai_list: Vec<_> = graph
-            .add_clips(
-                hentai
-                    .into_iter(),
-                1.0,
-                graph.root,
-            )
+            .add_clips(hentai.into_iter(), 1.0, graph.root)
             .collect();
 
         let graph = graphs.add(graph);
 
         if loaded_gltf.config.spawn {
-            let mut entity_commands = commands.spawn((SceneRoot(first_scene_handle),
-                                                      Animation { animation_list: hentai_list, graph },
-                                                      AnimationPlayer::default()));
-            let func = loaded_gltf.config.entity_initializer;
+            let mut entity_commands = commands.spawn((
+                SceneRoot(first_scene_handle),
+                Animation {
+                    animation_list: hentai_list,
+                    graph,
+                },
+                AnimationPlayer::default(),
+            ));
+            let func = &loaded_gltf.config.entity_initializer;
             func(&mut entity_commands);
         }
         loaded_gltf.processed = true;

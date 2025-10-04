@@ -293,7 +293,7 @@ fn setup_kirby(
         String::from("test_scene2.glb"),
         GLTFLoadConfig {
             spawn: true,
-            entity_initializer: add_scene_tag,
+            entity_initializer: Box::new(add_scene_tag),
             generate_static_collider: true,
             collision_groups: CollisionGroups {
                 memberships: Default::default(),

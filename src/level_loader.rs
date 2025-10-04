@@ -89,17 +89,24 @@ fn load_level(
                 *z as f32,
             );
 
+            let x_copy = *x;
+            let z_copy = *z;
+
             // Store rover spawn position for the start tile
             if matches!(tile.tile_type(), TileType::Start) {
                 load_gltf(
                     String::from("pistol_shrimp.glb"),
                     GLTFLoadConfig {
-                        entity_initializer: |commands: &mut EntityCommands| {
+                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
                             commands
                                 .insert(SceneElement)
-                                .insert(Transform::from_xyz(0.0, 0.5, 0.0))
+                                .insert(
+                                    // should spawn at the tile position
+                                    Transform::from_xyz(x_copy as f32, 0.5, z_copy as f32)
+                                        .with_scale(Vec3::splat(0.25)),
+                                )
                                 .insert(RoverEntity);
-                        },
+                        }),
                         ..Default::default()
                     },
                     &mut asset_server,
