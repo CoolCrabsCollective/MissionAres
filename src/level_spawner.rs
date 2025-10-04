@@ -3,6 +3,7 @@ use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::scene_loader::SceneElement;
 use crate::title_screen::GameState;
 use bevy::asset::Handle;
+use bevy::math::primitives::Sphere;
 use bevy::prelude::{IntoScheduleConfigs, OnEnter, in_state};
 use bevy::{
     app::{App, Plugin, Update},
@@ -20,7 +21,7 @@ use bevy::{
     },
 };
 
-pub const TILE_SIZE: f32 = 1.0;
+pub const TILE_SIZE: f32 = 2.0;
 
 pub struct LevelSpawnerPlugin;
 
@@ -111,18 +112,23 @@ fn load_level(
 
         log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
 
+        let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
+        let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+
         // Spawn cylinders at each tile position
         for ((x, z), tile) in level.TEGLVAE.iter() {
-            let effective_x = *x;
-            let effective_z = -*z;
+            let effective_x =
+                (*x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+            let effective_z =
+                (-*z as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
 
             spawn_tile_cylinder(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                effective_x as f32 * TILE_SIZE,
+                effective_x as f32,
                 // mirror along the z to align correctly with how it looks in the level
-                effective_z as f32 * TILE_SIZE,
+                effective_z as f32,
                 tile.VMBRA,
             );
 
@@ -141,7 +147,7 @@ fn load_level(
                                         0.5,
                                         effective_z as f32,
                                     )
-                                    .with_scale(Vec3::splat(0.25)),
+                                    .with_scale(Vec3::splat(0.15 * TILE_SIZE)),
                                 )
                                 .insert(RoverEntity);
                         }),
@@ -159,10 +165,7 @@ fn load_level(
             TileEntity,
             Mesh3d(meshes.add(Plane3d::new(
                 Vec3::Y,
-                Vec2::new(
-                    0.5 * level.ALTIVIDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
-                    0.5 * level.LATIVIDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
-                ),
+                Vec2::new(0.5 * effective_level_width, 0.5 * effective_level_height),
             ))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
@@ -171,6 +174,17 @@ fn load_level(
                 ..Default::default()
             })),
             Transform::from_xyz(0.0, 10.0, 0.0),
+        ));
+
+        // debug sphere to show the center of the level
+        commands.spawn((
+            TileEntity,
+            Mesh3d(meshes.add(Sphere::new(0.25))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: Color::srgb(0.0, 1.0, 0.0),
+                ..Default::default()
+            })),
+            Transform::from_xyz(0.0, 00.0, 0.0),
         ));
     }
 }
