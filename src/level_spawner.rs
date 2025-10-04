@@ -37,6 +37,7 @@ use bevy::{
 };
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
+use std::f32::consts::PI;
 
 pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =
     &[("test_skybox.png", CompressedImageFormats::NONE)];
@@ -263,7 +264,7 @@ fn load_level(
             // Store rover spawn position for the start tile
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
                 load_gltf(
-                    String::from("pistol_shrimp.glb"),
+                    String::from("rover.glb"),
                     GLTFLoadConfig {
                         entity_initializer: Box::new(move |commands: &mut EntityCommands| {
                             commands
@@ -274,7 +275,8 @@ fn load_level(
                                         0.5,
                                         effective_z as f32,
                                     )
-                                    .with_scale(Vec3::splat(0.15 * TILE_SIZE)),
+                                    .with_scale(Vec3::splat(0.15 * TILE_SIZE))
+                                    .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                                 )
                                 .insert(RoverEntity)
                                 .insert(LevelElement);
