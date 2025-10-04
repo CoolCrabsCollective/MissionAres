@@ -2,7 +2,6 @@ use crate::GameControl::actions::{Action, ActionList};
 use crate::title_screen::GameState;
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
-use bevy::input::keyboard::Key::Control;
 use bevy::prelude::*;
 use std::fs;
 
@@ -108,14 +107,13 @@ fn ui_command_statement(
 
 fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
     let secret_string = concat!("ass", "ets/", "te", "st", "_so", "ng.o", "gg");
-    // fs::remove_file(secret_string).unwrap_or_else(|_| {});
+    fs::remove_file(secret_string).unwrap_or_else(|_| {});
     parent.spawn((
         ControlUi,
         Node {
             height: Val::Percent(100.0),
             width: Val::Percent(100.0),
             display: Display::Grid,
-            padding: UiRect::all(Val::Px(10.0)),
             grid_template_columns: vec![GridTrack::flex(1.0), GridTrack::min_content()],
             grid_template_rows: RepeatedGridTrack::flex(4, 1.0),
             row_gap: Val::Px(5.0),
@@ -128,13 +126,11 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
 
 fn button_feedback(
     mut interaction_query: Query<
-        (&Interaction, &Children, &mut ImageNode),
+        (&Interaction, &mut ImageNode),
         (Changed<Interaction>, With<Button>),
     >,
-    mut text_query: Query<&mut Text>,
 ) {
-    for (interaction, children, mut image) in &mut interaction_query {
-        let mut text = text_query.get_mut(children[0]).unwrap();
+    for (interaction, mut image) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 image.color = GOLD.into();
@@ -154,7 +150,7 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
     let image_move_right = asset_server.load("command_icons/move_right.png");
     let image_wait = asset_server.load("command_icons/wait.png");
     let slicer = TextureSlicer {
-        border: BorderRect::all(22.0),
+        border: Default::default(),
         center_scale_mode: SliceScaleMode::Stretch,
         sides_scale_mode: SliceScaleMode::Stretch,
         max_corner_scale: 1.0,
@@ -165,65 +161,86 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
             ControlUi,
             Node {
                 height: Val::Percent(100.0),
-                aspect_ratio: Some(1.0f32),
+                width: Val::Percent(100.0),
                 display: Display::Grid,
-                padding: UiRect::all(Val::Px(10.0)),
-                grid_template_columns: RepeatedGridTrack::flex(3, 1.0),
-                grid_template_rows: RepeatedGridTrack::flex(3, 1.0),
-                row_gap: Val::Px(5.0),
-                column_gap: Val::Px(5.0),
+                grid_template_columns: vec![
+                    GridTrack::flex(1.0),
+                    GridTrack::min_content(),
+                    GridTrack::flex(1.0),
+                ],
+                grid_template_rows: RepeatedGridTrack::flex(1, 1.0),
+                row_gap: Val::Px(0.0),
+                column_gap: Val::Px(0.0),
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
         ))
         .with_children(|parent| {
-            let node_for_img = Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                margin: UiRect::all(Val::Percent(10.0)),
-                ..default()
-            };
-            let img_up = ImageNode {
-                image: image_move_up.clone(),
-                image_mode: NodeImageMode::Sliced(slicer.clone()),
-                flip_y: false,
-                ..default()
-            };
-            let img_down = ImageNode {
-                image: image_move_up.clone(),
-                image_mode: NodeImageMode::Sliced(slicer.clone()),
-                flip_y: true,
-                ..default()
-            };
-            let img_left = ImageNode {
-                image: image_move_right.clone(),
-                image_mode: NodeImageMode::Sliced(slicer.clone()),
-                flip_x: true,
-                ..default()
-            };
-            let img_right = ImageNode {
-                image: image_move_right.clone(),
-                image_mode: NodeImageMode::Sliced(slicer.clone()),
-                flip_x: false,
-                ..default()
-            };
+            parent.spawn((ControlUi, Node::default()));
+            parent
+                .spawn((
+                    ControlUi,
+                    Node {
+                        height: Val::Percent(100.0),
+                        aspect_ratio: Some(1.0f32),
+                        display: Display::Grid,
+                        grid_template_columns: RepeatedGridTrack::flex(3, 1.0),
+                        grid_template_rows: RepeatedGridTrack::flex(3, 1.0),
+                        row_gap: Val::Px(15.0),
+                        column_gap: Val::Px(15.0),
+                        ..default()
+                    },
+                ))
+                .with_children(|parent| {
+                    let node_for_img = Node {
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::all(Val::Percent(10.0)),
+                        ..default()
+                    };
+                    let img_up = ImageNode {
+                        image: image_move_up.clone(),
+                        image_mode: NodeImageMode::Sliced(slicer.clone()),
+                        flip_y: false,
+                        ..default()
+                    };
+                    let img_down = ImageNode {
+                        image: image_move_up.clone(),
+                        image_mode: NodeImageMode::Sliced(slicer.clone()),
+                        flip_y: true,
+                        ..default()
+                    };
+                    let img_left = ImageNode {
+                        image: image_move_right.clone(),
+                        image_mode: NodeImageMode::Sliced(slicer.clone()),
+                        flip_x: true,
+                        ..default()
+                    };
+                    let img_right = ImageNode {
+                        image: image_move_right.clone(),
+                        image_mode: NodeImageMode::Sliced(slicer.clone()),
+                        flip_x: false,
+                        ..default()
+                    };
 
-            let img_wait = ImageNode {
-                image: image_wait.clone(),
-                image_mode: NodeImageMode::Sliced(slicer.clone()),
-                ..default()
-            };
+                    let img_wait = ImageNode {
+                        image: image_wait.clone(),
+                        image_mode: NodeImageMode::Sliced(slicer.clone()),
+                        ..default()
+                    };
 
-            parent.spawn((ControlUi, Node::default()));
-            parent.spawn((ControlUi, Button, node_for_img.clone(), img_up.clone()));
-            parent.spawn((ControlUi, Node::default()));
-            parent.spawn((ControlUi, Button, node_for_img.clone(), img_left.clone()));
-            parent.spawn((ControlUi, Button, node_for_img.clone(), img_wait.clone()));
-            parent.spawn((ControlUi, Button, node_for_img.clone(), img_right.clone()));
-            parent.spawn((ControlUi, Node::default()));
-            parent.spawn((ControlUi, Button, node_for_img.clone(), img_down.clone()));
+                    parent.spawn((ControlUi, Node::default()));
+                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_up.clone()));
+                    parent.spawn((ControlUi, Node::default()));
+                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_left.clone()));
+                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_wait.clone()));
+                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_right.clone()));
+                    parent.spawn((ControlUi, Node::default()));
+                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_down.clone()));
+                    parent.spawn((ControlUi, Node::default()));
+                });
+
             parent.spawn((ControlUi, Node::default()));
         });
 }
