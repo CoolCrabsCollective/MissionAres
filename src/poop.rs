@@ -3,7 +3,6 @@ use crate::title_screen::GameState;
 use crate::GameControl::actions::Action;
 use bevy::prelude::*;
 use bevy::{ecs::resource::Resource, math::IVec2};
-use bevy_tweening::*;
 
 enum RoverStates {
     Standby,
@@ -82,7 +81,7 @@ fn execute_actions(
                 let effective_z = 0.0;
                 // (-*rover_list.list.get(idx).unwrap().position.y as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
 
-                // TODO: smoothly move between current and target locations
+                // TODO: smoothly move between current and target locations, execute one action at a time
                 commands.entity(entity).insert(Transform::from_xyz(
                     effective_x as f32,
                     0.5,
