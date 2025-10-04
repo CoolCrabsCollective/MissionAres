@@ -4,17 +4,17 @@ use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::*;
 
-pub struct ControlUiPlugin;
+pub struct ControlUIPlugin;
 
 const MAX_COMMANDS: u16 = 12;
 
 #[derive(Component)]
-pub struct ControlUi;
+pub struct ControlUI;
 
 #[derive(Resource)]
 pub struct RoverColors(Vec<Color>);
 
-impl Plugin for ControlUiPlugin {
+impl Plugin for ControlUIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
@@ -35,7 +35,7 @@ impl Plugin for ControlUiPlugin {
 fn update_action_list_ui(
     mut commands: Commands,
     mut action_lists: EventReader<ActionList>,
-    current_ui_elem_query: Query<Entity, With<ControlUi>>,
+    current_ui_elem_query: Query<Entity, With<ControlUI>>,
     all_rover_colors: Res<RoverColors>,
     asset_server: Res<AssetServer>,
 ) {
@@ -56,7 +56,7 @@ fn update_action_list_ui(
         let image_robot = asset_server.load("command_icons/robot.png");
         let side_bar = commands
             .spawn((
-                ControlUi,
+                ControlUI,
                 ui_sidebar_node(),
                 BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
             ))
@@ -67,7 +67,7 @@ fn update_action_list_ui(
                 let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
                 parent
                     .spawn((
-                        ControlUi,
+                        ControlUI,
                         Node {
                             height: Val::Percent(100.0),
                             width: Val::Percent(100.0),
@@ -103,7 +103,7 @@ fn update_action_list_ui(
                                 ..default()
                             };
                             parent.spawn((
-                                ControlUi,
+                                ControlUI,
                                 robot_node_for_img.clone(),
                                 img_robot_node.clone(),
                             ));
@@ -111,7 +111,7 @@ fn update_action_list_ui(
                     });
 
                 let mut multi_robot_command_list =
-                    parent.spawn((ControlUi, multi_robot_command_list(number_of_rovers)));
+                    parent.spawn((ControlUI, multi_robot_command_list(number_of_rovers)));
                 multi_robot_command_list.with_children(|parent| {
                     for i in 0..number_of_rovers {
                         let mut ui_commands = ui_command_list(parent);
@@ -151,7 +151,7 @@ fn ui_command_statement(
 ) {
     // Action text
     parent.spawn((
-        ControlUi,
+        ControlUI,
         Text::new(action.moves.0.as_str()),
         Node {
             align_items: AlignItems::Center,
@@ -177,7 +177,7 @@ fn multi_robot_command_list(num_rovers: usize) -> Node {
 }
 fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
     parent.spawn((
-        ControlUi,
+        ControlUI,
         Node {
             height: Val::Percent(100.0),
             width: Val::Percent(100.0),
@@ -227,7 +227,7 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
 
     parent
         .spawn((
-            ControlUi,
+            ControlUI,
             Node {
                 height: Val::Percent(100.0),
                 width: Val::Percent(100.0),
@@ -244,10 +244,10 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
             },
         ))
         .with_children(|parent| {
-            parent.spawn((ControlUi, Node::default()));
+            parent.spawn((ControlUI, Node::default()));
             parent
                 .spawn((
-                    ControlUi,
+                    ControlUI,
                     Node {
                         height: Val::Percent(100.0),
                         aspect_ratio: Some(1.0f32),
@@ -299,17 +299,17 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                         ..default()
                     };
 
-                    parent.spawn((ControlUi, Node::default()));
-                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_up.clone()));
-                    parent.spawn((ControlUi, Node::default()));
-                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_left.clone()));
-                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_wait.clone()));
-                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_right.clone()));
-                    parent.spawn((ControlUi, Node::default()));
-                    parent.spawn((ControlUi, Button, node_for_img.clone(), img_down.clone()));
-                    parent.spawn((ControlUi, Node::default()));
+                    parent.spawn((ControlUI, Node::default()));
+                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_up.clone()));
+                    parent.spawn((ControlUI, Node::default()));
+                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_left.clone()));
+                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_wait.clone()));
+                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_right.clone()));
+                    parent.spawn((ControlUI, Node::default()));
+                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_down.clone()));
+                    parent.spawn((ControlUI, Node::default()));
                 });
 
-            parent.spawn((ControlUi, Node::default()));
+            parent.spawn((ControlUI, Node::default()));
         });
 }
