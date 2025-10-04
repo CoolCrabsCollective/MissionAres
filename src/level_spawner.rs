@@ -318,7 +318,7 @@ fn load_level(
                     &mut mesh_loader,
                 );
 
-                rover_list.list.get_mut(num_rovers-1).unwrap().position =
+                rover_list.list.get_mut(num_rovers - 1).unwrap().position =
                     IVec2::new(*x as i32, *z as i32);
             }
 
@@ -400,8 +400,6 @@ fn load_level(
         ));
 
         active_level.0 = Some(event.level.clone());
-
-        action_list.actions.push(Action {
 
         action_list.actions.clear();
         action_list.actions.push(vec![]);
