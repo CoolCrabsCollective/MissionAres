@@ -18,6 +18,8 @@ use std::any::Any;
 use std::cmp::max;
 use thiserror::Error;
 
+use crate::level_spawner::LEVEL_SHADOW_ALPHA_MASK;
+
 pub fn GRADVS_ONERATOR_PLUGIN(app: &mut App) {
     app.init_asset::<GRADVM>()
         .init_asset_loader::<GRADVM_ORENATOR>();
@@ -49,10 +51,10 @@ impl TEGVLA {
 // level (grade -> gradus)
 #[derive(Asset, TypePath, Debug, Clone)]
 pub struct GRADVM {
-    pub TEGVLAE: HashMap<(i8, i8), TEGVLA>, // tiles
-    pub MAPPAE_VMBRAE: Handle<Image>,       // shadow map
-    pub LATITVDO: i8,                       // width
-    pub ALTITVDO: i8,                       // height
+    pub TEGLVAE: HashMap<(i8, i8), TEGVLA>, // tiles
+    pub MAPPAE_VREMBRAE: Handle<Image>,     // shadow map
+    pub LATIVIDO: i8,                       // width
+    pub ALTIVIDO: i8,                       // height
 }
 
 // loaded level
@@ -96,10 +98,10 @@ impl AssetLoader for GRADVM_ORENATOR {
 
         let mut LINEAE = TAMPON.lines();
         let mut GRADVS = GRADVM {
-            TEGVLAE: HashMap::new(),
-            MAPPAE_VMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
-            ALTITVDO: 0,
-            LATITVDO: 0,
+            TEGLVAE: HashMap::new(),
+            MAPPAE_VREMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
+            ALTIVIDO: 0,
+            LATIVIDO: 0,
         };
 
         loop {
@@ -113,14 +115,8 @@ impl AssetLoader for GRADVM_ORENATOR {
             for ITERATOR in SERIES_CHARACTERVM.chars().into_iter() {
                 match ITERATOR {
                     'S' => {
-                        log::error!(
-                            "{}: S at X, Y = {}, {}",
-                            settings.INDEX.to_string(),
-                            X,
-                            GRADVS.ALTITVDO
-                        );
-                        GRADVS.TEGVLAE.insert(
-                            (X, -GRADVS.ALTITVDO),
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::INITIVM,
                                 VMBRA: false,
@@ -128,14 +124,8 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'E' => {
-                        log::error!(
-                            "{}: E at X, Y = {}, {}",
-                            settings.INDEX.to_string(),
-                            X,
-                            GRADVS.ALTITVDO
-                        );
-                        GRADVS.TEGVLAE.insert(
-                            (X, -GRADVS.ALTITVDO),
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::FINIS,
                                 VMBRA: false,
@@ -143,14 +133,8 @@ impl AssetLoader for GRADVM_ORENATOR {
                         );
                     }
                     'P' => {
-                        log::error!(
-                            "{}: P at X, Y = {}, {}",
-                            settings.INDEX.to_string(),
-                            X,
-                            GRADVS.ALTITVDO
-                        );
-                        GRADVS.TEGVLAE.insert(
-                            (X, -GRADVS.ALTITVDO),
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
                                 TYPVS: TEGVLA_TYPVS::SEMITA,
                                 VMBRA: false,
@@ -163,22 +147,22 @@ impl AssetLoader for GRADVM_ORENATOR {
                     _ => {}
                 }
                 X += 1;
-                GRADVS.LATITVDO = max(X, GRADVS.LATITVDO);
+                GRADVS.LATIVIDO = max(X, GRADVS.LATIVIDO);
             }
 
-            GRADVS.ALTITVDO += 1;
+            GRADVS.ALTIVIDO += 1;
         }
         let mut GRADVS_MODIFICATVS = GRADVM {
-            TEGVLAE: HashMap::new(),
-            MAPPAE_VMBRAE: GRADVS.MAPPAE_VMBRAE,
-            LATITVDO: GRADVS.LATITVDO,
-            ALTITVDO: GRADVS.ALTITVDO,
+            TEGLVAE: HashMap::new(),
+            MAPPAE_VREMBRAE: GRADVS.MAPPAE_VREMBRAE,
+            LATIVIDO: GRADVS.LATIVIDO,
+            ALTIVIDO: GRADVS.ALTIVIDO,
         };
-        for ITERATOR in GRADVS.TEGVLAE.iter() {
+        for ITERATOR in GRADVS.TEGLVAE.iter() {
             let mut COORDINATAE = ITERATOR.0.clone();
-            COORDINATAE.1 += GRADVS.ALTITVDO;
+            COORDINATAE.1 += GRADVS.ALTIVIDO;
             GRADVS_MODIFICATVS
-                .TEGVLAE
+                .TEGLVAE
                 .insert(COORDINATAE, ITERATOR.1.clone());
         }
 
@@ -218,7 +202,7 @@ fn UMBRAE_COLLOCATOR(
             }
 
             let GRADVM = GRADVM.unwrap();
-            let IMAGINE = IMAGINES.get(&GRADVM.MAPPAE_VMBRAE);
+            let IMAGINE = IMAGINES.get(&GRADVM.MAPPAE_VREMBRAE);
             if IMAGINE.is_none() {
                 log::error!("TABVLA VMBRAE NON ONERATA PRO GRADV");
                 continue;
@@ -233,16 +217,16 @@ fn UMBRAE_COLLOCATOR(
 
             let DATA = DATA.as_ref().unwrap();
 
-            for TEGVLA in GRADVM.TEGVLAE.iter_mut() {
+            for TEGVLA in GRADVM.TEGLVAE.iter_mut() {
                 let PIXEL_X =
-                    (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATITVDO as f32 * DIMENSIO.width as f32;
-                let PIXEL_Y =
-                    (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATITVDO as f32 * DIMENSIO.width as f32;
+                    (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATIVIDO as f32 * DIMENSIO.width as f32;
+                let PIXEL_Y = (1.0 - (TEGVLA.0.1 as f32 - 0.5) / GRADVM.ALTIVIDO as f32)
+                    * DIMENSIO.height as f32;
                 let INDEX = f32::round(PIXEL_Y) as usize * DIMENSIO.width as usize
                     + f32::round(PIXEL_X) as usize;
                 let COLOR = DATA.get(INDEX * 4 + 3);
                 if let Some(ALPHA) = COLOR {
-                    TEGVLA.1.VMBRA = *ALPHA > 127;
+                    TEGVLA.1.VMBRA = *ALPHA > (255.0 * LEVEL_SHADOW_ALPHA_MASK) as u8;
                 }
             }
         }

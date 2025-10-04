@@ -1,31 +1,27 @@
-use std::collections::HashMap;
-use bevy::prelude::*;
 use crate::title_screen::GameState;
+use bevy::prelude::*;
 
 #[derive(Clone)]
-pub enum Robot
-{
+pub enum Robot {
     ROVER1,
     ROVER2,
     DRONE1,
-    DRONE2
+    DRONE2,
 }
 
 #[derive(Clone)]
-pub enum ActionType
-{
+pub enum ActionType {
     MoveUp,
     MoveDown,
     MoveLeft,
     MoveRight,
-    Wait
+    Wait,
 }
 
 pub struct ActionController;
 
 #[derive(Clone)]
-pub struct Action
-{
+pub struct Action {
     pub moves: (ActionType, Robot),
 }
 
@@ -48,12 +44,12 @@ impl ActionType {
 }
 
 impl Robot {
-    pub (crate) fn as_str(&self) -> &'static str {
+    pub(crate) fn as_str(&self) -> &'static str {
         match self {
             Robot::ROVER1 => "R1",
             Robot::ROVER2 => "R2",
             Robot::DRONE1 => "D1",
-            Robot::DRONE2 => "D2"
+            Robot::DRONE2 => "D2",
         }
     }
 }
@@ -68,9 +64,15 @@ impl Plugin for ActionController {
 
 fn setup_actions(mut commands: Commands, mut action_list: ResMut<ActionList>) {
     // Temp insert actions immediately
-    action_list.actions.push( Action { moves: (ActionType::MoveUp, Robot::ROVER1) });
-    action_list.actions.push( Action { moves: (ActionType::MoveUp, Robot::ROVER1) });
-    action_list.actions.push( Action { moves: (ActionType::MoveRight, Robot::ROVER1) });
+    action_list.actions.push(Action {
+        moves: (ActionType::MoveUp, Robot::ROVER1),
+    });
+    action_list.actions.push(Action {
+        moves: (ActionType::MoveUp, Robot::ROVER1),
+    });
+    action_list.actions.push(Action {
+        moves: (ActionType::MoveRight, Robot::ROVER1),
+    });
 
     let action_event = action_list.clone();
     commands.send_event(action_event);

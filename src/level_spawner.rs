@@ -1,9 +1,25 @@
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
-use crate::scene_loader::SceneElement;
 use crate::title_screen::GameState;
+use bevy::app::Startup;
 use bevy::asset::Handle;
-use bevy::prelude::{IntoScheduleConfigs, OnEnter, in_state};
+use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
+use bevy::core_pipeline::bloom::Bloom;
+use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::image::{CompressedImageFormats, Image};
+use bevy::math::Quat;
+use bevy::math::primitives::Sphere;
+use bevy::pbr::{
+    AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
+    DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
+};
+use bevy::prelude::{
+    Camera, Camera3d, ClearColor, ClearColorConfig, IntoScheduleConfigs, Msaa, OnEnter,
+    PerspectiveProjection, Projection, Resource, default, in_state,
+};
+use bevy::render::camera::TemporalJitter;
+use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
 use bevy::{
     app::{App, Plugin, Update},
     asset::AssetServer,
@@ -19,8 +35,24 @@ use bevy::{
         Mesh3d, MeshMaterial3d, Plane3d, Res, ResMut, StandardMaterial, Transform, Vec2, Vec3,
     },
 };
+use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
+use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
+use std::f32::consts::PI;
 
-pub const TILE_SIZE: f32 = 1.0;
+pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =
+    &[("test_skybox.png", CompressedImageFormats::NONE)];
+
+#[derive(Resource)]
+pub struct Cubemap {
+    pub(crate) is_loaded: bool,
+    pub(crate) image_handle: Handle<Image>,
+}
+
+#[derive(Component)]
+pub struct LevelElement;
+
+pub const TILE_SIZE: f32 = 2.0;
+pub const LEVEL_SHADOW_ALPHA_MASK: f32 = 0.5;
 
 pub struct LevelSpawnerPlugin;
 
@@ -45,7 +77,97 @@ impl Plugin for LevelSpawnerPlugin {
         );
         app.add_systems(Update, load_level.run_if(in_state(GameState::Game)));
         app.add_systems(OnEnter(GameState::Game), debug_add_fake_level_load_event);
+        app.add_systems(Startup, setup_scene);
+
+        app.add_systems(Update, asset_loaded);
+        app.add_plugins((
+            RapierPhysicsPlugin::<NoUserData>::default(),
+            RapierDebugRenderPlugin::default().disabled(),
+        ));
+
+        #[cfg(not(target_arch = "wasm32"))]
+        app.add_plugins(TemporalAntiAliasPlugin);
+
+        app.add_systems(Update, debug_render_toggle)
+            .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.9)))
+            .insert_resource(DirectionalLightShadowMap { size: 4096 });
     }
+}
+
+fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
+    // commands.spawn((
+    //     AudioPlayer::new(asset_server.load("test_song.ogg")),
+    //     PlaybackSettings::LOOP,
+    // ));
+
+    let skybox_handle = asset_server.load(CUBEMAPS[0].0);
+
+    commands.insert_resource(Cubemap {
+        is_loaded: false,
+        image_handle: skybox_handle.clone(),
+    });
+
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 250.0,
+        affects_lightmapped_meshes: true,
+    });
+    commands.spawn((
+        DirectionalLight {
+            color: Color::WHITE,
+            illuminance: 2000.0,
+            shadows_enabled: true,
+            affects_lightmapped_mesh_diffuse: true,
+            ..Default::default()
+        },
+        Transform::from_xyz(50.0, 50.0, 50.0)
+            .with_rotation(Quat::from_axis_angle(Vec3::X, -std::f32::consts::PI / 2.0)),
+        CascadeShadowConfigBuilder {
+            maximum_distance: 100.0,
+            ..default()
+        }
+        .build(),
+    ));
+    let skybox_handle = asset_server.load(CUBEMAPS[0].0);
+
+    let mut camera_bundle = commands.spawn((
+        Camera3d::default(),
+        Camera {
+            // renders after / on top of the main camera
+            order: 1,
+            hdr: true,
+            // don't clear the color while rendering this camera
+            clear_color: ClearColorConfig::Default,
+            ..default()
+        },
+        Projection::Perspective(PerspectiveProjection {
+            fov: 55.0f32.to_radians(),
+            ..default()
+        }),
+        Transform::from_xyz(-0.5, 5.0, 10.5).with_rotation(Quat::from_axis_angle(Vec3::Y, 0.0)),
+        Skybox {
+            image: skybox_handle.clone(),
+            brightness: 1000.0,
+            rotation: Default::default(),
+        },
+        DistanceFog {
+            color: Color::srgb(0.8, 0.35, 0.2),
+            falloff: FogFalloff::Linear {
+                start: 500.0,
+                end: 600.0,
+            },
+            ..default()
+        },
+        Msaa::Off,
+        ScreenSpaceAmbientOcclusion {
+            quality_level: ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
+            ..default()
+        },
+        Bloom::default(),
+    ));
+
+    #[cfg(not(target_arch = "wasm32"))]
+    camera_bundle.insert((TemporalAntiAliasing::default(), TemporalJitter::default()));
 }
 
 fn debug_add_fake_level_load_event(
@@ -89,16 +211,12 @@ fn load_level(
     mut asset_server: ResMut<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
     levels: Res<Assets<GRADVM>>,
-    tiles: Query<Entity, With<TileEntity>>,
-    rovers: Query<Entity, With<RoverEntity>>,
+    level_elements: Query<Entity, With<LevelElement>>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
-        for tile in tiles.iter() {
-            commands.entity(tile).despawn();
-        }
-        for rover in rovers.iter() {
-            commands.entity(rover).despawn();
+        for level_element in level_elements.iter() {
+            commands.entity(level_element).despawn();
         }
 
         let level = levels.get(&event.level);
@@ -109,31 +227,47 @@ fn load_level(
 
         let level = level.unwrap();
 
-        log::info!("Level loaded with {} tiles", level.TEGVLAE.len());
+        log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
+
+        let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
+        let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+
+        commands.spawn((
+            LevelElement,
+            Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1000.0)))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
+                perceptual_roughness: 0.9,
+                metallic: 0.0,
+                ..Default::default()
+            })),
+            Transform::from_xyz(0.0, -0.5, 0.0),
+        ));
 
         // Spawn cylinders at each tile position
-        for ((x, z), tile) in level.TEGVLAE.iter() {
-            let effective_x = *x;
-            let effective_z = -*z;
+        for ((x, z), tile) in level.TEGLVAE.iter() {
+            let effective_x =
+                (*x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+            let effective_z =
+                (-*z as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
 
             spawn_tile_cylinder(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                effective_x as f32 * TILE_SIZE,
+                effective_x as f32,
                 // mirror along the z to align correctly with how it looks in the level
-                effective_z as f32 * TILE_SIZE,
+                effective_z as f32,
                 tile.VMBRA,
             );
 
             // Store rover spawn position for the start tile
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
                 load_gltf(
-                    String::from("pistol_shrimp.glb"),
+                    String::from("rover.glb"),
                     GLTFLoadConfig {
                         entity_initializer: Box::new(move |commands: &mut EntityCommands| {
                             commands
-                                .insert(SceneElement)
                                 .insert(
                                     // should spawn at the tile position
                                     Transform::from_xyz(
@@ -141,9 +275,11 @@ fn load_level(
                                         0.5,
                                         effective_z as f32,
                                     )
-                                    .with_scale(Vec3::splat(0.25)),
+                                    .with_scale(Vec3::splat(0.15 * TILE_SIZE))
+                                    .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                                 )
-                                .insert(RoverEntity);
+                                .insert(RoverEntity)
+                                .insert(LevelElement);
                         }),
                         ..Default::default()
                     },
@@ -153,24 +289,35 @@ fn load_level(
             }
         }
 
-        log::info!("Level size: {}x{}", level.ALTITVDO, level.LATITVDO);
+        log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
 
         commands.spawn((
+            LevelElement,
             TileEntity,
             Mesh3d(meshes.add(Plane3d::new(
                 Vec3::Y,
-                Vec2::new(
-                    0.5 * level.ALTITVDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
-                    0.5 * level.LATITVDO as f32 * TILE_SIZE + TILE_SIZE * 0.5,
-                ),
+                Vec2::new(0.5 * effective_level_width, 0.5 * effective_level_height),
             ))),
             MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(level.MAPPAE_VMBRAE.clone()),
-                alpha_mode: AlphaMode::Mask(0.5),
+                base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
+                alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
                 cull_mode: None,
+                unlit: true,
                 ..Default::default()
             })),
             Transform::from_xyz(0.0, 10.0, 0.0),
+        ));
+
+        // debug sphere to show the center of the level
+        commands.spawn((
+            LevelElement,
+            TileEntity,
+            Mesh3d(meshes.add(Sphere::new(0.1))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: Color::srgb(0.0, 1.0, 0.0),
+                ..Default::default()
+            })),
+            Transform::from_xyz(0.0, 00.0, 0.0),
         ));
     }
 }
@@ -184,6 +331,7 @@ fn spawn_tile_cylinder(
     umbra: bool,
 ) {
     commands.spawn((
+        LevelElement,
         Mesh3d(meshes.add(Cylinder::new(0.25 * TILE_SIZE, 0.1))),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: if umbra {
@@ -196,4 +344,36 @@ fn spawn_tile_cylinder(
         Transform::from_xyz(x, 0.0, z),
         TileEntity,
     ));
+}
+
+fn debug_render_toggle(mut context: ResMut<DebugRenderContext>, keys: Res<ButtonInput<KeyCode>>) {
+    if keys.just_released(KeyCode::F12) {
+        context.enabled = !context.enabled;
+    }
+}
+
+fn asset_loaded(
+    asset_server: Res<AssetServer>,
+    mut images: ResMut<Assets<Image>>,
+    mut cubemap: ResMut<Cubemap>,
+    mut skyboxes: Query<&mut Skybox>,
+) {
+    if !cubemap.is_loaded && asset_server.load_state(&cubemap.image_handle).is_loaded() {
+        let image = images.get_mut(&cubemap.image_handle).unwrap();
+        // NOTE: PNGs do not have any metadata that could indicate they contain a cubemap texture,
+        // so they appear as one texture. The following code reconfigures the texture as necessary.
+        if image.texture_descriptor.array_layer_count() == 1 {
+            image.reinterpret_stacked_2d_as_array(image.height() / image.width());
+            image.texture_view_descriptor = Some(TextureViewDescriptor {
+                dimension: Some(TextureViewDimension::Cube),
+                ..default()
+            });
+        }
+
+        for mut skybox in &mut skyboxes {
+            skybox.image = cubemap.image_handle.clone();
+        }
+
+        cubemap.is_loaded = true;
+    }
 }
