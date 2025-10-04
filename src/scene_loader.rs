@@ -134,19 +134,21 @@ fn setup_basic(
 
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 1000.0,
+        brightness: 250.0,
         affects_lightmapped_meshes: true,
     });
     commands.spawn((
         SceneElement,
         DirectionalLight {
             color: Color::WHITE,
-            illuminance: 5000.0,
+            illuminance: 2000.0,
             shadows_enabled: true,
             affects_lightmapped_mesh_diffuse: true,
             shadow_depth_bias: 1.0,
             shadow_normal_bias: 1.0,
         },
+        Transform::from_xyz(0.0, 10.0, 0.0)
+            .with_rotation(Quat::from_axis_angle(Vec3::X, -std::f32::consts::PI / 2.0)),
         CascadeShadowConfigBuilder {
             maximum_distance: 500.0,
             ..default()
