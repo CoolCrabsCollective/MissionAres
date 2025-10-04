@@ -1,7 +1,7 @@
-use crate::mesh_loader::{self, load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{self, GLTFLoadConfig, MeshLoader, load_gltf};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::image::CompressedImageFormats;
 use bevy::pbr::{
     CascadeShadowConfigBuilder, DirectionalLightShadowMap, ScreenSpaceAmbientOcclusion,

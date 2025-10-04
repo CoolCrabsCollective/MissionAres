@@ -1,23 +1,25 @@
 mod debug_camera_controller;
+mod hentai_anime;
+mod level;
+mod level_loader;
 mod mesh_loader;
 mod object_spawner;
 mod scene_loader;
 mod title_screen;
-mod level;
-mod hentai_anime;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
+use crate::level_loader::LevelLoaderPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::object_spawner::ObjectSpawnerPlugin;
 use crate::scene_loader::SceneLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
-use bevy::app::{App, PluginGroup};
+use bevy::DefaultPlugins;
+use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
-use bevy::DefaultPlugins;
 
 fn main() {
     let mut app = App::new();
@@ -61,10 +63,21 @@ fn main() {
     );
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(SceneLoaderPlugin);
+    app.add_plugins(LevelLoaderPlugin);
     app.add_plugins(TitleScreenPlugin);
     app.add_plugins(DebugCameraControllerPlugin);
     app.add_plugins(ObjectSpawnerPlugin);
     app.insert_state(GameState::TitleScreen);
+    app.add_systems(Update, quit_on_escape);
 
     app.run();
+}
+
+fn quit_on_escape(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut app_exit_events: EventWriter<AppExit>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Escape) {
+        app_exit_events.write(AppExit::Success);
+    }
 }
