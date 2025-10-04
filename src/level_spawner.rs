@@ -22,6 +22,7 @@ use bevy::{
 };
 
 pub const TILE_SIZE: f32 = 2.0;
+pub const LEVEL_SHADOW_ALPHA_MASK: f32 = 0.5;
 
 pub struct LevelSpawnerPlugin;
 
@@ -169,7 +170,7 @@ fn load_level(
             ))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
-                alpha_mode: AlphaMode::Mask(0.5),
+                alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
                 cull_mode: None,
                 ..Default::default()
             })),

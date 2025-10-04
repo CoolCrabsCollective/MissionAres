@@ -18,6 +18,8 @@ use std::any::Any;
 use std::cmp::max;
 use thiserror::Error;
 
+use crate::level_spawner::LEVEL_SHADOW_ALPHA_MASK;
+
 pub fn GRADVS_ONERATOR_PLUGIN(app: &mut App) {
     app.init_asset::<GRADVM>()
         .init_asset_loader::<GRADVM_ORENATOR>();
@@ -236,13 +238,19 @@ fn UMBRAE_COLLOCATOR(
             for TEGVLA in GRADVM.TEGLVAE.iter_mut() {
                 let PIXEL_X =
                     (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATIVIDO as f32 * DIMENSIO.width as f32;
-                let PIXEL_Y =
-                    (TEGVLA.0.0 as f32 + 0.5) / GRADVM.LATIVIDO as f32 * DIMENSIO.width as f32;
+                let PIXEL_Y = DIMENSIO.height as f32
+                    - ((TEGVLA.0.1 as f32 - 0.5) / GRADVM.ALTIVIDO as f32 * DIMENSIO.height as f32);
+                log::error!(
+                    "TEGVLA: {:?}, PIXEL_X: {}, PIXEL_Y: {}",
+                    TEGVLA,
+                    PIXEL_X,
+                    PIXEL_Y
+                );
                 let INDEX = f32::round(PIXEL_Y) as usize * DIMENSIO.width as usize
                     + f32::round(PIXEL_X) as usize;
                 let COLOR = DATA.get(INDEX * 4 + 3);
                 if let Some(ALPHA) = COLOR {
-                    TEGVLA.1.VMBRA = *ALPHA > 127;
+                    TEGVLA.1.VMBRA = *ALPHA > (255.0 * LEVEL_SHADOW_ALPHA_MASK) as u8;
                 }
             }
         }
