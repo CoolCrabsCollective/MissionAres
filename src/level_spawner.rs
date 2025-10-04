@@ -302,6 +302,29 @@ fn load_level(
                     &mut mesh_loader,
                 );
             }
+
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::FINIS) {
+                load_gltf(
+                    String::from("mineral.glb"),
+                    GLTFLoadConfig {
+                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                            commands
+                                .insert(
+                                    // should spawn at the tile position
+                                    Transform::from_xyz(effective_x, 0.0, effective_z)
+                                        .with_scale(Vec3::splat(0.05 * TILE_SIZE))
+                                        .with_rotation(Quat::from_rotation_y(
+                                            random::<f32>() * PI * 2.0,
+                                        )),
+                                )
+                                .insert(LevelElement);
+                        }),
+                        ..Default::default()
+                    },
+                    &asset_server,
+                    &mut mesh_loader,
+                );
+            }
         }
 
         log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
