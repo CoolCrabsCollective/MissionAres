@@ -62,8 +62,8 @@ pub fn setup(mut commands: Commands) {
 pub fn load_gltf(
     asset_path: String,
     config: GLTFLoadConfig,
-    mut asset_server: &mut ResMut<AssetServer>,
-    mut mesh_loader: &mut ResMut<MeshLoader>,
+    asset_server: &Res<AssetServer>,
+    mesh_loader: &mut ResMut<MeshLoader>,
 ) {
     mesh_loader.0.push(LoadedGLTF {
         gltf_handle: asset_server.load(asset_path),

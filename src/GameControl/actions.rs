@@ -1,3 +1,4 @@
+use crate::poop::ActionListExecute;
 use crate::title_screen::GameState;
 use bevy::prelude::*;
 
@@ -60,4 +61,11 @@ impl Plugin for ActionController {
         app.add_event::<ActionList>();
         app.insert_resource(ActionList { num_rovers: 0, actions: vec![] });
     }
+}
+
+fn execute(mut commands: Commands, action_list: ResMut<ActionList>) {
+    let execute_event = ActionListExecute {
+        action_list: action_list.actions.clone(),
+    };
+    commands.send_event(execute_event);
 }
