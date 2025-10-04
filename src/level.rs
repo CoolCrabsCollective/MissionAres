@@ -1,55 +1,55 @@
 use bevy::platform::collections::HashMap;
 
 // tile type
-pub enum TYPVS {
+pub enum TileType {
     // initial tile
-    INITIVM,
+    Initial,
     // finish tile
-    FINIS,
+    Finish,
     // semi transparent tile
-    SEMITA,
+    Path,
 }
 
 // tile
-pub struct TEGVLA {
-    TYPVS: TYPVS,
-    VMBRA: bool,
+pub struct Tile {
+    tile_type: TileType,
+    shadow: bool,
 }
 
-pub struct GRADVS {
-    TEGVLAE: HashMap<(i8, i8), TEGVLA>,
-    //MAPPAE_VMBRAE: Option<Handle<Texture>>,
+pub struct Level {
+    tiles: HashMap<(i8, i8), Tile>,
+    //shadow_map: Option<Handle<Texture>>,
 }
 
-pub fn GRADVS1() -> GRADVS {
-    GRADVS {
-        TEGVLAE: HashMap::from([
+pub fn level1() -> Level {
+    Level {
+        tiles: HashMap::from([
             (
                 (0, 0),
-                TEGVLA {
-                    TYPVS: TYPVS::INITIVM,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Initial,
+                    shadow: false,
                 },
             ),
             (
                 (0, 1),
-                TEGVLA {
-                    TYPVS: TYPVS::SEMITA,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: false,
                 },
             ),
             (
                 (0, 2),
-                TEGVLA {
-                    TYPVS: TYPVS::SEMITA,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Path,
+                    shadow: false,
                 },
             ),
             (
                 (1, 2),
-                TEGVLA {
-                    TYPVS: TYPVS::FINIS,
-                    VMBRA: false,
+                Tile {
+                    tile_type: TileType::Finish,
+                    shadow: false,
                 },
             ),
         ]),
