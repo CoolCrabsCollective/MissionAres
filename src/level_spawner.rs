@@ -1,7 +1,7 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
-use crate::poop::RoverList;
+use crate::poop::{RoverEntity, RoverList};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
@@ -75,15 +75,6 @@ pub struct LevelLoadedEvent {}
 #[derive(Component)]
 pub struct TileEntity;
 
-#[derive(Component)]
-pub struct RoverEntity {
-    pub is_setup: bool,
-    pub base_color: Color,
-    pub gltf_handle: Handle<Gltf>,
-    pub logical_position: I8Vec2,
-    pub battery_level: u8,
-}
-
 #[derive(Resource)]
 pub struct ActiveLevel(pub Option<Handle<GRADVM>>);
 
@@ -99,6 +90,7 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(Startup, setup_scene);
 
         app.add_systems(Update, asset_loaded);
+        app.insert_resource(ActiveLevel { 0: None });
         app.add_plugins((
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
@@ -233,7 +225,7 @@ fn load_level(
     mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
-    mut rover_list: ResMut<RoverList>,
+    // mut rover_list: ResMut<RoverList>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -318,8 +310,8 @@ fn load_level(
                     &mut mesh_loader,
                 );
 
-                rover_list.list.get_mut(num_rovers - 1).unwrap().position =
-                    IVec2::new(*x as i32, *z as i32);
+                // rover_list.list.get_mut(num_rovers-1).unwrap().position =
+                //     IVec2::new(*x as i32, *z as i32);
             }
 
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::FINIS) {
