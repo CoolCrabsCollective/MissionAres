@@ -18,7 +18,7 @@ use crate::level::{GRADVS, GRADVS1, GRADVS2, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::scene_loader::SceneElement;
 
-pub struct LevelLoaderPlugin;
+pub struct LevelSpawnerPlugin;
 
 #[derive(Event)]
 pub struct LevelLoadedEvent {
@@ -32,7 +32,7 @@ struct TileEntity;
 #[derive(Component)]
 struct RoverEntity;
 
-impl Plugin for LevelLoaderPlugin {
+impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LevelLoadedEvent>();
         app.add_systems(Update, choose_level_by_num_keys);

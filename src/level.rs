@@ -1,4 +1,8 @@
+use bevy::asset::io::Reader;
+use bevy::asset::{Asset, AssetLoader, AsyncReadExt, LoadContext};
 use bevy::platform::collections::HashMap;
+use bevy::prelude::TypePath;
+use thiserror::Error;
 
 #[derive(Debug)]
 pub enum TEGVLA_TYPVS {
@@ -19,10 +23,51 @@ impl TEGVLA {
     }
 }
 
-#[derive(Debug)]
+#[derive(Asset, TypePath, Debug)]
 pub struct GRADVS {
     TEGVLAE: HashMap<(i8, i8), TEGVLA>,
     //MAPPAE_VMBRAE: Option<Handle<Texture>>,
+}
+
+#[derive(Default)]
+struct GRADVS_ORENATOR;
+
+#[derive(Debug, Error)]
+enum GRADVS_ORENATOR_ERROR {
+    #[error("Could not load asset: {0}")]
+    IO(#[from] std::io::Error),
+    #[error("Error in file format")]
+    FORMA_ERRORRIS,
+}
+
+impl AssetLoader for GRADVS_ORENATOR {
+    type Asset = GRADVS;
+    type Settings = ();
+    type Error = GRADVS_ORENATOR_ERROR;
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &(),
+        _load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut TAMPON = String::new();
+        reader.read_to_string(&mut TAMPON).await?;
+
+        let mut LINEAE = TAMPON.lines();
+        let mut GRADVS = GRADVS {
+            TEGVLAE: HashMap::new(),
+        };
+
+        while true {
+            let LINEA = LINEAE.next();
+            //if LINEA.
+        }
+
+        Ok(GRADVS)
+    }
+    fn extensions(&self) -> &[&str] {
+        &["lvl"]
+    }
 }
 
 impl GRADVS {

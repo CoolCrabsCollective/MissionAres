@@ -1,26 +1,26 @@
+mod GameControl;
 mod debug_camera_controller;
 mod hentai_anime;
 mod level;
-mod level_loader;
+mod level_spawner;
 mod mesh_loader;
 mod object_spawner;
 mod scene_loader;
 mod title_screen;
-mod GameControl;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
-use crate::level_loader::LevelLoaderPlugin;
+use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::object_spawner::ObjectSpawnerPlugin;
 use crate::scene_loader::SceneLoaderPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
-use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
+use bevy::DefaultPlugins;
 
 fn main() {
     let mut app = App::new();
@@ -64,7 +64,7 @@ fn main() {
     );
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(SceneLoaderPlugin);
-    app.add_plugins(LevelLoaderPlugin);
+    app.add_plugins(LevelSpawnerPlugin);
     app.add_plugins(TitleScreenPlugin);
     app.add_plugins(DebugCameraControllerPlugin);
     app.add_plugins(ObjectSpawnerPlugin);
