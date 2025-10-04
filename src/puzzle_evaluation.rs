@@ -12,37 +12,30 @@ impl Plugin for PuzzleEvaluationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, on_puzzle_evaluation_request);
         app.add_systems(Update, debug_puzzle_evaluation);
-        app.add_systems(Update, reset_on_level_spawned);
         app.add_event::<PuzzleEvaluationRequestEvent>();
-        app.insert_resource(PuzzleState {
-            win_state: WinState::InProgress,
-        });
+        app.add_event::<PuzzleSolvedEvent>();
+        app.add_event::<PuzzleFailedEvent>();
     }
 }
 
-#[derive(Resource)]
-pub struct PuzzleState {
-    win_state: WinState,
-}
+#[derive(Event)]
+pub struct PuzzleSolvedEvent;
 
-#[derive(Resource)]
-pub enum WinState {
-    Win,
-    InProgress,
-    Lose,
-}
+#[derive(Event)]
+pub struct PuzzleFailedEvent;
 
 #[derive(Event)]
 pub struct PuzzleEvaluationRequestEvent;
 
 fn on_puzzle_evaluation_request(
-    mut events: EventReader<PuzzleEvaluationRequestEvent>,
-    mut puzzle_state: ResMut<PuzzleState>,
+    mut evaluation_requests: EventReader<PuzzleEvaluationRequestEvent>,
+    mut puzzle_solved_event_writer: EventWriter<PuzzleSolvedEvent>,
+    mut puzzle_failed_event_writer: EventWriter<PuzzleFailedEvent>,
     mut rovers: Query<&mut RoverEntity>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
 ) {
-    for event in events.read() {
+    for _ in evaluation_requests.read() {
         log::info!("Received puzzle evaluation request.");
         let Some(active_level_handle) = &active_level.0 else {
             log::error!(
@@ -88,13 +81,13 @@ fn on_puzzle_evaluation_request(
 
         if all_rovers_in_finish_tile {
             log::info!("All rovers are in the finish tile. Setting win state to win.");
-            puzzle_state.win_state = WinState::Win;
+            puzzle_solved_event_writer.write(PuzzleSolvedEvent);
             break;
         }
 
         if let Some(_rover) = rovers.iter().find(|rover| rover.battery_level == 0) {
             log::info!("Rover is out of battery. Setting win state to lose.",);
-            puzzle_state.win_state = WinState::Lose;
+            puzzle_failed_event_writer.write(PuzzleFailedEvent);
         }
     }
 }
@@ -106,15 +99,5 @@ fn debug_puzzle_evaluation(
     if keys.just_pressed(KeyCode::KeyP) {
         log::info!("Writing puzzle evaluation request event.");
         event_writer.write(PuzzleEvaluationRequestEvent);
-    }
-}
-
-fn reset_on_level_spawned(
-    mut puzzle_state: ResMut<PuzzleState>,
-    mut events: EventReader<AfterLevelSpawnEvent>,
-) {
-    for event in events.read() {
-        log::info!("Resetting win state on level spawned.");
-        puzzle_state.win_state = WinState::InProgress;
     }
 }
