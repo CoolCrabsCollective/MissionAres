@@ -3,6 +3,7 @@ mod mesh_loader;
 mod object_spawner;
 mod scene_loader;
 mod title_screen;
+mod level;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
