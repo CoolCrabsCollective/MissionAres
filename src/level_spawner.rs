@@ -179,7 +179,7 @@ fn load_level(
         // debug sphere to show the center of the level
         commands.spawn((
             TileEntity,
-            Mesh3d(meshes.add(Sphere::new(0.25))),
+            Mesh3d(meshes.add(Sphere::new(0.1))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color: Color::srgb(0.0, 1.0, 0.0),
                 ..Default::default()
