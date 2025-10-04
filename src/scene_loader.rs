@@ -105,9 +105,9 @@ fn scene_switcher(
 fn setup_basic(
     mut commands: Commands,
     mut asset_server: ResMut<AssetServer>,
-    mut mesh_loader: ResMut<MeshLoader>,
-    mut _meshes: ResMut<Assets<Mesh>>,
-    mut _materials: ResMut<Assets<StandardMaterial>>,
+    mut _mesh_loader: ResMut<MeshLoader>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     mut water_level: ResMut<WaterSettings>,
 ) {
     water_level.height = -10.0;
@@ -120,21 +120,35 @@ fn setup_basic(
         PlaybackSettings::LOOP,
     ));
 
+    commands.spawn((
+        SceneElement,
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
+            perceptual_roughness: 0.9,
+            metallic: 0.0,
+            ..Default::default()
+        })),
+        Transform::from_xyz(0.0, -0.5, 0.0),
+    ));
+
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 1000.0,
+        brightness: 250.0,
         affects_lightmapped_meshes: true,
     });
     commands.spawn((
         SceneElement,
         DirectionalLight {
             color: Color::WHITE,
-            illuminance: 5000.0,
+            illuminance: 2000.0,
             shadows_enabled: true,
             affects_lightmapped_mesh_diffuse: true,
             shadow_depth_bias: 1.0,
             shadow_normal_bias: 1.0,
         },
+        Transform::from_xyz(0.0, 10.0, 0.0)
+            .with_rotation(Quat::from_axis_angle(Vec3::X, -std::f32::consts::PI / 2.0)),
         CascadeShadowConfigBuilder {
             maximum_distance: 500.0,
             ..default()

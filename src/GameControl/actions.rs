@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::title_screen::GameState;
 
 #[derive(Clone)]
-enum ROBOT
+pub enum Robot
 {
     ROVER1,
     ROVER2,
@@ -12,7 +12,7 @@ enum ROBOT
 }
 
 #[derive(Clone)]
-enum ActionType
+pub enum ActionType
 {
     MoveUp,
     MoveDown,
@@ -26,7 +26,7 @@ pub struct ActionController;
 #[derive(Clone)]
 pub struct Action
 {
-    pub moves: (ActionType, ROBOT),
+    pub moves: (ActionType, Robot),
 }
 
 #[derive(Resource, Event, Clone)]
@@ -36,13 +36,24 @@ pub struct ActionList {
 
 // TODO: instead of putting strings we should list icons
 impl ActionType {
-    fn as_str(&self) -> &'static str {
+    pub(crate) fn as_str(&self) -> &'static str {
         match self {
             ActionType::MoveUp => "UP",
             ActionType::MoveDown => "DOWN",
             ActionType::MoveLeft => "LEFT",
             ActionType::MoveRight => "RIGHT",
             ActionType::Wait => "WAIT",
+        }
+    }
+}
+
+impl Robot {
+    pub (crate) fn as_str(&self) -> &'static str {
+        match self {
+            Robot::ROVER1 => "R1",
+            Robot::ROVER2 => "R2",
+            Robot::DRONE1 => "D1",
+            Robot::DRONE2 => "D2"
         }
     }
 }
@@ -55,7 +66,12 @@ impl Plugin for ActionController {
     }
 }
 
-fn setup_actions(mut commands: Commands, action_list: Res<ActionList>) {
+fn setup_actions(mut commands: Commands, mut action_list: ResMut<ActionList>) {
+    // Temp insert actions immediately
+    action_list.actions.push( Action { moves: (ActionType::MoveUp, Robot::ROVER1) });
+    action_list.actions.push( Action { moves: (ActionType::MoveUp, Robot::ROVER1) });
+    action_list.actions.push( Action { moves: (ActionType::MoveRight, Robot::ROVER1) });
+
     let action_event = action_list.clone();
     commands.send_event(action_event);
 }
