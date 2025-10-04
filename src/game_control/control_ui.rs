@@ -151,7 +151,7 @@ fn ui_command_statement(
 ) {
     // Action text
     parent.spawn((
-        ControlUi,
+        ControlUI,
         Text::new(action.moves.0.as_str()),
         Node {
             align_items: AlignItems::Center,
