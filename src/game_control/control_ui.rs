@@ -147,18 +147,19 @@ fn ui_command_statement(
     action: &Action,
     font_node: &TextFont,
 ) {
-    // Action text
-    parent.spawn((
-        ControlUi,
-        Text::new(action.moves.0.as_str()),
-        Node {
-            align_items: AlignItems::Center,
+    parent
+        .spawn((Node {
+            justify_content: JustifyContent::Center,
             ..default()
-        },
-        font_node.clone(),
-        TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-        TextShadow::default(),
-    ));
+        },))
+        .with_children(|builder| {
+            builder.spawn((
+                Text::new(action.moves.0.as_str()),
+                font_node.clone(),
+                TextLayout::new_with_justify(JustifyText::Center).with_no_wrap(),
+                TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+            ));
+        });
 }
 
 fn multi_robot_command_list(num_rovers: usize) -> Node {
