@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::poop::RoverEntity;
+use crate::rover::RoverEntity;
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
     level_spawner::ActiveLevel,
