@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
-    level_spawner::{ActiveLevel, LevelElement, RoverEntity},
+    level_spawner::{ActiveLevel, RoverEntity},
 };
 
 pub struct PuzzleEvaluationPlugin;
@@ -10,6 +10,8 @@ pub struct PuzzleEvaluationPlugin;
 impl Plugin for PuzzleEvaluationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, on_puzzle_evaluation_request);
+        app.add_systems(Update, debug_puzzle_evaluation);
+        app.add_event::<PuzzleEvaluationRequestEvent>();
         app.insert_resource(PuzzleState {
             win_state: WinState::InProgress,
         });
@@ -38,21 +40,24 @@ fn on_puzzle_evaluation_request(
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
 ) {
-    let Some(active_level_handle) = &active_level.0 else {
-        log::error!("No active level. How the FUCK could you request that I evaluate the puzzle?");
-        return;
-    };
-
-    let Some(active_level) = levels.get(active_level_handle) else {
-        log::error!("No active level. How the FUCK could you request that I evaluate the puzzle?");
-        return;
-    };
-
     for event in events.read() {
-        // loop through the rovers and drain 1 battery if they are in shadow
-        // if any rover reaches 0 batteries, set the win state to lose
-        // if all rovers are in a finish tile, set the win state to win
+        log::info!("Received puzzle evaluation request.");
+        let Some(active_level_handle) = &active_level.0 else {
+            log::error!(
+                "No active level. How the FUCK could you request that I evaluate the puzzle?"
+            );
+            return;
+        };
+
+        let Some(active_level) = levels.get(active_level_handle) else {
+            log::error!(
+                "No active level. How the FUCK could you request that I evaluate the puzzle?"
+            );
+            return;
+        };
+
         let mut all_rovers_in_finish_tile = true;
+        let mut i = 0;
         for mut rover in rovers.iter_mut() {
             let Some(tile) = active_level.TEGLVAE.get(&(
                 rover.logical_position.x as i8,
@@ -66,18 +71,38 @@ fn on_puzzle_evaluation_request(
 
             if tile.VMBRA {
                 rover.battery_level -= 1;
+                log::info!(
+                    "Rover {} in position {} battery level went down to: {}",
+                    i,
+                    rover.logical_position,
+                    rover.battery_level
+                );
             }
 
             all_rovers_in_finish_tile &= matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS);
+
+            i += 1;
         }
 
         if all_rovers_in_finish_tile {
+            log::info!("All rovers are in the finish tile. Setting win state to win.");
             puzzle_state.win_state = WinState::Win;
             break;
         }
 
-        if rovers.iter().all(|rover| rover.battery_level == 0) {
+        if let Some(_rover) = rovers.iter().find(|rover| rover.battery_level == 0) {
+            log::info!("Rover is out of battery. Setting win state to lose.",);
             puzzle_state.win_state = WinState::Lose;
         }
+    }
+}
+
+fn debug_puzzle_evaluation(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut event_writer: EventWriter<PuzzleEvaluationRequestEvent>,
+) {
+    if keys.just_pressed(KeyCode::KeyP) {
+        log::info!("Writing puzzle evaluation request event.");
+        event_writer.write(PuzzleEvaluationRequestEvent);
     }
 }

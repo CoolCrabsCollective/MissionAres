@@ -16,6 +16,7 @@ use crate::game_control::control_ui::ControlUiPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
+use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
@@ -72,6 +73,7 @@ fn main() {
     app.add_plugins(DebugCameraControllerPlugin);
     app.add_plugins(GRADVS_ONERATOR_PLUGIN);
     app.add_plugins(LevelSpawnerPlugin);
+    app.add_plugins(PuzzleEvaluationPlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 
