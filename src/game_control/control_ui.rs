@@ -92,6 +92,7 @@ fn update_action_list_ui(
                             height: Val::Px(96.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
+                            margin: UiRect::all(Val::Auto),
                             ..default()
                         };
 
@@ -117,7 +118,7 @@ fn update_action_list_ui(
                         let mut ui_commands = ui_command_list(parent);
                         for action in event.clone().actions[0].iter() {
                             ui_commands.with_children(|parent| {
-                                ui_command_statement(parent, action, &font);
+                                ui_command_statement(parent, action, &asset_server);
                             });
                         }
                     }
@@ -147,24 +148,30 @@ fn ui_sidebar_node() -> Node {
 fn ui_command_statement(
     parent: &mut RelatedSpawnerCommands<ChildOf>,
     action: &Action,
-    font_node: &TextFont,
+    asset_server: &Res<AssetServer>,
 ) {
-    parent
-        .spawn((
-            ControlUI,
-            Node {
-                align_items: AlignItems::Center,
-                ..default()
-            },
-        ))
-        .with_children(|builder| {
-            builder.spawn((
-                Text::new(action.moves.0.as_str()),
-                font_node.clone(),
-                TextLayout::new_with_justify(JustifyText::Center).with_no_wrap(),
-                TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-            ));
-        });
+    let image_move = asset_server.load(action.moves.0.img_path());
+    let slicer = TextureSlicer {
+        border: Default::default(),
+        center_scale_mode: SliceScaleMode::Stretch,
+        sides_scale_mode: SliceScaleMode::Stretch,
+        max_corner_scale: 1.0,
+    };
+    let move_node_for_img = Node {
+        height: Val::Percent(100.0),
+        aspect_ratio: Some(1.0f32),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        margin: UiRect::all(Val::Auto),
+        ..default()
+    };
+
+    let img_move_node = ImageNode {
+        image: image_move.clone(),
+        image_mode: NodeImageMode::Sliced(slicer.clone()),
+        ..default()
+    };
+    parent.spawn((ControlUI, move_node_for_img.clone(), img_move_node.clone()));
 }
 
 fn multi_robot_command_list(num_rovers: usize) -> Node {
@@ -188,7 +195,7 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
             display: Display::Grid,
             grid_template_columns: vec![GridTrack::flex(1.0)],
             grid_template_rows: RepeatedGridTrack::flex(MAX_COMMANDS, 1.0),
-            row_gap: Val::Px(0.0),
+            row_gap: Val::Px(5.0),
             column_gap: Val::Px(5.0),
             align_items: AlignItems::Center,
             ..default()
