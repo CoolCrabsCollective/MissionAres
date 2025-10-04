@@ -18,19 +18,33 @@ enum ActionType
     MoveDown,
     MoveLeft,
     MoveRight,
+    Wait
 }
 
 pub struct ActionController;
 
 #[derive(Clone)]
-struct Action
+pub struct Action
 {
-    moves: HashMap<ActionType, ROBOT>,
+    pub moves: (ActionType, ROBOT),
 }
 
 #[derive(Resource, Event, Clone)]
 pub struct ActionList {
-    actions: Vec<Action>,
+    pub actions: Vec<Action>,
+}
+
+// TODO: instead of putting strings we should list icons
+impl ActionType {
+    fn as_str(&self) -> &'static str {
+        match self {
+            ActionType::MoveUp => "UP",
+            ActionType::MoveDown => "DOWN",
+            ActionType::MoveLeft => "LEFT",
+            ActionType::MoveRight => "RIGHT",
+            ActionType::Wait => "WAIT",
+        }
+    }
 }
 
 impl Plugin for ActionController {
