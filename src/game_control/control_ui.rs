@@ -1,4 +1,6 @@
 use crate::game_control::actions::{Action, ActionList};
+use crate::level::GRADVM;
+use crate::level_spawner::ActiveLevel;
 use crate::title_screen::GameState;
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
@@ -38,14 +40,23 @@ fn update_action_list_ui(
     current_ui_elem_query: Query<Entity, With<ControlUI>>,
     all_rover_colors: Res<RoverColors>,
     asset_server: Res<AssetServer>,
+    active_level: Res<ActiveLevel>,
+    levels: Res<Assets<GRADVM>>,
 ) {
-    let font = TextFont {
-        font: asset_server.load("font.ttf"),
-        font_size: 40.0,
-        ..default()
-    };
+    if action_lists.is_empty() {
+        return;
+    }
+
+    let gradum = levels.get(
+        &match &active_level.0 {
+            Some(x) => x,
+            None => panic!("No active level"),
+        }
+        .clone(),
+    );
+
     for event in action_lists.read() {
-        let number_of_rovers = 3; //event.actions.len();
+        let number_of_rovers: usize = gradum.unwrap().NVMERVS_VEHICVLORVM_MOBILIVM as usize;
         println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
             if let Ok(_) = commands.get_entity(ui_element) {

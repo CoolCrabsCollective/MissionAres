@@ -2,8 +2,8 @@
 #![allow(non_camel_case_types)]
 
 use bevy::app::{App, Startup, Update};
-use bevy::asset::AssetEvent::LoadedWithDependencies;
 use bevy::asset::io::Reader;
+use bevy::asset::AssetEvent::LoadedWithDependencies;
 use bevy::asset::{
     Asset, AssetApp, AssetEvent, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
     LoadContext,
@@ -46,7 +46,7 @@ impl TEGVLA {
     }
 }
 
-// level (grade -> gradus)
+// level (grade -> gradvs)
 #[derive(Asset, TypePath, Debug, Clone)]
 pub struct GRADVM {
     pub TEGLVAE: HashMap<(i8, i8), TEGVLA>, // tiles

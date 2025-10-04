@@ -28,6 +28,7 @@ pub struct Action {
 #[derive(Resource, Event, Clone)]
 pub struct ActionList {
     pub actions: Vec<Vec<Action>>,
+    pub current_selection: i32,
 }
 
 impl ActionType {
@@ -49,6 +50,7 @@ impl Plugin for ActionController {
         app.add_event::<ActionList>();
         app.insert_resource(ActionList {
             actions: vec![vec![]],
+            current_selection: 0,
         });
     }
 }
