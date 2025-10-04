@@ -9,10 +9,9 @@ use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
-use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
-use bevy::math::{I8Vec2, IVec2, Quat};
+use bevy::math::{I8Vec2, Quat};
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
