@@ -1,6 +1,7 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::poop::RoverList;
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
@@ -8,9 +9,10 @@ use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
+use bevy::ecs::query::QueryData;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
-use bevy::math::Quat;
+use bevy::math::{I8Vec2, IVec2, Quat};
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
@@ -78,7 +80,12 @@ pub struct RoverEntity {
     pub is_setup: bool,
     pub base_color: Color,
     pub gltf_handle: Handle<Gltf>,
+    pub logical_position: I8Vec2,
+    pub battery_level: u8,
 }
+
+#[derive(Resource)]
+pub struct ActiveLevel(pub Option<Handle<GRADVM>>);
 
 impl Plugin for LevelSpawnerPlugin {
     fn build(&self, app: &mut App) {
@@ -222,9 +229,11 @@ fn load_level(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
+    mut active_level: ResMut<ActiveLevel>,
     mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
+    mut rover_list: ResMut<RoverList>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -256,8 +265,11 @@ fn load_level(
             })),
             Transform::from_xyz(0.0, 0.0, 0.0),
         ));
+        let mut num_rovers = 0;
         // Spawn cylinders at each tile position
         for ((x, z), tile) in level.TEGLVAE.iter() {
+            let logical_x = *x as i32;
+            let logical_z = *z as i32;
             let effective_x =
                 (*x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
             // mirror along the z to align correctly with how it looks in the level
@@ -276,6 +288,7 @@ fn load_level(
             // Store rover spawn position for the start tile
 
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
+                num_rovers += 1;
                 load_gltf(
                     String::from("rover.glb"),
                     GLTFLoadConfig {
@@ -291,7 +304,38 @@ fn load_level(
                                     is_setup: false,
                                     base_color: Color::srgb(0.5, 0.2, 0.8),
                                     gltf_handle: Default::default(),
+                                    logical_position: I8Vec2::new(
+                                        logical_x.try_into().unwrap(),
+                                        logical_z.try_into().unwrap(),
+                                    ),
+                                    battery_level: 3,
                                 })
+                                .insert(LevelElement);
+                        }),
+                        ..Default::default()
+                    },
+                    &asset_server,
+                    &mut mesh_loader,
+                );
+
+                rover_list.list.get_mut(num_rovers-1).unwrap().position =
+                    IVec2::new(*x as i32, *z as i32);
+            }
+
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::FINIS) {
+                load_gltf(
+                    String::from("mineral.glb"),
+                    GLTFLoadConfig {
+                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                            commands
+                                .insert(
+                                    // should spawn at the tile position
+                                    Transform::from_xyz(effective_x, 0.0, effective_z)
+                                        .with_scale(Vec3::splat(0.05 * TILE_SIZE))
+                                        .with_rotation(Quat::from_rotation_y(
+                                            random::<f32>() * PI * 2.0,
+                                        )),
+                                )
                                 .insert(LevelElement);
                         }),
                         ..Default::default()
@@ -354,6 +398,10 @@ fn load_level(
             })),
             Transform::from_xyz(random::<f32>(), 0.0, random::<f32>()),
         ));
+
+        active_level.0 = Some(event.level.clone());
+
+        action_list.actions.push(Action {
 
         action_list.actions.clear();
         action_list.actions.push(vec![]);
