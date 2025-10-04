@@ -1,11 +1,10 @@
-use crate::level::{GRADVS, GRADVS_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::sane_level::{LevelAssetStorage, LevelAssets, LevelHandle, TileType, get_level};
 use crate::scene_loader::SceneElement;
 use crate::title_screen::GameState;
-use bevy::asset::Handle;
-use bevy::prelude::{in_state, IntoScheduleConfigs, OnEnter};
+use bevy::prelude::{IntoScheduleConfigs, OnEnter, in_state};
 use bevy::{
-    app::{App, Plugin, Startup, Update},
+    app::{App, Plugin, Update},
     asset::AssetServer,
     ecs::{
         entity::Entity,
@@ -24,7 +23,7 @@ pub struct LevelSpawnerPlugin;
 
 #[derive(Event)]
 pub struct LevelSpawnRequestEvent {
-    level: Handle<GRADVS>,
+    level: LevelHandle,
 }
 
 // tile entity
@@ -48,34 +47,42 @@ impl Plugin for LevelSpawnerPlugin {
 
 fn debug_add_fake_level_load_event(
     mut events: EventWriter<LevelSpawnRequestEvent>,
-    levels: Res<GRADVS_ONVSTVS>,
+    levels: Res<LevelAssets>,
 ) {
-    events.write(LevelSpawnRequestEvent {
-        level: levels.GRADVS[0].clone(),
-    });
+    if let Some(level) = levels.get(0) {
+        events.write(LevelSpawnRequestEvent {
+            level: level.clone(),
+        });
+    }
 }
 
 fn choose_level_by_num_keys(
     input: Res<ButtonInput<KeyCode>>,
     mut events: EventWriter<LevelSpawnRequestEvent>,
-    levels: Res<GRADVS_ONVSTVS>,
+    levels: Res<LevelAssets>,
 ) {
     if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[0].clone(),
-        });
+        if let Some(level) = levels.get(0) {
+            events.write(LevelSpawnRequestEvent {
+                level: level.clone(),
+            });
+        }
     }
 
     if input.just_pressed(KeyCode::Numpad2) || input.just_pressed(KeyCode::Digit2) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[1].clone(),
-        });
+        if let Some(level) = levels.get(1) {
+            events.write(LevelSpawnRequestEvent {
+                level: level.clone(),
+            });
+        }
     }
 
     if input.just_pressed(KeyCode::Numpad3) || input.just_pressed(KeyCode::Digit3) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[2].clone(),
-        });
+        if let Some(level) = levels.get(2) {
+            events.write(LevelSpawnRequestEvent {
+                level: level.clone(),
+            });
+        }
     }
 }
 
@@ -86,7 +93,7 @@ fn load_level(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut asset_server: ResMut<AssetServer>,
     mut mesh_loader: ResMut<MeshLoader>,
-    levels: Res<Assets<GRADVS>>,
+    level_assets: Res<LevelAssetStorage>,
     tiles: Query<Entity, With<TileEntity>>,
     rovers: Query<Entity, With<RoverEntity>>,
 ) {
@@ -98,7 +105,8 @@ fn load_level(
         for rover in rovers.iter() {
             commands.entity(rover).despawn();
         }
-        let level = levels.get(&event.level);
+
+        let level = get_level(&event.level, &level_assets);
 
         if level.is_none() {
             continue;
@@ -106,10 +114,10 @@ fn load_level(
 
         let level = level.unwrap();
 
-        log::info!("Level loaded with {} tiles", level.TEGVLAE.len());
+        log::info!("Level loaded with {} tiles", level.tiles().len());
 
         // Spawn cylinders at each tile position
-        for ((x, z), tile) in level.TEGVLAE.iter() {
+        for ((x, z), tile) in level.tiles().iter() {
             spawn_tile_cylinder(
                 &mut commands,
                 &mut meshes,
@@ -122,7 +130,7 @@ fn load_level(
             let z_copy = *z;
 
             // Store rover spawn position for the start tile
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
+            if matches!(tile.tile_type, TileType::Start) {
                 load_gltf(
                     String::from("pistol_shrimp.glb"),
                     GLTFLoadConfig {
@@ -146,14 +154,14 @@ fn load_level(
 
         commands.spawn((
             TileEntity,
-            Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(15.0)))),
+            Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(asset_server.load("cutoff_texture.png")),
                 alpha_mode: AlphaMode::Mask(0.5),
                 cull_mode: None,
                 ..Default::default()
             })),
-            Transform::from_xyz(5.0, 10.0, 0.0),
+            Transform::from_xyz(0.0, 10.0, 0.0),
         ));
     }
 }
