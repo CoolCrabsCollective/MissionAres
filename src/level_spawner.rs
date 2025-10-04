@@ -2,7 +2,7 @@ use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
-use bevy::asset::Handle;
+use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
@@ -16,10 +16,12 @@ use bevy::pbr::{
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, Gltf,
-    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
+    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
+    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    Reflect, Resource,
 };
 use bevy::render::camera::TemporalJitter;
+use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
 use bevy::{
     app::{App, Plugin, Update},
@@ -328,13 +330,14 @@ fn load_level(
             }
         }
 
+        let plane_mesh_handle = meshes.add(create_mappae_umbrae_mesh(Vec2::new(
+            effective_level_width,
+            effective_level_height,
+        )));
         commands.spawn((
             LevelElement,
             TileEntity,
-            Mesh3d(meshes.add(Plane3d::new(
-                Vec3::Y,
-                Vec2::new(0.5 * effective_level_width, 0.5 * effective_level_height),
-            ))),
+            Mesh3d::from(plane_mesh_handle),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
                 alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
@@ -370,6 +373,36 @@ fn load_level(
         action_event.num_rovers = num_rovers;
         commands.send_event(action_event);
     }
+}
+
+fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
+    Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        vec![
+            [-0.5 * size.x, 0.0, -0.5 * size.y],
+            [0.5 * size.x, 0.0, -0.5 * size.y],
+            [0.5 * size.x, 0.0, 0.5 * size.y],
+            [-0.5 * size.x, 0.0, 0.5 * size.y],
+        ],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        vec![
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ],
+    )
+    .with_inserted_indices(Indices::U32(vec![0, 3, 1, 1, 3, 2]))
 }
 
 fn spawn_tile_cylinder(
