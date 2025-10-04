@@ -28,6 +28,7 @@ pub struct Action {
 
 #[derive(Resource, Event, Clone)]
 pub struct ActionList {
+    pub num_rovers: usize,
     pub actions: Vec<Action>,
 }
 
@@ -57,26 +58,9 @@ impl Robot {
 
 impl Plugin for ActionController {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Game), setup_actions);
         app.add_event::<ActionList>();
-        app.insert_resource(ActionList { actions: vec![] });
+        app.insert_resource(ActionList { num_rovers: 0, actions: vec![] });
     }
-}
-
-fn setup_actions(mut commands: Commands, mut action_list: ResMut<ActionList>) {
-    // Temp insert actions immediately
-    action_list.actions.push(Action {
-        moves: (ActionType::MoveUp, Robot::ROVER1),
-    });
-    action_list.actions.push(Action {
-        moves: (ActionType::MoveUp, Robot::ROVER1),
-    });
-    action_list.actions.push(Action {
-        moves: (ActionType::MoveRight, Robot::ROVER1),
-    });
-
-    let action_event = action_list.clone();
-    commands.send_event(action_event);
 }
 
 fn execute(mut commands: Commands, action_list: ResMut<ActionList>) {
