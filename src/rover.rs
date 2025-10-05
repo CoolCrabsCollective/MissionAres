@@ -1,5 +1,5 @@
 use crate::game_control::actions::{Action, ActionType};
-use crate::level::GRADVM;
+use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
@@ -35,6 +35,7 @@ pub struct ActionExecution {
     action_list: Vec<Vec<Action>>,
     active_action_idx: Vec<usize>,
     wait_time_start: Vec<f32>,
+    is_waiting: Vec<bool>,
 }
 
 pub struct RoverPlugin;
@@ -49,6 +50,7 @@ impl Plugin for RoverPlugin {
             action_list: vec![],
             active_action_idx: vec![0usize, 0usize],
             wait_time_start: vec![0.0],
+            is_waiting: vec![false],
         });
         app.add_event::<ActionListExecute>();
     }
@@ -68,11 +70,88 @@ fn setup_rover_colors(
     }
 }
 
+fn setup_action_movements(
+    rover: &mut RoverEntity,
+    active_level: &Res<ActiveLevel>,
+    levels: &Res<Assets<GRADVM>>,
+    action_execution: &mut ResMut<ActionExecution>,
+    robot_num: usize,
+    time: &Res<Time>,
+) {
+    // Setup first action movements, validate level boundary
+    let mut is_action_valid = true;
+    let current_log_pos = rover.logical_position;
+
+    let Some(level_handle) = &active_level.0 else {
+        return;
+    };
+    let level = levels.get(level_handle).unwrap();
+
+    let actions = &action_execution.action_list[robot_num];
+
+    let action = actions
+        .get(action_execution.active_action_idx[robot_num])
+        .unwrap();
+
+    match action.moves.0 {
+        ActionType::MoveUp => {
+            rover.logical_position += I8Vec2::new(0, 1);
+
+            if !is_pos_in_level(level, &rover.logical_position) {
+                is_action_valid = false;
+            }
+        }
+        ActionType::MoveDown => {
+            if rover.logical_position.y == 0 {
+                is_action_valid = false;
+            } else {
+                rover.logical_position -= I8Vec2::new(0, 1);
+
+                if !is_pos_in_level(level, &rover.logical_position) {
+                    is_action_valid = false;
+                }
+            }
+        }
+        ActionType::MoveLeft => {
+            if rover.logical_position.x == 0 {
+                is_action_valid = false;
+            } else {
+                rover.logical_position -= I8Vec2::new(1, 0);
+
+                if !is_pos_in_level(level, &rover.logical_position) {
+                    is_action_valid = false;
+                }
+            }
+        }
+        ActionType::MoveRight => {
+            rover.logical_position += I8Vec2::new(1, 0);
+
+            if !is_pos_in_level(level, &rover.logical_position) {
+                is_action_valid = false;
+            }
+        }
+        ActionType::Wait => {
+            action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
+            action_execution.is_waiting[robot_num] = true;
+        }
+    }
+
+    dbg!(is_action_valid);
+    if !is_action_valid {
+        action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
+        action_execution.is_waiting[robot_num] = true;
+
+        rover.logical_position = current_log_pos;
+    }
+}
+
 fn start_execution(
     mut events: EventReader<ActionListExecute>,
     mut action_execution: ResMut<ActionExecution>,
     mut rover_query: Query<(&mut RoverEntity)>,
     time: Res<Time>,
+    active_level: Res<ActiveLevel>,
+    levels: Res<Assets<GRADVM>>,
 ) {
     for event in events.read() {
         action_execution.is_active = true;
@@ -85,37 +164,21 @@ fn start_execution(
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
 
-            let actions = &action_execution.action_list[robot_num];
-
-            let action = actions
-                .get(action_execution.active_action_idx[robot_num])
-                .unwrap();
-
             // Setup first action movements, validate level boundary
-            match action.moves.0 {
-                ActionType::MoveUp => {
-                    rover.logical_position += I8Vec2::new(0, 1);
-                }
-                ActionType::MoveDown => {
-                    rover.logical_position -= I8Vec2::new(0, 1);
-                }
-                ActionType::MoveLeft => {
-                    rover.logical_position -= I8Vec2::new(1, 0);
-                }
-                ActionType::MoveRight => {
-                    rover.logical_position += I8Vec2::new(1, 0);
-                }
-                ActionType::Wait => {
-                    action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
-                }
-            }
+            setup_action_movements(
+                &mut rover,
+                &active_level,
+                &levels,
+                &mut action_execution,
+                robot_num,
+                &time,
+            );
         }
     }
 }
 
 fn action_execution(
     mut commands: Commands,
-    mut events: EventReader<ActionListExecute>,
     mut rover_query: Query<(Entity, &mut RoverEntity, &mut Transform), With<RoverEntity>>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
@@ -132,17 +195,11 @@ fn action_execution(
         let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
 
         // Iterate through each robot and move them progressively towards the next tile based on action
-        for (mut entity, mut rover, mut trans) in rover_query.iter_mut() {
+        for (_, mut rover, mut trans) in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
 
-            let actions = &action_execution.action_list[robot_num];
-
-            let action = actions
-                .get(action_execution.active_action_idx[robot_num])
-                .unwrap();
-
             // If in wait, skip rest of loop logic
-            if action.moves.0 == ActionType::Wait {
+            if action_execution.is_waiting[robot_num] {
                 let current_time = time.elapsed_secs_wrapped();
 
                 let wait_duration = current_time - action_execution.wait_time_start[robot_num];
@@ -151,6 +208,8 @@ fn action_execution(
                     action_execution.active_action_idx[robot_num] += 1;
                     action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
                     commands.send_event(PuzzleEvaluationRequestEvent);
+
+                    action_execution.is_waiting[robot_num] = false;
                 }
 
                 continue;
@@ -205,6 +264,8 @@ fn continue_execution(
     mut events: EventReader<PuzzleResponseEvent>,
     mut action_execution: ResMut<ActionExecution>,
     mut rover_query: Query<&mut RoverEntity>,
+    active_level: Res<ActiveLevel>,
+    levels: Res<Assets<GRADVM>>,
     time: Res<Time>,
 ) {
     for event in events.read() {
@@ -215,32 +276,15 @@ fn continue_execution(
             for mut rover in rover_query.iter_mut() {
                 let robot_num = rover.identifier as usize;
 
-                let actions = &action_execution.action_list[robot_num];
-
-                let Some(action) = actions.get(action_execution.active_action_idx[robot_num])
-                else {
-                    log::error!("No more actions for robot {}", robot_num);
-                    continue;
-                };
-
                 // Setup first action movements, validate level boundary
-                match action.moves.0 {
-                    ActionType::MoveUp => {
-                        rover.logical_position += I8Vec2::new(0, 1);
-                    }
-                    ActionType::MoveDown => {
-                        rover.logical_position -= I8Vec2::new(0, 1);
-                    }
-                    ActionType::MoveLeft => {
-                        rover.logical_position -= I8Vec2::new(1, 0);
-                    }
-                    ActionType::MoveRight => {
-                        rover.logical_position += I8Vec2::new(1, 0);
-                    }
-                    ActionType::Wait => {
-                        action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
-                    }
-                }
+                setup_action_movements(
+                    &mut rover,
+                    &active_level,
+                    &levels,
+                    &mut action_execution,
+                    robot_num,
+                    &time,
+                );
             }
         }
     }
