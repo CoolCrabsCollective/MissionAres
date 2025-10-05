@@ -129,13 +129,13 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
 
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 250.0,
+        brightness: 700.0,
         affects_lightmapped_meshes: true,
     });
     commands.spawn((
         DirectionalLight {
             color: Color::WHITE,
-            illuminance: 2000.0,
+            illuminance: 1000.0,
             shadows_enabled: true,
             affects_lightmapped_mesh_diffuse: true,
             ..Default::default()
@@ -169,14 +169,6 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
             image: skybox_handle.clone(),
             brightness: 1000.0,
             rotation: Default::default(),
-        },
-        DistanceFog {
-            color: Color::srgb(0.8, 0.35, 0.2),
-            falloff: FogFalloff::Linear {
-                start: 500.0,
-                end: 600.0,
-            },
-            ..default()
         },
         Msaa::Off,
         ScreenSpaceAmbientOcclusion {
