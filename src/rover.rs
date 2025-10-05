@@ -14,12 +14,15 @@ const SPEED: f32 = 5.0;
 const WAIT_TIME: f32 = 1.0;
 const TURN_SPEED: f32 = 2.5;
 
+#[derive(Clone)]
 pub enum CardinalDirection {
     UP,
     RIGHT,
     LEFT,
     DOWN,
 }
+
+#[derive(Clone)]
 pub enum RoverStates {
     Standby,
     Moving(CardinalDirection),
