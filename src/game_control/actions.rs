@@ -34,11 +34,11 @@ pub struct ActionList {
 impl ActionType {
     pub(crate) fn img_path(&self) -> &'static str {
         match self {
-            ActionType::MoveUp => "command_icons/up.png",
-            ActionType::MoveDown => "command_icons/down.png",
-            ActionType::MoveLeft => "command_icons/left.png",
-            ActionType::MoveRight => "command_icons/right.png",
-            ActionType::Wait => "command_icons/wait.png",
+            ActionType::MoveUp => "command_icons/arrow_up_outlined.png",
+            ActionType::MoveDown => "command_icons/arrow_down_outlined.png",
+            ActionType::MoveLeft => "command_icons/arrow_left_outlined.png",
+            ActionType::MoveRight => "command_icons/arrow_right_outlined.png",
+            ActionType::Wait => "command_icons/clock_outlined.png",
         }
     }
 }
