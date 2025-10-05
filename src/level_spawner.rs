@@ -5,7 +5,7 @@ use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
-use crate::rover::{RoverEntity, RoverPlugin};
+use crate::rover::{RoverEntity, RoverPlugin, RoverStates};
 use crate::title_screen::GameState;
 use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
@@ -425,6 +425,7 @@ fn load_level(
                                     battery_level: 3,
                                     identifier: num_rovers - 1,
                                     heading: -PI / 2.0,
+                                    rover_state: RoverStates::Standby,
                                 })
                                 .insert(LevelElement)
                                 .insert(AnimationPlayer::default())
