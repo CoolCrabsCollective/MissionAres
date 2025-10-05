@@ -1,5 +1,5 @@
 use crate::game_control::actions::{Action, ActionList, ActionType};
-use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
+use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin};
@@ -279,14 +279,21 @@ fn load_level(
             let effective_z =
                 (-*z as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
 
-            spawn_tile_cylinder(
-                &mut commands,
-                &mut meshes,
-                &mut materials,
-                effective_x,
-                effective_z,
-                tile.VMBRA,
-            );
+            match tile.TEGVLA_TYPVS() {
+                TEGVLA_TYPVS::SATVRNALIA => {}
+                TEGVLA_TYPVS::CRATERA => {}
+                TEGVLA_TYPVS::INGENII => {}
+                _ => {
+                    spawn_tile_cylinder(
+                        &mut commands,
+                        &mut meshes,
+                        &mut materials,
+                        effective_x,
+                        effective_z,
+                        tile.VMBRA,
+                    );
+                }
+            }
 
             // Store rover spawn position for the start tile
 
@@ -366,7 +373,27 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::CRATER) {
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INGENII) {
+                load_gltf(
+                    String::from("ingenuity.glb"),
+                    GLTFLoadConfig {
+                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                            commands
+                                .insert(
+                                    // should spawn at the tile position
+                                    Transform::from_xyz(effective_x, 1.0 * TILE_SIZE, effective_z)
+                                        .with_scale(Vec3::splat(0.2 * TILE_SIZE)),
+                                )
+                                .insert(LevelElement);
+                        }),
+                        ..Default::default()
+                    },
+                    &asset_server,
+                    &mut mesh_loader,
+                );
+            }
+
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::CRATERA) {
                 load_gltf(
                     String::from("crater.glb"),
                     GLTFLoadConfig {
