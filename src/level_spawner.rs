@@ -171,7 +171,7 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
         Transform::default(),
         Skybox {
             image: skybox_handle.clone(),
-            brightness: 1000.0,
+            brightness: 2000.0,
             rotation: Default::default(),
         },
         Msaa::Off,
