@@ -1,15 +1,15 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::puzzle_evaluation::{PuzzleFailedEvent, PuzzleSolvedEvent};
 use crate::rover::RoverEntity;
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
-use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
 use bevy::math::{I8Vec2, Quat};
@@ -18,9 +18,9 @@ use bevy::pbr::{
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges, Gltf,
-    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
-    default, in_state,
+    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
+    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    Reflect, Resource,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -43,6 +43,7 @@ use bevy::{
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
 use rand::random;
+use std::cmp::{max, min};
 use std::f32::consts::PI;
 
 pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =
@@ -59,7 +60,7 @@ pub struct LevelElement;
 
 pub const TILE_SIZE: f32 = 2.0;
 pub const LEVEL_SHADOW_ALPHA_MASK: f32 = 0.5;
-pub const ROCK_PADDING: i32 = 10;
+pub const ROCK_PADDING: i32 = 5;
 
 pub struct LevelSpawnerPlugin;
 
@@ -343,20 +344,39 @@ fn load_level(
         for x in -ROCK_PADDING..level.LATIVIDO as i32 + ROCK_PADDING {
             for y in -ROCK_PADDING..level.ALTIVIDO as i32 + ROCK_PADDING {
                 let key = (x as i8, level.ALTIVIDO - y as i8);
-                if x >= 0
-                    && x < level.LATIVIDO as i32
-                    && y >= 0
-                    && y < level.ALTIVIDO as i32
-                    && level.TEGLVAE.contains_key(&key)
+                if x >= 0 && x < level.LATIVIDO as i32 && y >= 0 && y < level.ALTIVIDO as i32
+                //&& level.TEGLVAE.contains_key(&key)
                 {
                     continue;
                 }
+                let distance_x = if x < 0 {
+                    -x
+                } else {
+                    x - level.LATIVIDO as i32 + 1
+                };
+                let distance_y = if y < 0 {
+                    -y
+                } else {
+                    y - level.ALTIVIDO as i32 + 1
+                };
+                let distance = max(0, max(distance_x, distance_y));
+
+                if distance == 1 {
+                    continue;
+                }
+
                 let effective_x =
                     (x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
                 let effective_z =
                     (y as f32 * TILE_SIZE - effective_level_height / 2.0) + TILE_SIZE / 2.0;
 
-                spawn_rock(effective_x, effective_z, &asset_server, &mut mesh_loader);
+                spawn_rock(
+                    effective_x,
+                    effective_z,
+                    distance,
+                    &asset_server,
+                    &mut mesh_loader,
+                );
             }
         }
 
@@ -375,7 +395,7 @@ fn load_level(
                 unlit: true,
                 ..Default::default()
             })),
-            Transform::from_xyz(0.0, 10.0, 0.0),
+            Transform::from_xyz(0.0, 30.0, 0.0),
         ));
 
         // debug sphere to show the center of the level
@@ -470,9 +490,11 @@ fn spawn_tile_cylinder(
 fn spawn_rock(
     x: f32,
     z: f32,
+    distance: i32,
     asset_server: &Res<AssetServer>,
     mesh_loader: &mut ResMut<MeshLoader>,
 ) {
+    let base_size: f32 = distance as f32 * 0.15;
     load_gltf(
         String::from("rock.glb"),
         GLTFLoadConfig {
@@ -480,9 +502,15 @@ fn spawn_rock(
                 commands
                     .insert(
                         // should spawn at the tile position
-                        Transform::from_xyz(x, 0.0, z)
-                            .with_scale(Vec3::splat((0.25 + random::<f32>() * 0.25) * TILE_SIZE))
-                            .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
+                        Transform::from_xyz(
+                            x + random::<f32>() * 0.6 - 0.3,
+                            0.0,
+                            z + random::<f32>() * 0.6 - 0.3,
+                        )
+                        .with_scale(Vec3::splat(
+                            ((1.0 + random::<f32>()) * base_size) * TILE_SIZE,
+                        ))
+                        .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
                     )
                     .insert(LevelElement);
             }),
