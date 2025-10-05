@@ -347,6 +347,46 @@ fn load_level(
                     &mut mesh_loader,
                 );
             }
+
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::SATVRNALIA) {
+                load_gltf(
+                    String::from("dish.glb"),
+                    GLTFLoadConfig {
+                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                            commands
+                                .insert(
+                                    // should spawn at the tile position
+                                    Transform::from_xyz(effective_x, 0.0, effective_z)
+                                        .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
+                                )
+                                .insert(LevelElement);
+                        }),
+                        ..Default::default()
+                    },
+                    &asset_server,
+                    &mut mesh_loader,
+                );
+            }
+
+            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::CRATER) {
+                load_gltf(
+                    String::from("crater.glb"),
+                    GLTFLoadConfig {
+                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                            commands
+                                .insert(
+                                    // should spawn at the tile position
+                                    Transform::from_xyz(effective_x, 0.0, -effective_z)
+                                        .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
+                                )
+                                .insert(LevelElement);
+                        }),
+                        ..Default::default()
+                    },
+                    &asset_server,
+                    &mut mesh_loader,
+                );
+            }
         }
 
         log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
