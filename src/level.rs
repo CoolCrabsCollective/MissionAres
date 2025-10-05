@@ -40,7 +40,8 @@ pub enum TEGVLA_TYPVS {
     FINIS,   // finish
     SEMITA,  // path
     SATVRNALIA,
-    CRATER,
+    CRATERA,
+    INGENII,
 }
 
 impl TEGVLA {
@@ -159,11 +160,20 @@ impl AssetLoader for GRADVM_ORENATOR {
                             },
                         );
                     }
+                    'I' => {
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
+                            TEGVLA {
+                                TYPVS: TEGVLA_TYPVS::INGENII,
+                                VMBRA: false,
+                            },
+                        );
+                    }
                     'C' => {
                         GRADVS.TEGLVAE.insert(
                             (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
-                                TYPVS: TEGVLA_TYPVS::CRATER,
+                                TYPVS: TEGVLA_TYPVS::CRATERA,
                                 VMBRA: false,
                             },
                         );
