@@ -1,6 +1,6 @@
-use crate::game_control::actions::{Action, ActionList, ActionType};
+use crate::game_control::actions::{ActionList, ActionType};
 use crate::hentai_anime::HentaiAnimePlugin;
-use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA, TEGVLA_TYPVS};
+use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
@@ -16,16 +16,15 @@ use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAn
 use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
-use bevy::math::primitives::Sphere;
 use bevy::math::{I8Vec2, Quat};
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
-    DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
+    ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
-    DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource, Without,
+    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, GlobalTransform,
+    Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
+    Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -382,18 +381,21 @@ fn load_level(
             // mirror along the z to align correctly with how it looks in the level
             let effective_z = (-*z as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0;
 
+            let tile_pos = (*x, *z);
+
             match tile.TYPVS {
                 TEGVLA_TYPVS::SATVRNALIA => {}
                 TEGVLA_TYPVS::CRATERA => {}
                 TEGVLA_TYPVS::INGENII => {}
                 _ => {
-                    spawn_tile_cylinder(
+                    spawn_tile(
                         &mut commands,
                         &asset_server,
                         &mut mesh_loader,
                         effective_x,
                         effective_z,
                         tile.VMBRA,
+                        level.NEXVS.contains_key(&tile_pos),
                     );
                 }
             }
@@ -696,13 +698,14 @@ fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
     .with_inserted_indices(Indices::U32(vec![0, 3, 1, 1, 3, 2]))
 }
 
-fn spawn_tile_cylinder(
+fn spawn_tile(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
     mesh_loader: &mut ResMut<MeshLoader>,
     x: f32,
     z: f32,
     umbra: bool,
+    connected: bool,
 ) {
     load_gltf(
         String::from("path.glb"),
@@ -723,6 +726,30 @@ fn spawn_tile_cylinder(
         &asset_server,
         mesh_loader,
     );
+
+    if connected {
+        load_gltf(
+            String::from("plate.glb"),
+            GLTFLoadConfig {
+                entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                    commands
+                        .insert(
+                            // should spawn at the tile position
+                            Transform::from_xyz(x, 0.05, z)
+                                .with_scale(Vec3::splat(0.2 * TILE_SIZE))
+                                .with_rotation(Quat::from_rotation_y(
+                                    random::<i8>() as f32 * PI / 2.0,
+                                )),
+                        )
+                        .insert(LevelElement)
+                        .insert(TileEntity);
+                }),
+                ..default()
+            },
+            &asset_server,
+            mesh_loader,
+        );
+    }
 }
 
 fn spawn_rock(
