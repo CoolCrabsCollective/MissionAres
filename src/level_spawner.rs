@@ -1,10 +1,12 @@
 use crate::game_control::actions::{Action, ActionList, ActionType};
+use crate::hentai_anime::HentaiAnimePlugin;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin};
 use crate::title_screen::GameState;
+use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
@@ -104,6 +106,7 @@ impl Plugin for LevelSpawnerPlugin {
         ));
 
         app.add_plugins(RoverPlugin);
+        app.add_plugins(HentaiAnimePlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(TemporalAntiAliasPlugin);
@@ -129,13 +132,13 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
 
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 250.0,
+        brightness: 700.0,
         affects_lightmapped_meshes: true,
     });
     commands.spawn((
         DirectionalLight {
             color: Color::WHITE,
-            illuminance: 2000.0,
+            illuminance: 1000.0,
             shadows_enabled: true,
             affects_lightmapped_mesh_diffuse: true,
             ..Default::default()
@@ -169,14 +172,6 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
             image: skybox_handle.clone(),
             brightness: 1000.0,
             rotation: Default::default(),
-        },
-        DistanceFog {
-            color: Color::srgb(0.8, 0.35, 0.2),
-            falloff: FogFalloff::Linear {
-                start: 500.0,
-                end: 600.0,
-            },
-            ..default()
         },
         Msaa::Off,
         ScreenSpaceAmbientOcclusion {
@@ -257,8 +252,8 @@ fn load_level(
 
         log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
 
-        let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
-        let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+        let level_width = level.LATIVIDO as f32 * TILE_SIZE;
+        let level_height = level.ALTIVIDO as f32 * TILE_SIZE;
 
         commands.spawn((
             LevelElement,
@@ -276,21 +271,19 @@ fn load_level(
         for ((x, z), tile) in level.TEGLVAE.iter() {
             let logical_x = *x as i32;
             let logical_z = *z as i32;
-            let effective_x =
-                (*x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+            let effective_x = (*x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
             // mirror along the z to align correctly with how it looks in the level
-            let effective_z =
-                (-*z as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
+            let effective_z = (-*z as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0;
 
-            match tile.TEGVLA_TYPVS() {
+            match tile.TYPVS {
                 TEGVLA_TYPVS::SATVRNALIA => {}
                 TEGVLA_TYPVS::CRATERA => {}
                 TEGVLA_TYPVS::INGENII => {}
                 _ => {
                     spawn_tile_cylinder(
                         &mut commands,
-                        &mut meshes,
-                        &mut materials,
+                        &asset_server,
+                        &mut mesh_loader,
                         effective_x,
                         effective_z,
                         tile.VMBRA,
@@ -300,7 +293,7 @@ fn load_level(
 
             // Store rover spawn position for the start tile
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::INITIVM) {
                 num_rovers += 1;
                 load_gltf(
                     String::from("rover.glb"),
@@ -323,7 +316,10 @@ fn load_level(
                                     ),
                                     battery_level: 3,
                                     identifier: num_rovers - 1,
+                                    heading: -PI / 2.0,
                                 })
+                                .insert(LevelElement)
+                                .insert(AnimationPlayer::default())
                                 .insert(LevelElement)
                                 .insert(DustSpawner {
                                     timer: Timer::from_seconds(0.4, TimerMode::Repeating),
@@ -336,7 +332,7 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::FINIS) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS) {
                 load_gltf(
                     String::from("mineral.glb"),
                     GLTFLoadConfig {
@@ -359,7 +355,7 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::SATVRNALIA) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
                 load_gltf(
                     String::from("dish.glb"),
                     GLTFLoadConfig {
@@ -379,7 +375,7 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INGENII) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::INGENII) {
                 load_gltf(
                     String::from("ingenuity.glb"),
                     GLTFLoadConfig {
@@ -399,7 +395,7 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::CRATERA) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::CRATERA) {
                 load_gltf(
                     String::from("crater.glb"),
                     GLTFLoadConfig {
@@ -407,7 +403,7 @@ fn load_level(
                             commands
                                 .insert(
                                     // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, -effective_z)
+                                    Transform::from_xyz(effective_x, 0.0, effective_z)
                                         .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
                                 )
                                 .insert(LevelElement);
@@ -418,6 +414,22 @@ fn load_level(
                     &mut mesh_loader,
                 );
             }
+        }
+
+        for (start, end) in level.NEXVS.iter() {
+            if start > end {
+                continue;
+            }
+
+            let start = Vec2::new(
+                (start.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
+                (-start.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
+            );
+            let end = Vec2::new(
+                (end.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
+                (-end.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
+            );
+            spawn_wire(&mut commands, &mut meshes, &mut materials, start, end);
         }
 
         log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
@@ -447,10 +459,8 @@ fn load_level(
                     continue;
                 }
 
-                let effective_x =
-                    (x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
-                let effective_z =
-                    (y as f32 * TILE_SIZE - effective_level_height / 2.0) + TILE_SIZE / 2.0;
+                let effective_x = (x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
+                let effective_z = (y as f32 * TILE_SIZE - level_height / 2.0) + TILE_SIZE / 2.0;
 
                 spawn_rock(
                     effective_x,
@@ -462,23 +472,14 @@ fn load_level(
             }
         }
 
-        let plane_mesh_handle = meshes.add(create_mappae_umbrae_mesh(Vec2::new(
-            effective_level_width,
-            effective_level_height,
-        )));
-        commands.spawn((
-            LevelElement,
-            TileEntity,
-            Mesh3d::from(plane_mesh_handle),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
-                alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
-                cull_mode: None,
-                unlit: true,
-                ..Default::default()
-            })),
-            Transform::from_xyz(0.0, 30.0, 0.0),
-        ));
+        spawn_umbra(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            level_width,
+            level_height,
+            level.MAPPAE_VREMBRAE.clone(),
+        );
 
         // debug sphere to show the center of the level
         commands.spawn((
@@ -506,7 +507,35 @@ fn load_level(
     }
 }
 
+fn spawn_umbra(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    level_width: f32,
+    level_height: f32,
+    image: Handle<Image>,
+) {
+    let plane_mesh_handle = meshes.add(create_mappae_umbrae_mesh(Vec2::new(
+        level_width,
+        level_height,
+    )));
+    commands.spawn((
+        LevelElement,
+        TileEntity,
+        Mesh3d::from(plane_mesh_handle),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(image),
+            alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
+            cull_mode: None,
+            unlit: true,
+            ..Default::default()
+        })),
+        Transform::from_xyz(0.0, 30.0, 0.0),
+    ));
+}
+
 fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
+    let uv_padding = 20.0;
     Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
@@ -514,15 +543,36 @@ fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
     .with_inserted_attribute(
         Mesh::ATTRIBUTE_POSITION,
         vec![
-            [-0.5 * size.x, 0.0, -0.5 * size.y],
-            [0.5 * size.x, 0.0, -0.5 * size.y],
-            [0.5 * size.x, 0.0, 0.5 * size.y],
-            [-0.5 * size.x, 0.0, 0.5 * size.y],
+            [
+                -0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                -0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
+            [
+                0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                -0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
+            [
+                0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
+            [
+                -0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
         ],
     )
     .with_inserted_attribute(
         Mesh::ATTRIBUTE_UV_0,
-        vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+        vec![
+            [-uv_padding, -uv_padding],
+            [1.0 + uv_padding, -uv_padding],
+            [1.0 + uv_padding, 1.0 + uv_padding],
+            [-uv_padding, 1.0 + uv_padding],
+        ],
     )
     .with_inserted_attribute(
         Mesh::ATTRIBUTE_NORMAL,
@@ -538,26 +588,31 @@ fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
 
 fn spawn_tile_cylinder(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    asset_server: &Res<AssetServer>,
+    mesh_loader: &mut ResMut<MeshLoader>,
     x: f32,
     z: f32,
     umbra: bool,
 ) {
-    commands.spawn((
-        LevelElement,
-        Mesh3d(meshes.add(Cylinder::new(0.25 * TILE_SIZE, 0.1))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: if umbra {
-                Color::srgb(0.5, 0.5, 0.8)
-            } else {
-                Color::srgb(0.8, 0.5, 0.5)
-            },
-            ..Default::default()
-        })),
-        Transform::from_xyz(x, 0.0, z),
-        TileEntity,
-    ));
+    load_gltf(
+        String::from("path.glb"),
+        GLTFLoadConfig {
+            entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                commands
+                    .insert(
+                        // should spawn at the tile position
+                        Transform::from_xyz(x, 0.0, z)
+                            .with_scale(Vec3::splat(0.4 * TILE_SIZE))
+                            .with_rotation(Quat::from_rotation_y(random::<i8>() as f32 * PI / 2.0)),
+                    )
+                    .insert(LevelElement)
+                    .insert(TileEntity);
+            }),
+            ..default()
+        },
+        &asset_server,
+        mesh_loader,
+    );
 }
 
 fn spawn_rock(
@@ -592,6 +647,34 @@ fn spawn_rock(
         &asset_server,
         mesh_loader,
     );
+}
+
+fn spawn_wire(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    start: Vec2,
+    end: Vec2,
+) {
+    let middle = (start + end) / 2.0;
+    let angle = (end - start).to_angle();
+    let len = (end - start).length();
+
+    let mut transform = Transform::default();
+    transform.rotate_z(PI / 2.0);
+    transform.rotate_y(-angle);
+    transform.translation = Vec3::new(middle.x, 0.0, middle.y);
+
+    commands.spawn((
+        LevelElement,
+        Mesh3d(meshes.add(Cylinder::new(0.02 * TILE_SIZE, len))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.1, 0.1, 0.1),
+            ..Default::default()
+        })),
+        transform,
+        TileEntity,
+    ));
 }
 
 fn debug_render_toggle(mut context: ResMut<DebugRenderContext>, keys: Res<ButtonInput<KeyCode>>) {

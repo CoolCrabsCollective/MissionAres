@@ -35,9 +35,9 @@ fn main() {
     let mut app = App::new();
 
     let default_sampler = ImageSamplerDescriptor {
-        address_mode_u: ImageAddressMode::from(AddressMode::Repeat),
-        address_mode_v: ImageAddressMode::from(AddressMode::Repeat),
-        address_mode_w: ImageAddressMode::from(AddressMode::Repeat),
+        address_mode_u: ImageAddressMode::from(AddressMode::ClampToEdge),
+        address_mode_v: ImageAddressMode::from(AddressMode::ClampToEdge),
+        address_mode_w: ImageAddressMode::from(AddressMode::ClampToEdge),
         mag_filter: ImageFilterMode::from(FilterMode::Linear),
         min_filter: ImageFilterMode::from(FilterMode::Linear),
         mipmap_filter: ImageFilterMode::from(FilterMode::Linear),

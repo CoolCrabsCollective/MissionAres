@@ -31,7 +31,7 @@ pub fn particle_opacity_update(
             1.0 - slerp_val
         };
 
-        let m = meshes.get_mut(material);
+        // let m = meshes.get_mut(material);
     }
 }
 

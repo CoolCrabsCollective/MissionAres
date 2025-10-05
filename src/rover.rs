@@ -1,13 +1,18 @@
 use crate::game_control::actions::{Action, ActionType};
+use crate::hentai_anime::Animation;
 use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
+use bevy::math::ops::abs;
+use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
 use bevy::prelude::*;
+use std::f32::consts::PI;
 
 const SPEED: f32 = 5.0;
 const WAIT_TIME: f32 = 1.0;
+const TURN_SPEED: f32 = 2.5;
 
 enum RoverStates {
     Standby,
@@ -22,6 +27,7 @@ pub struct RoverEntity {
     pub logical_position: I8Vec2,
     pub battery_level: u8,
     pub identifier: u8,
+    pub heading: f32,
 }
 
 #[derive(Event)]
@@ -36,6 +42,7 @@ pub struct ActionExecution {
     active_action_idx: Vec<usize>,
     wait_time_start: Vec<f32>,
     is_waiting: Vec<bool>,
+    is_turning: Vec<bool>,
 }
 
 pub struct RoverPlugin;
@@ -51,6 +58,7 @@ impl Plugin for RoverPlugin {
             active_action_idx: vec![0usize, 0usize],
             wait_time_start: vec![0.0],
             is_waiting: vec![false],
+            is_turning: vec![false],
         });
         app.add_event::<ActionListExecute>();
     }
@@ -91,11 +99,51 @@ fn setup_action_movements(
 
     let action = actions
         .get(action_execution.active_action_idx[robot_num])
-        .unwrap();
+        .unwrap(); //todo! THIS CRASHES ON LEVEL 3
+    // stack trace:
+    // plz fix
+    // 2025-10-05T15:59:42.139519Z  INFO bevy_quickstart_game::puzzle_evaluation: Rover 0 in position [4, 3] battery level from 3 to: 2
+    //
+    // thread 'Compute Task Pool (1)' panicked at src/rover.rs:102:10:
+    // called `Option::unwrap()` on a `None` value
+    // stack backtrace:
+    //    0: __rustc::rust_begin_unwind
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/std/src/panicking.rs:697:5
+    //    1: core::panicking::panic_fmt
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:75:14
+    //    2: core::panicking::panic
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:145:5
+    //    3: core::option::unwrap_failed
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/option.rs:2130:5
+    //    4: core::option::Option<T>::unwrap
+    //              at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1009:21
+    //    5: bevy_quickstart_game::rover::setup_action_movements
+    //              at ./src/rover.rs:102:10
+    //    6: bevy_quickstart_game::rover::continue_execution
+    //              at ./src/rover.rs:343:17
+    //    7: core::ops::function::FnMut::call_mut
+    //              at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:168:5
+    //    8: core::ops::function::impls::<impl core::ops::function::FnMut<A> for &mut F>::call_mut
+    //              at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:301:21
+    //    9: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5) .> Out>>::run::call_inner
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:945:21
+    //   10: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5) .> Out>>::run
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:948:17
+    //   11: <bevy_ecs::system::function_system::FunctionSystem<Marker,F> as bevy_ecs::system::system::System>::run_unsafe
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:735:29
+    //   12: <bevy_ecs::system::schedule_system::InfallibleSystemWrapper<S> as bevy_ecs::system::system::System>::run_unsafe
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/schedule_system.rs:68:16
+    // note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+    // Encountered a panic in system `bevy_quickstart_game::rover::continue_execution`!
+    // Encountered a panic in system `bevy_app::main_schedule::Main::run_main`!
+
+    let mut new_heading = rover.heading;
 
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
+
+            new_heading = -PI / 2.0;
 
             if !is_pos_in_level(level, &rover.logical_position) {
                 is_action_valid = false;
@@ -106,6 +154,8 @@ fn setup_action_movements(
                 is_action_valid = false;
             } else {
                 rover.logical_position -= I8Vec2::new(0, 1);
+
+                new_heading = PI / 2.0;
 
                 if !is_pos_in_level(level, &rover.logical_position) {
                     is_action_valid = false;
@@ -118,6 +168,8 @@ fn setup_action_movements(
             } else {
                 rover.logical_position -= I8Vec2::new(1, 0);
 
+                new_heading = -PI;
+
                 if !is_pos_in_level(level, &rover.logical_position) {
                     is_action_valid = false;
                 }
@@ -125,6 +177,8 @@ fn setup_action_movements(
         }
         ActionType::MoveRight => {
             rover.logical_position += I8Vec2::new(1, 0);
+
+            new_heading = PI;
 
             if !is_pos_in_level(level, &rover.logical_position) {
                 is_action_valid = false;
@@ -136,12 +190,16 @@ fn setup_action_movements(
         }
     }
 
-    dbg!(is_action_valid);
     if !is_action_valid {
         action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
         action_execution.is_waiting[robot_num] = true;
 
         rover.logical_position = current_log_pos;
+    } else {
+        if rover.heading != new_heading {
+            action_execution.is_turning[robot_num] = true;
+            rover.heading = new_heading;
+        }
     }
 }
 
@@ -152,8 +210,20 @@ fn start_execution(
     time: Res<Time>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
+    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), With<RoverEntity>>,
 ) {
     for event in events.read() {
+        if action_execution.is_active {
+            return; // Avoid double execution
+        }
+
+        // Start animations
+        for (mut player, animation) in player_query.iter_mut() {
+            for hentai in &animation.animation_list {
+                player.play(hentai.clone()).repeat();
+            }
+        }
+
         action_execution.is_active = true;
 
         action_execution.action_list = event.action_list.clone();
@@ -184,6 +254,7 @@ fn action_execution(
     levels: Res<Assets<GRADVM>>,
     mut action_execution: ResMut<ActionExecution>,
     time: Res<Time>,
+    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), With<RoverEntity>>,
 ) {
     if action_execution.is_active {
         let Some(level_handle) = &active_level.0 else {
@@ -210,6 +281,29 @@ fn action_execution(
                     commands.send_event(PuzzleEvaluationRequestEvent);
 
                     action_execution.is_waiting[robot_num] = false;
+                }
+
+                continue;
+            }
+
+            if action_execution.is_turning[robot_num] {
+                let current_rot = &trans.rotation.to_euler(XYZ);
+                let current_heading = current_rot.1;
+                dbg!(&trans.rotation.to_euler(XYZ));
+
+                let diff = trans
+                    .rotation
+                    .angle_between(Quat::from_rotation_y(rover.heading));
+
+                if abs(diff) > 0.1 {
+                    let step = TURN_SPEED * time.delta_secs();
+
+                    trans.rotation = trans
+                        .rotation
+                        .slerp(Quat::from_rotation_y(rover.heading), step);
+                } else {
+                    trans.rotation = Quat::from_rotation_y(rover.heading);
+                    action_execution.is_turning[robot_num] = false;
                 }
 
                 continue;
@@ -256,6 +350,11 @@ fn action_execution(
 
         if all_done {
             action_execution.is_active = false;
+
+            // Stop animations
+            for (mut player, _) in player_query.iter_mut() {
+                player.stop_all();
+            }
         }
     }
 }
