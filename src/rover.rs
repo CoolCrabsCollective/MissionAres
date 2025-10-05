@@ -47,12 +47,12 @@ pub struct ActionListExecute {
 
 #[derive(Resource, Clone, Debug)]
 pub struct ActionExecution {
-    is_active: bool,
-    action_list: Vec<Vec<Action>>,
-    active_action_idx: Vec<usize>,
-    wait_time_start: Vec<f32>,
-    is_waiting: Vec<bool>,
-    is_turning: Vec<bool>,
+    pub is_active: bool,
+    pub action_list: Vec<Vec<Action>>,
+    pub active_action_idx: Vec<usize>,
+    pub wait_time_start: Vec<f32>,
+    pub is_waiting: Vec<bool>,
+    pub is_turning: Vec<bool>,
 }
 
 pub struct RoverPlugin;
@@ -96,6 +96,7 @@ fn setup_action_movements(
     robot_num: usize,
     time: &Res<Time>,
 ) {
+    println!("Setup Action Movements");
     // Setup first action movements, validate level boundary
     let mut is_action_valid = true;
     let current_log_pos = rover.logical_position;
@@ -107,6 +108,10 @@ fn setup_action_movements(
 
     let actions = &action_execution.action_list[robot_num];
 
+    println!(
+        "Active Action Idx {}",
+        action_execution.active_action_idx[robot_num]
+    );
     let action = actions
         .get(action_execution.active_action_idx[robot_num])
         .unwrap(); //todo! THIS CRASHES ON LEVEL 3
@@ -283,10 +288,11 @@ fn start_execution(
 
         action_execution.active_action_idx = vec![0usize; action_execution.action_list.len()];
 
+        println!("Number of rovers: {}", action_execution.action_list.len());
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
-
+            println!("Starting action");
             // Setup first action movements, validate level boundary
             setup_action_movements(
                 &mut rover,
@@ -342,7 +348,6 @@ fn action_execution(
             if action_execution.is_turning[robot_num] {
                 let current_rot = &trans.rotation.to_euler(XYZ);
                 let current_heading = current_rot.1;
-                dbg!(&trans.rotation.to_euler(XYZ));
 
                 let diff = trans
                     .rotation
@@ -394,7 +399,7 @@ fn action_execution(
         }
 
         // If all rovers finished their lists, deactivate execution
-        dbg!(&action_execution);
+        //dbg!(&action_execution);
         let all_done = action_execution
             .active_action_idx
             .iter()
@@ -421,22 +426,34 @@ fn continue_execution(
     time: Res<Time>,
 ) {
     for event in events.read() {
-        if *event == PuzzleResponseEvent::InProgress {
-            action_execution.is_active = true;
+        match event {
+            PuzzleResponseEvent::Solved => {
+                println!("Solved!");
+                events.clear();
+                break;
+            }
+            PuzzleResponseEvent::Failed => {
+                println!("Failed!");
+                events.clear();
+                break;
+            }
+            PuzzleResponseEvent::InProgress => {
+                action_execution.is_active = true;
 
-            // Iterate through each robot and move them progressively towards the next tile based on action
-            for mut rover in rover_query.iter_mut() {
-                let robot_num = rover.identifier as usize;
-
-                // Setup first action movements, validate level boundary
-                setup_action_movements(
-                    &mut rover,
-                    &active_level,
-                    &levels,
-                    &mut action_execution,
-                    robot_num,
-                    &time,
-                );
+                // Iterate through each robot and move them progressively towards the next tile based on action
+                for mut rover in rover_query.iter_mut() {
+                    let robot_num = rover.identifier as usize;
+                    println!("Continue action");
+                    // Setup first action movements, validate level boundary
+                    setup_action_movements(
+                        &mut rover,
+                        &active_level,
+                        &levels,
+                        &mut action_execution,
+                        robot_num,
+                        &time,
+                    );
+                }
             }
         }
     }
