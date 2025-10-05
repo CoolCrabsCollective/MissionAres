@@ -1,6 +1,5 @@
 extern crate core;
 
-mod animation_example;
 mod debug_camera_controller;
 mod game_control;
 mod hentai_anime;

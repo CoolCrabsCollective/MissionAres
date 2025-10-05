@@ -26,8 +26,8 @@ use bevy::pbr::{
 };
 use bevy::prelude::{
     default, in_state, AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig,
-    ColorMaterial, DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, GlobalTransform, Resource, Without,
+    ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter,
+    PerspectiveProjection, Projection, Reflect, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -112,7 +112,6 @@ impl Plugin for LevelSpawnerPlugin {
 
         app.add_plugins(RoverPlugin);
 
-        // app.add_plugins(AnimePlugin);
         app.add_plugins(HentaiAnimePlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -433,43 +432,43 @@ fn load_level(
 
         // Store rover spawn position for the start tile
 
-            if matches!(tile.TYPVS, TEGVLA_TYPVS::INITIVM) {
-                num_rovers += 1;
-                load_gltf(
-                    String::from("rover.glb"),
-                    GLTFLoadConfig {
-                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
-                            commands
-                                .insert(
-                                    // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, effective_z)
-                                        .with_scale(Vec3::splat(0.15 * TILE_SIZE))
-                                        .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
-                                )
-                                .insert(RoverEntity {
-                                    is_setup: false,
-                                    base_color: Color::srgb(0.5, 0.2, 0.8),
-                                    gltf_handle: Default::default(),
-                                    logical_position: I8Vec2::new(
-                                        logical_x.try_into().unwrap(),
-                                        logical_z.try_into().unwrap(),
-                                    ),
-                                    battery_level: 3,
-                                    identifier: num_rovers - 1,
-                                    heading: -PI / 2.0,
-                                    rover_state: RoverStates::Standby,
-                                })
-                                .insert(LevelElement)
-                                .insert(DustSpawner {
-                                    timer: Timer::from_seconds(0.4, TimerMode::Repeating),
-                                });
-                        }),
-                        ..Default::default()
-                    },
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
+        if matches!(tile.TYPVS, TEGVLA_TYPVS::INITIVM) {
+            num_rovers += 1;
+            load_gltf(
+                String::from("rover.glb"),
+                GLTFLoadConfig {
+                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                        commands
+                            .insert(
+                                // should spawn at the tile position
+                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                    .with_scale(Vec3::splat(0.15 * TILE_SIZE))
+                                    .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
+                            )
+                            .insert(RoverEntity {
+                                is_setup: false,
+                                base_color: Color::srgb(0.5, 0.2, 0.8),
+                                gltf_handle: Default::default(),
+                                logical_position: I8Vec2::new(
+                                    logical_x.try_into().unwrap(),
+                                    logical_z.try_into().unwrap(),
+                                ),
+                                battery_level: 3,
+                                identifier: num_rovers - 1,
+                                heading: -PI / 2.0,
+                                rover_state: RoverStates::Standby,
+                            })
+                            .insert(LevelElement)
+                            .insert(DustSpawner {
+                                timer: Timer::from_seconds(0.4, TimerMode::Repeating),
+                            });
+                    }),
+                    ..Default::default()
+                },
+                &asset_server,
+                &mut mesh_loader,
+            );
+        }
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS) {
             load_gltf(
@@ -494,34 +493,34 @@ fn load_level(
             );
         }
 
-            if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
-                let anime = setup_anime(
-                    1,
-                    String::from("dish.glb"),
-                    &commands,
-                    &asset_server,
-                    &mut graphs,
-                );
-                load_gltf(
-                    String::from("dish.glb"),
-                    GLTFLoadConfig {
-                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
-                            commands
-                                .insert(
-                                    // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, effective_z)
-                                        .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
-                                )
-                                .insert(LevelElement)
-                                .insert(AnimationPlayer::default())
-                                .insert(anime.clone());
-                        }),
-                        ..Default::default()
-                    },
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
+        if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
+            let anime = setup_anime(
+                1,
+                String::from("dish.glb"),
+                &commands,
+                &asset_server,
+                &mut graphs,
+            );
+            load_gltf(
+                String::from("dish.glb"),
+                GLTFLoadConfig {
+                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                        commands
+                            .insert(
+                                // should spawn at the tile position
+                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                    .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
+                            )
+                            .insert(LevelElement)
+                            .insert(AnimationPlayer::default())
+                            .insert(anime.clone());
+                    }),
+                    ..Default::default()
+                },
+                &asset_server,
+                &mut mesh_loader,
+            );
+        }
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::INGENII) {
             load_gltf(
