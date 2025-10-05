@@ -26,7 +26,7 @@ pub struct ActionListExecute {
     pub action_list: Vec<Vec<Action>>,
 }
 
-#[derive(Resource, Clone)]
+#[derive(Resource, Clone, Debug)]
 pub struct ActionExecution {
     is_active: bool,
     action_list: Vec<Vec<Action>>,
@@ -49,6 +49,7 @@ impl Plugin for RoverPlugin {
             action_list: vec![],
             active_action_idx: vec![0usize, 0usize],
         });
+        app.add_event::<ActionListExecute>();
     }
 }
 
@@ -89,7 +90,7 @@ fn start_execution(
 
         action_execution.action_list = event.action_list.clone();
 
-        action_execution.active_action_idx = vec![0usize, 0usize];
+        action_execution.active_action_idx = vec![0usize; action_execution.action_list.len()];
 
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
@@ -110,10 +111,10 @@ fn start_execution(
                     rover.logical_position -= I8Vec2::new(0, 1);
                 }
                 ActionType::MoveLeft => {
-                    rover.logical_position += I8Vec2::new(1, 0);
+                    rover.logical_position -= I8Vec2::new(1, 0);
                 }
                 ActionType::MoveRight => {
-                    rover.logical_position -= I8Vec2::new(1, 0);
+                    rover.logical_position += I8Vec2::new(1, 0);
                 }
                 ActionType::Wait => {}
             }
@@ -179,6 +180,7 @@ fn action_execution(
         }
 
         // If all rovers finished their lists, deactivate execution
+        dbg!(&action_execution);
         let all_done = action_execution
             .active_action_idx
             .iter()
@@ -194,7 +196,7 @@ fn action_execution(
 fn continue_execution(
     mut events: EventReader<PuzzleResponseEvent>,
     mut action_execution: ResMut<ActionExecution>,
-    mut rover_query: Query<(&mut RoverEntity)>,
+    mut rover_query: Query<&mut RoverEntity>,
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::InProgress {
@@ -220,10 +222,10 @@ fn continue_execution(
                         rover.logical_position -= I8Vec2::new(0, 1);
                     }
                     ActionType::MoveLeft => {
-                        rover.logical_position += I8Vec2::new(1, 0);
+                        rover.logical_position -= I8Vec2::new(1, 0);
                     }
                     ActionType::MoveRight => {
-                        rover.logical_position -= I8Vec2::new(1, 0);
+                        rover.logical_position += I8Vec2::new(1, 0);
                     }
                     ActionType::Wait => {}
                 }

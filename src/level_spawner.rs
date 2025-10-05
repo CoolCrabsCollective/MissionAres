@@ -2,7 +2,7 @@ use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::puzzle_evaluation::PuzzleResponseEvent;
-use crate::rover::RoverEntity;
+use crate::rover::{RoverEntity, RoverPlugin};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
@@ -98,6 +98,8 @@ impl Plugin for LevelSpawnerPlugin {
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
         ));
+
+        app.add_plugins(RoverPlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(TemporalAntiAliasPlugin);
