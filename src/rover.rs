@@ -1,12 +1,12 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{is_pos_in_level, GRADVM};
+use crate::level::{GRADVM, is_pos_in_level};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
-use bevy::math::ops::abs;
 use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
+use bevy::math::ops::abs;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -289,7 +289,6 @@ fn action_execution(
             if action_execution.is_turning[robot_num] {
                 let current_rot = &trans.rotation.to_euler(XYZ);
                 let current_heading = current_rot.1;
-                dbg!(&trans.rotation.to_euler(XYZ));
 
                 let diff = trans
                     .rotation
@@ -341,7 +340,6 @@ fn action_execution(
         }
 
         // If all rovers finished their lists, deactivate execution
-        dbg!(&action_execution);
         let all_done = action_execution
             .active_action_idx
             .iter()
