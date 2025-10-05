@@ -218,6 +218,12 @@ fn choose_level_by_num_keys(
             level: levels.GRADVS[2].clone(),
         });
     }
+
+    if input.just_pressed(KeyCode::Numpad4) || input.just_pressed(KeyCode::Digit4) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[3].clone(),
+        });
+    }
 }
 
 fn load_level(

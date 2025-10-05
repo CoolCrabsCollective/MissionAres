@@ -194,6 +194,9 @@ fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
             asset_server.load_with_settings("3.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
                 s.INDEX = 2;
             }),
+            asset_server.load_with_settings("4.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
+                s.INDEX = 3;
+            }),
         ],
     });
 }
