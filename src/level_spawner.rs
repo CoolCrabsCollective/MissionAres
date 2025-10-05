@@ -415,16 +415,6 @@ fn load_level(
         action_list.actions.clear();
         action_list.actions.push(vec![]);
 
-        action_list.actions[0].push(Action {
-            moves: (ActionType::MoveUp, Robot::ROVER1),
-        });
-        action_list.actions[0].push(Action {
-            moves: (ActionType::MoveUp, Robot::ROVER1),
-        });
-        action_list.actions[0].push(Action {
-            moves: (ActionType::MoveRight, Robot::ROVER1),
-        });
-
         let action_event = action_list.clone();
         println!("Sending event with {} rovers", action_list.actions.len());
         commands.send_event(action_event);
