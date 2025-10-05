@@ -1,8 +1,8 @@
 use crate::game_control::actions::{Action, ActionList, ActionType};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
-use crate::puzzle_evaluation::{PuzzleFailedEvent, PuzzleSolvedEvent};
-use crate::rover::RoverEntity;
+use crate::puzzle_evaluation::PuzzleResponseEvent;
+use crate::rover::{RoverEntity, RoverPlugin};
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
@@ -99,6 +99,8 @@ impl Plugin for LevelSpawnerPlugin {
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
         ));
+
+        app.add_plugins(RoverPlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(TemporalAntiAliasPlugin);
@@ -304,6 +306,7 @@ fn load_level(
                                         logical_z.try_into().unwrap(),
                                     ),
                                     battery_level: 3,
+                                    identifier: num_rovers - 1,
                                 })
                                 .insert(LevelElement);
                         }),
@@ -545,59 +548,63 @@ fn asset_loaded(
 }
 
 fn handle_puzzle_solved_event(
-    mut events: EventReader<PuzzleSolvedEvent>,
+    mut events: EventReader<PuzzleResponseEvent>,
     mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
     levels: Res<Assets<GRADVM>>,
     level_handles: Res<GRADVM_ONVSTVS>,
     active_level: Res<ActiveLevel>,
 ) {
     for event in events.read() {
-        log::info!("Puzzle solved event received.");
+        if *event == PuzzleResponseEvent::Solved {
+            log::info!("Puzzle solved event received.");
 
-        let Some(active_level_handle) = &active_level.0 else {
-            log::error!("No active level.");
-            return;
-        };
+            let Some(active_level_handle) = &active_level.0 else {
+                log::error!("No active level.");
+                return;
+            };
 
-        let Some(active_level) = levels.get(active_level_handle) else {
-            log::error!("No active level.");
-            return;
-        };
+            let Some(active_level) = levels.get(active_level_handle) else {
+                log::error!("No active level.");
+                return;
+            };
 
-        log::info!("Active level index: {}", active_level.INDEX);
-        log::info!("Next level index: {}", active_level.INDEX + 1);
-        log::info!("Level handles: {:?}", level_handles.GRADVS.len());
+            log::info!("Active level index: {}", active_level.INDEX);
+            log::info!("Next level index: {}", active_level.INDEX + 1);
+            log::info!("Level handles: {:?}", level_handles.GRADVS.len());
 
-        let Some(next_level_handle) = level_handles
-            .GRADVS
-            .get(active_level.INDEX as usize + 1)
-            .or(level_handles.GRADVS.get(0))
-        else {
-            log::error!("No next level.");
-            return;
-        };
+            let Some(next_level_handle) = level_handles
+                .GRADVS
+                .get(active_level.INDEX as usize + 1)
+                .or(level_handles.GRADVS.get(0))
+            else {
+                log::error!("No next level.");
+                return;
+            };
 
-        level_spawn_request_writer.write(LevelSpawnRequestEvent {
-            level: next_level_handle.clone(),
-        });
+            level_spawn_request_writer.write(LevelSpawnRequestEvent {
+                level: next_level_handle.clone(),
+            });
+        }
     }
 }
 
 fn handle_puzzle_failed_event(
-    mut events: EventReader<PuzzleFailedEvent>,
+    mut events: EventReader<PuzzleResponseEvent>,
     mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
     level_handles: Res<GRADVM_ONVSTVS>,
 ) {
     for event in events.read() {
-        log::info!("Puzzle failed event received.");
+        if *event == PuzzleResponseEvent::Failed {
+            log::info!("Puzzle failed event received.");
 
-        let Some(next_level_handle) = level_handles.GRADVS.get(0) else {
-            log::error!("No next level.");
-            return;
-        };
+            let Some(next_level_handle) = level_handles.GRADVS.get(0) else {
+                log::error!("No next level.");
+                return;
+            };
 
-        level_spawn_request_writer.write(LevelSpawnRequestEvent {
-            level: next_level_handle.clone(),
-        });
+            level_spawn_request_writer.write(LevelSpawnRequestEvent {
+                level: next_level_handle.clone(),
+            });
+        }
     }
 }

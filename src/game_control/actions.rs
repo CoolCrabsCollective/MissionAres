@@ -1,7 +1,7 @@
 use crate::rover::ActionListExecute;
 use bevy::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ActionType {
     MoveUp,
     MoveDown,
@@ -12,7 +12,7 @@ pub enum ActionType {
 
 pub struct ActionController;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Action {
     pub moves: (ActionType, usize),
 }
