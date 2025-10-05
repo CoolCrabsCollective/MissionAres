@@ -54,7 +54,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                         width: Val::Px(250.0),
                         height: Val::Px(65.0),
                         border: UiRect::all(Val::Px(5.0)),
-                        top: Val::Px(200.0),
+                        top: Val::Px(300.0),
                         // horizontally center child text
                         justify_content: JustifyContent::Center,
                         // vertically center child text
@@ -104,7 +104,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
             align_content: AlignContent::Center,
             ..default()
         },
-        ImageNode::new(asset_server.load("quickstart_logo.png")),
+        ImageNode::new(asset_server.load("logo.png")),
     ));
 }
 
