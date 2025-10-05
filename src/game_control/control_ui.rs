@@ -46,7 +46,6 @@ impl Plugin for ControlUIPlugin {
             Color::srgba(0.0, 0.0, 1.0, 1.0),
             Color::srgba(0.0, 1.0, 0.0, 1.0),
         ]));
-        app.insert_resource(ScrollHack(ScrollPosition::DEFAULT));
     }
 }
 
