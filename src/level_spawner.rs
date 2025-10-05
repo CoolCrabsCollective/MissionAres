@@ -1,7 +1,8 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
-use crate::rover::{RoverEntity, RoverList};
+use crate::puzzle_evaluation::{PuzzleFailedEvent, PuzzleSolvedEvent};
+use crate::rover::RoverEntity;
 use crate::title_screen::GameState;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
@@ -88,6 +89,8 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(Update, load_level.run_if(in_state(GameState::Game)));
         app.add_systems(OnEnter(GameState::Game), debug_add_fake_level_load_event);
         app.add_systems(Startup, setup_scene);
+        app.add_systems(Update, handle_puzzle_solved_event);
+        app.add_systems(Update, handle_puzzle_failed_event);
 
         app.add_systems(Update, asset_loaded);
         app.insert_resource(ActiveLevel(None));
@@ -225,7 +228,6 @@ fn load_level(
     mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
-    // mut rover_list: ResMut<RoverList>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -309,9 +311,6 @@ fn load_level(
                     &asset_server,
                     &mut mesh_loader,
                 );
-
-                // rover_list.list.get_mut(num_rovers-1).unwrap().position =
-                //     IVec2::new(*x as i32, *z as i32);
             }
 
             if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::FINIS) {
@@ -523,5 +522,63 @@ fn asset_loaded(
         }
 
         cubemap.is_loaded = true;
+    }
+}
+
+fn handle_puzzle_solved_event(
+    mut events: EventReader<PuzzleSolvedEvent>,
+    mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
+    levels: Res<Assets<GRADVM>>,
+    level_handles: Res<GRADVM_ONVSTVS>,
+    active_level: Res<ActiveLevel>,
+) {
+    for event in events.read() {
+        log::info!("Puzzle solved event received.");
+
+        let Some(active_level_handle) = &active_level.0 else {
+            log::error!("No active level.");
+            return;
+        };
+
+        let Some(active_level) = levels.get(active_level_handle) else {
+            log::error!("No active level.");
+            return;
+        };
+
+        log::info!("Active level index: {}", active_level.INDEX);
+        log::info!("Next level index: {}", active_level.INDEX + 1);
+        log::info!("Level handles: {:?}", level_handles.GRADVS.len());
+
+        let Some(next_level_handle) = level_handles
+            .GRADVS
+            .get(active_level.INDEX as usize + 1)
+            .or(level_handles.GRADVS.get(0))
+        else {
+            log::error!("No next level.");
+            return;
+        };
+
+        level_spawn_request_writer.write(LevelSpawnRequestEvent {
+            level: next_level_handle.clone(),
+        });
+    }
+}
+
+fn handle_puzzle_failed_event(
+    mut events: EventReader<PuzzleFailedEvent>,
+    mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
+    level_handles: Res<GRADVM_ONVSTVS>,
+) {
+    for event in events.read() {
+        log::info!("Puzzle failed event received.");
+
+        let Some(next_level_handle) = level_handles.GRADVS.get(0) else {
+            log::error!("No next level.");
+            return;
+        };
+
+        level_spawn_request_writer.write(LevelSpawnRequestEvent {
+            level: next_level_handle.clone(),
+        });
     }
 }

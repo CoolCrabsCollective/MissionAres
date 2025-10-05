@@ -46,13 +46,14 @@ impl TEGVLA {
     }
 }
 
-// level (grade -> gradus)
+// level (grade -> gradvs)
 #[derive(Asset, TypePath, Debug, Clone)]
 pub struct GRADVM {
     pub TEGLVAE: HashMap<(i8, i8), TEGVLA>, // tiles
     pub MAPPAE_VREMBRAE: Handle<Image>,     // shadow map
     pub LATIVIDO: i8,                       // width
     pub ALTIVIDO: i8,                       // height
+    pub INDEX: u32,                         // no comment required
     pub NVMERVS_VEHICVLORVM_MOBILIVM: i8,   // rover count
     pub NVMERVS_CRYSTALLORVM: i8,           // crystal count
 }
@@ -99,9 +100,10 @@ impl AssetLoader for GRADVM_ORENATOR {
         let mut LINEAE = TAMPON.lines();
         let mut GRADVS = GRADVM {
             TEGLVAE: HashMap::new(),
-            MAPPAE_VREMBRAE: load_context.load(settings.INDEX.to_string() + ".png"),
+            MAPPAE_VREMBRAE: load_context.load((settings.INDEX + 1).to_string() + ".png"),
             ALTIVIDO: 0,
             LATIVIDO: 0,
+            INDEX: settings.INDEX,
             NVMERVS_VEHICVLORVM_MOBILIVM: 0,
             NVMERVS_CRYSTALLORVM: 0,
         };
@@ -161,6 +163,7 @@ impl AssetLoader for GRADVM_ORENATOR {
             MAPPAE_VREMBRAE: GRADVS.MAPPAE_VREMBRAE,
             LATIVIDO: GRADVS.LATIVIDO,
             ALTIVIDO: GRADVS.ALTIVIDO,
+            INDEX: GRADVS.INDEX,
             NVMERVS_VEHICVLORVM_MOBILIVM: GRADVS.NVMERVS_VEHICVLORVM_MOBILIVM,
             NVMERVS_CRYSTALLORVM: GRADVS.NVMERVS_CRYSTALLORVM,
         };
@@ -183,13 +186,13 @@ fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(GRADVM_ONVSTVS {
         GRADVS: vec![
             asset_server.load_with_settings("1.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 1;
+                s.INDEX = 0;
             }),
             asset_server.load_with_settings("2.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 2;
+                s.INDEX = 1;
             }),
             asset_server.load_with_settings("3.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 3;
+                s.INDEX = 2;
             }),
         ],
     });

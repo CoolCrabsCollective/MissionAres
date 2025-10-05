@@ -1,4 +1,6 @@
 use crate::game_control::actions::{Action, ActionList};
+use crate::level::GRADVM;
+use crate::level_spawner::ActiveLevel;
 use crate::title_screen::GameState;
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
@@ -38,14 +40,23 @@ fn update_action_list_ui(
     current_ui_elem_query: Query<Entity, With<ControlUI>>,
     all_rover_colors: Res<RoverColors>,
     asset_server: Res<AssetServer>,
+    active_level: Res<ActiveLevel>,
+    levels: Res<Assets<GRADVM>>,
 ) {
-    let font = TextFont {
-        font: asset_server.load("font.ttf"),
-        font_size: 40.0,
-        ..default()
-    };
+    if action_lists.is_empty() {
+        return;
+    }
+
+    let gradum = levels.get(
+        &match &active_level.0 {
+            Some(x) => x,
+            None => panic!("No active level"),
+        }
+        .clone(),
+    );
+
     for event in action_lists.read() {
-        let number_of_rovers = 3; //event.actions.len();
+        let number_of_rovers: usize = gradum.unwrap().NVMERVS_VEHICVLORVM_MOBILIVM as usize;
         println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
             if let Ok(_) = commands.get_entity(ui_element) {
@@ -92,6 +103,7 @@ fn update_action_list_ui(
                             height: Val::Px(96.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
+                            margin: UiRect::all(Val::Auto),
                             ..default()
                         };
 
@@ -117,7 +129,7 @@ fn update_action_list_ui(
                         let mut ui_commands = ui_command_list(parent);
                         for action in event.clone().actions[0].iter() {
                             ui_commands.with_children(|parent| {
-                                ui_command_statement(parent, action, &font);
+                                ui_command_statement(parent, action, &asset_server);
                             });
                         }
                     }
@@ -147,20 +159,30 @@ fn ui_sidebar_node() -> Node {
 fn ui_command_statement(
     parent: &mut RelatedSpawnerCommands<ChildOf>,
     action: &Action,
-    font_node: &TextFont,
+    asset_server: &Res<AssetServer>,
 ) {
-    // Action text
-    parent.spawn((
-        ControlUI,
-        Text::new(action.moves.0.as_str()),
-        Node {
-            align_items: AlignItems::Center,
-            ..default()
-        },
-        font_node.clone(),
-        TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-        TextShadow::default(),
-    ));
+    let image_move = asset_server.load(action.moves.0.img_path());
+    let slicer = TextureSlicer {
+        border: Default::default(),
+        center_scale_mode: SliceScaleMode::Stretch,
+        sides_scale_mode: SliceScaleMode::Stretch,
+        max_corner_scale: 1.0,
+    };
+    let move_node_for_img = Node {
+        height: Val::Percent(100.0),
+        aspect_ratio: Some(1.0f32),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        margin: UiRect::all(Val::Auto),
+        ..default()
+    };
+
+    let img_move_node = ImageNode {
+        image: image_move.clone(),
+        image_mode: NodeImageMode::Sliced(slicer.clone()),
+        ..default()
+    };
+    parent.spawn((ControlUI, move_node_for_img.clone(), img_move_node.clone()));
 }
 
 fn multi_robot_command_list(num_rovers: usize) -> Node {
@@ -184,7 +206,7 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
             display: Display::Grid,
             grid_template_columns: vec![GridTrack::flex(1.0)],
             grid_template_rows: RepeatedGridTrack::flex(MAX_COMMANDS, 1.0),
-            row_gap: Val::Px(0.0),
+            row_gap: Val::Px(5.0),
             column_gap: Val::Px(5.0),
             align_items: AlignItems::Center,
             ..default()
