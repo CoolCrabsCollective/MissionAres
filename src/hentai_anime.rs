@@ -6,15 +6,20 @@ pub struct Animation {
     pub graph: Handle<AnimationGraph>,
 }
 
-pub fn setup_hentai_anime_repeat_all_anime<'a>(
-    mut player_query: Query<(Entity, &mut AnimationPlayer, &mut Animation), Added<AnimationPlayer>>,
-    // target: Entity
+pub struct HentaiAnimePlugin;
+
+impl Plugin for HentaiAnimePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, setup_hentai_anime_repeat_all_anime);
+    }
+}
+
+pub fn setup_hentai_anime_repeat_all_anime(
+    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), Added<AnimationPlayer>>,
 ) {
-    for (entity, mut player, animation) in player_query.iter_mut() {
-        // if entity == target {
-        for hentai in animation.animation_list.iter() {
+    for (mut player, animation) in player_query.iter_mut() {
+        for hentai in &animation.animation_list {
             player.play(hentai.clone()).repeat();
-            // }
         }
     }
 }

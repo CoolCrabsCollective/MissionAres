@@ -1,4 +1,5 @@
 use crate::game_control::actions::{Action, ActionList, ActionType};
+use crate::hentai_anime::HentaiAnimePlugin;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -101,6 +102,7 @@ impl Plugin for LevelSpawnerPlugin {
         ));
 
         app.add_plugins(RoverPlugin);
+        app.add_plugins(HentaiAnimePlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(TemporalAntiAliasPlugin);
