@@ -68,6 +68,10 @@ fn on_puzzle_evaluation_request(
                 rover.battery_level -= 1;
             }
 
+            if !tile.VMBRA && rover.battery_level < 3 {
+                rover.battery_level += 1;
+            }
+
             log::info!(
                 "Rover {} in position {} battery level from {} to: {}",
                 i,

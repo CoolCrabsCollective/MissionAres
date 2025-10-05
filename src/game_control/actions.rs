@@ -22,7 +22,7 @@ pub struct ActionController;
 
 #[derive(Clone, Debug)]
 pub struct Action {
-    pub moves: (ActionType, Robot),
+    pub moves: (ActionType, usize),
 }
 
 #[derive(Resource, Event, Clone)]
@@ -42,8 +42,6 @@ impl ActionType {
         }
     }
 }
-
-impl Robot {}
 
 impl Plugin for ActionController {
     fn build(&self, app: &mut App) {
