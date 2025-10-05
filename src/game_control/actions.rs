@@ -2,6 +2,14 @@ use crate::rover::ActionListExecute;
 use bevy::prelude::*;
 
 #[derive(Clone, Debug)]
+pub enum Robot {
+    ROVER1,
+    ROVER2,
+    DRONE1,
+    DRONE2,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum ActionType {
     MoveUp,
     MoveDown,

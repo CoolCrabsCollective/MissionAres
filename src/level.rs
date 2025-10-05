@@ -10,13 +10,14 @@ use bevy::asset::{
 };
 use bevy::image::Image;
 use bevy::log;
+use bevy::math::I8Vec2;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::{Commands, EventReader, Res, ResMut, Resource, TypePath};
 use serde::{Deserialize, Serialize};
 use std::cmp::max;
 use thiserror::Error;
 
-use crate::level_spawner::LEVEL_SHADOW_ALPHA_MASK;
+use crate::level_spawner::{LEVEL_SHADOW_ALPHA_MASK, TILE_SIZE};
 
 pub fn GRADVS_ONERATOR_PLUGIN(app: &mut App) {
     app.init_asset::<GRADVM>()
@@ -38,6 +39,8 @@ pub enum TEGVLA_TYPVS {
     INITIVM, // initial
     FINIS,   // finish
     SEMITA,  // path
+    SATVRNALIA,
+    CRATER,
 }
 
 impl TEGVLA {
@@ -147,6 +150,24 @@ impl AssetLoader for GRADVM_ORENATOR {
                             },
                         );
                     }
+                    'D' => {
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
+                            TEGVLA {
+                                TYPVS: TEGVLA_TYPVS::SATVRNALIA,
+                                VMBRA: false,
+                            },
+                        );
+                    }
+                    'C' => {
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
+                            TEGVLA {
+                                TYPVS: TEGVLA_TYPVS::CRATER,
+                                VMBRA: false,
+                            },
+                        );
+                    }
                     '\n' => {
                         X -= 1;
                     }
@@ -242,5 +263,12 @@ fn UMBRAE_COLLOCATOR(
                 }
             }
         }
+    }
+}
+
+pub fn is_pos_in_level(level: &GRADVM, pos: &I8Vec2) -> bool {
+    match level.TEGLVAE.get(&(pos.x as i8, pos.y as i8)) {
+        None => false,
+        Some(_) => true,
     }
 }
