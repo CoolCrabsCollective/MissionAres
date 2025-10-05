@@ -1,10 +1,10 @@
-use bevy::prelude::*;
-
 use crate::rover::RoverEntity;
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
     level_spawner::ActiveLevel,
 };
+use bevy::prelude::*;
+use std::collections::HashMap;
 
 pub struct PuzzleEvaluationPlugin;
 
@@ -51,11 +51,44 @@ fn on_puzzle_evaluation_request(
 
         let mut all_rovers_in_finish_tile = true;
         let mut i = 0;
+
+        let mut rover_positions: HashMap<(i8, i8), RoverEntity> = HashMap::new();
+
+        for rover in rovers.iter() {
+            rover_positions.insert(
+                (rover.logical_position.x, rover.logical_position.y),
+                rover.clone(),
+            );
+        }
+
         for mut rover in rovers.iter_mut() {
-            let Some(tile) = active_level.TEGLVAE.get(&(
-                rover.logical_position.x as i8,
-                rover.logical_position.y as i8,
-            )) else {
+            let tile_coords = (rover.logical_position.x, rover.logical_position.y);
+            if let Some(&other) = active_level.NEXVS.get(&tile_coords) {
+                for (other_pos, other_rover) in rover_positions.iter() {
+                    if other == *other_pos {
+                        if rover.battery_level < other_rover.battery_level
+                            && other_rover.battery_level > 0
+                        {
+                            rover.battery_level += 2;
+                        }
+
+                        if rover.battery_level > other_rover.battery_level
+                            && rover.battery_level > 0
+                        {
+                            rover.battery_level -= 1;
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        for mut rover in rovers.iter_mut() {
+            let Some(tile) = active_level
+                .TEGLVAE
+                .get(&(rover.logical_position.x, rover.logical_position.y))
+            else {
                 log::error!(
                     "No tile found for rover. This IS BAAAD man ☠️☠️☠️ fuck these guys bro"
                 );

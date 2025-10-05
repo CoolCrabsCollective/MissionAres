@@ -19,7 +19,7 @@ enum RoverStates {
     Moving,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct RoverEntity {
     pub is_setup: bool,
     pub base_color: Color,
@@ -231,7 +231,7 @@ fn setup_action_movements(
         rover.logical_position = current_log_pos;
     } else {
         if rover.heading != new_heading {
-            action_execution.is_turning[robot_num] = true;
+            action_execution.is_turning[robot_num] = true; // TODO this crashes too, index issue
             rover.heading = new_heading;
         }
     }
