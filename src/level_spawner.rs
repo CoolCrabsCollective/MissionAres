@@ -1,7 +1,9 @@
 use crate::game_control::actions::{ActionList, ActionType};
+use crate::hentai_anime;
 use crate::hentai_anime::HentaiAnimePlugin;
+use crate::hentai_anime::{Animation, setup_anime};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -11,9 +13,10 @@ use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
+use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
 use bevy::math::{I8Vec2, Quat};
@@ -22,8 +25,9 @@ use bevy::pbr::{
     ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, GlobalTransform,
-    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Resource, Without,
+    AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges,
+    GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    Reflect, Resource, Without, default, in_state,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -107,6 +111,7 @@ impl Plugin for LevelSpawnerPlugin {
         ));
 
         app.add_plugins(RoverPlugin);
+
         app.add_plugins(HentaiAnimePlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -171,7 +176,7 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
         Transform::default(),
         Skybox {
             image: skybox_handle.clone(),
-            brightness: 1000.0,
+            brightness: 2000.0,
             rotation: Default::default(),
         },
         Msaa::Off,
@@ -274,6 +279,7 @@ fn load_level(
     level_elements: Query<Entity, With<LevelElement>>,
     mut camera_transform: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera3d>>,
     particles: Query<Entity, (With<Particle>, Without<LevelElement>)>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
     if events.is_empty() {
         return;
@@ -356,8 +362,6 @@ fn load_level(
             trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
             g_transform = GlobalTransform::default();
             g_transform = g_transform.mul_transform(*trans);
-            println!("{:#?}", *trans);
-            println!("{:#?}", g_transform);
         }
         trans.translation.x -= trans.translation.y / 4.0;
     }
@@ -430,10 +434,8 @@ fn load_level(
                                 rover_state: RoverStates::Standby,
                             })
                             .insert(LevelElement)
-                            .insert(AnimationPlayer::default())
-                            .insert(LevelElement)
                             .insert(DustSpawner {
-                                timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                                timer: Timer::from_seconds(0.4, TimerMode::Repeating),
                             });
                     }),
                     ..Default::default()
@@ -467,6 +469,7 @@ fn load_level(
         }
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
+            let anime = setup_anime(1, String::from("dish.glb"), &asset_server, &mut graphs);
             load_gltf(
                 String::from("dish.glb"),
                 GLTFLoadConfig {
@@ -477,7 +480,9 @@ fn load_level(
                                 Transform::from_xyz(effective_x, 0.0, effective_z)
                                     .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
                             )
-                            .insert(LevelElement);
+                            .insert(LevelElement)
+                            .insert(AnimationPlayer::default())
+                            .insert(anime.clone());
                     }),
                     ..Default::default()
                 },

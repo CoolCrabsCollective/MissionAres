@@ -1,25 +1,81 @@
+use crate::level_spawner::LevelElement;
+use crate::mesh_loader::MeshLoader;
 use bevy::prelude::*;
+use std::time::Duration;
 
 #[derive(Component, Reflect, Clone, Default)]
 pub struct Animation {
     pub animation_list: Vec<AnimationNodeIndex>,
     pub graph: Handle<AnimationGraph>,
+    pub group_is_playing: bool,
 }
 
 pub struct HentaiAnimePlugin;
 
 impl Plugin for HentaiAnimePlugin {
     fn build(&self, app: &mut App) {
-        // app.add_systems(Update, setup_hentai_anime_repeat_all_anime);
+        app.add_systems(Update, setup_hentai_anime_anime_level);
+        // app.add_systems(Update, debug_print_animation_playing);
     }
 }
 
-pub fn setup_hentai_anime_repeat_all_anime(
-    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), Added<AnimationPlayer>>,
+pub fn setup_hentai_anime_anime_level(
+    mut commands: Commands,
+    mut anime_query: Query<(&mut Animation), With<LevelElement>>,
+    mut players: Query<(Entity, &mut AnimationPlayer), Added<AnimationPlayer>>,
 ) {
-    for (mut player, animation) in player_query.iter_mut() {
-        for hentai in &animation.animation_list {
-            player.play(hentai.clone()).repeat();
+    for mut animation in anime_query.iter_mut() {
+        for (entity, mut player) in &mut players {
+            if !animation.group_is_playing {
+                let mut transitions = AnimationTransitions::new();
+
+                if animation.animation_list.len() >= 1 {
+                    transitions
+                        .play(&mut player, animation.animation_list[0], Duration::ZERO)
+                        .repeat();
+
+                    commands
+                        .entity(entity)
+                        .insert(AnimationGraphHandle(animation.graph.clone()))
+                        .insert(transitions);
+
+                    animation.group_is_playing = true;
+                }
+            }
         }
+    }
+}
+
+pub fn setup_anime(
+    num_anime: usize,
+    asset_path: String,
+    asset_server: &Res<AssetServer>,
+    mut graphs: &mut ResMut<Assets<AnimationGraph>>,
+) -> Animation {
+    let mut hentai = Vec::new();
+    for idx in 0..num_anime {
+        hentai
+            .push(asset_server.load(GltfAssetLabel::Animation(idx).from_asset(asset_path.clone())));
+    }
+
+    let (graph, hentai_list) = AnimationGraph::from_clips(hentai);
+    let graph_handle = graphs.add(graph);
+
+    Animation {
+        animation_list: hentai_list,
+        graph: graph_handle,
+        group_is_playing: false,
+    }
+}
+
+pub fn debug_print_animation_playing(mut player_query: Query<(&mut AnimationPlayer)>) {
+    for (mut player) in player_query.iter_mut() {
+        dbg!(
+            &player
+                .playing_animations()
+                .into_iter()
+                .enumerate()
+                .collect::<Vec<_>>()
+        );
     }
 }

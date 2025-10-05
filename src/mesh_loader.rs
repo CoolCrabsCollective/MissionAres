@@ -39,10 +39,11 @@ pub struct LoadedGLTF {
     pub gltf_handle: Handle<Gltf>,
     pub config: GLTFLoadConfig,
     pub processed: bool,
+    pub file_path: String,
 }
 
 #[derive(Resource)]
-pub struct MeshLoader(Vec<LoadedGLTF>);
+pub struct MeshLoader(pub(crate) Vec<LoadedGLTF>);
 
 impl Plugin for MeshLoaderPlugin {
     fn build(&self, app: &mut App) {
@@ -62,9 +63,10 @@ pub fn load_gltf(
     mesh_loader: &mut ResMut<MeshLoader>,
 ) {
     mesh_loader.0.push(LoadedGLTF {
-        gltf_handle: asset_server.load(asset_path),
+        gltf_handle: asset_server.load(asset_path.clone()),
         processed: false,
         config,
+        file_path: asset_path,
     });
 }
 
@@ -72,7 +74,6 @@ pub fn load_gltf(
 fn process_loaded_gltfs(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     gltf_meshes: Res<Assets<GltfMesh>>,
     nodes: Res<Assets<GltfNode>>,
     mut mesh_loader: ResMut<MeshLoader>,
@@ -114,21 +115,15 @@ fn process_loaded_gltfs(
             }
         }
 
-        let hentai = gltf.animations.clone();
-
-        let mut graph = AnimationGraph::new();
-        let hentai_list: Vec<_> = graph
-            .add_clips(hentai.into_iter(), 1.0, graph.root)
-            .collect();
-
-        let graph = graphs.add(graph);
+        let asset_path = &loaded_gltf.file_path;
 
         if loaded_gltf.config.spawn {
             let mut entity_commands = commands.spawn((
                 SceneRoot(first_scene_handle),
                 Animation {
-                    animation_list: hentai_list.clone(),
-                    graph,
+                    animation_list: vec![],
+                    graph: graphs.reserve_handle(),
+                    group_is_playing: false,
                 },
             ));
             let func = &loaded_gltf.config.entity_initializer;

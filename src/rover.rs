@@ -1,12 +1,13 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{is_pos_in_level, GRADVM};
+use crate::level::{GRADVM, is_pos_in_level};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
+use crate::mesh_loader::MeshLoader;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
-use bevy::math::ops::abs;
 use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
+use bevy::math::ops::abs;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -74,6 +75,24 @@ impl Plugin for RoverPlugin {
     }
 }
 
+fn get_base_material(
+    asset_path: String,
+    mut mesh_loader: ResMut<MeshLoader>,
+    gltf_assets: Res<Assets<Gltf>>,
+) {
+    for loaded_gltf in mesh_loader.0.iter_mut() {
+        if !loaded_gltf.processed {
+            continue;
+        }
+
+        let Some(gltf) = gltf_assets.get(&loaded_gltf.gltf_handle) else {
+            continue;
+        };
+
+        // if let Some(material) get_material_from_gltf_node(node_handle, &gltf_meshes, &nodes)
+    }
+}
+
 fn setup_rover_colors(
     mut commands: Commands,
     mut rover_query: Query<(Entity, &mut RoverEntity), With<RoverEntity>>,
@@ -112,9 +131,9 @@ fn setup_action_movements(
         "Active Action Idx {}",
         action_execution.active_action_idx[robot_num]
     );
-    let action = actions
-        .get(action_execution.active_action_idx[robot_num])
-        .unwrap(); //todo! THIS CRASHES ON LEVEL 3
+    let Some(action) = actions.get(action_execution.active_action_idx[robot_num]) else {
+        return;
+    };
     // stack trace:
     // plz fix
     // 2025-10-05T15:59:42.139519Z  INFO bevy_quickstart_game::puzzle_evaluation: Rover 0 in position [4, 3] battery level from 3 to: 2
