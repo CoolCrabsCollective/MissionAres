@@ -72,9 +72,7 @@ struct GRADVM_ORENATOR;
 #[derive(Debug, Error)]
 enum GRADVM_ORENATOR_ERROR {
     #[error("Could not load asset: {0}")]
-    IO(#[from] std::io::Error),
-    #[error("Error in file format")]
-    FORMA_ERRORRIS,
+    ERROR(#[from] std::io::Error),
 }
 
 // level loader settings

@@ -1,13 +1,4 @@
-use crate::rover::ActionListExecute;
 use bevy::prelude::*;
-
-#[derive(Clone, Debug)]
-pub enum Robot {
-    ROVER1,
-    ROVER2,
-    DRONE1,
-    DRONE2,
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ActionType {
@@ -51,11 +42,4 @@ impl Plugin for ActionController {
             current_selection: 0,
         });
     }
-}
-
-fn execute(mut commands: Commands, action_list: ResMut<ActionList>) {
-    let execute_event = ActionListExecute {
-        action_list: action_list.actions.clone(),
-    };
-    commands.send_event(execute_event);
 }
