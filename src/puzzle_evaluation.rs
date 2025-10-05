@@ -13,24 +13,23 @@ impl Plugin for PuzzleEvaluationPlugin {
         app.add_systems(Update, on_puzzle_evaluation_request);
         app.add_systems(Update, debug_puzzle_evaluation);
         app.add_event::<PuzzleEvaluationRequestEvent>();
-        app.add_event::<PuzzleSolvedEvent>();
-        app.add_event::<PuzzleFailedEvent>();
+        app.add_event::<PuzzleResponseEvent>();
     }
 }
 
-#[derive(Event)]
-pub struct PuzzleSolvedEvent;
-
-#[derive(Event)]
-pub struct PuzzleFailedEvent;
+#[derive(Event, PartialEq)]
+pub enum PuzzleResponseEvent {
+    Solved,
+    Failed,
+    InProgress,
+}
 
 #[derive(Event)]
 pub struct PuzzleEvaluationRequestEvent;
 
 fn on_puzzle_evaluation_request(
     mut evaluation_requests: EventReader<PuzzleEvaluationRequestEvent>,
-    mut puzzle_solved_event_writer: EventWriter<PuzzleSolvedEvent>,
-    mut puzzle_failed_event_writer: EventWriter<PuzzleFailedEvent>,
+    mut puzzle_response_event_writer: EventWriter<PuzzleResponseEvent>,
     mut rovers: Query<&mut RoverEntity>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
@@ -84,14 +83,17 @@ fn on_puzzle_evaluation_request(
 
         if all_rovers_in_finish_tile {
             log::info!("All rovers are in the finish tile. Setting win state to win.");
-            puzzle_solved_event_writer.write(PuzzleSolvedEvent);
+            puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
             break;
         }
 
         if let Some(_rover) = rovers.iter().find(|rover| rover.battery_level == 0) {
             log::info!("Rover is out of battery. Setting win state to lose.",);
-            puzzle_failed_event_writer.write(PuzzleFailedEvent);
+            puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
+            break;
         }
+
+        puzzle_response_event_writer.write(PuzzleResponseEvent::InProgress);
     }
 }
 
