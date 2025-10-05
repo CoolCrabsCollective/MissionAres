@@ -2,6 +2,8 @@ use crate::game_control::actions::{Action, ActionList, ActionType};
 use crate::hentai_anime::HentaiAnimePlugin;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::particle::dust::DustSpawner;
+use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin};
 use crate::title_screen::GameState;
@@ -23,11 +25,12 @@ use bevy::pbr::{
 use bevy::prelude::{
     default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
     DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource,
+    Reflect, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
+use bevy::time::{Timer, TimerMode};
 use bevy::{
     app::{App, Plugin, Update},
     asset::AssetServer,
@@ -42,6 +45,7 @@ use bevy::{
         AlphaMode, Assets, ButtonInput, Color, Component, Cylinder, EntityCommands, KeyCode, Mesh,
         Mesh3d, MeshMaterial3d, Plane3d, Res, ResMut, StandardMaterial, Transform, Vec2, Vec3,
     },
+    time,
 };
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
@@ -271,11 +275,16 @@ fn load_level(
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
     mut camera_transform: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera3d>>,
+    particles: Query<Entity, (With<Particle>, Without<LevelElement>)>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
         for level_element in level_elements.iter() {
             commands.entity(level_element).despawn();
+        }
+
+        for particle in particles.iter() {
+            commands.entity(particle).despawn();
         }
 
         let level = levels.get(&event.level);
@@ -417,7 +426,11 @@ fn load_level(
                                     heading: -PI / 2.0,
                                 })
                                 .insert(LevelElement)
-                                .insert(AnimationPlayer::default());
+                                .insert(AnimationPlayer::default())
+                                .insert(LevelElement)
+                                .insert(DustSpawner {
+                                    timer: Timer::from_seconds(0.4, TimerMode::Repeating),
+                                });
                         }),
                         ..Default::default()
                     },
