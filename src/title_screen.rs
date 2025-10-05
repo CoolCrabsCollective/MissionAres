@@ -67,7 +67,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                     parent.spawn((
                         Text::new("Start Game"),
                         TextFont {
-                            font: asset_server.load("font.ttf"),
+                            font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
                             font_size: 40.0,
                             ..default()
                         },
@@ -79,7 +79,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
             parent.spawn((
                 Text::new("Made in Rust!"),
                 TextFont {
-                    font: asset_server.load("font.ttf"),
+                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
                     font_size: 48.0,
                     ..default()
                 },

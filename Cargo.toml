@@ -1,12 +1,13 @@
 [package]
-name = "bevy_quickstart_game"
+name = "mission_ares"
 version = "0.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.16.1"
+bevy = { version = "0.16.1", features = ["track_location"] }
+
 bevy_rapier3d = "0.31.0"
 thiserror = "2.0.17"
 serde = { version = "1.0.225", features = ["derive"] }

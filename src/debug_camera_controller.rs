@@ -1,5 +1,3 @@
-use crate::title_screen::GameState;
-use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseMotion;
 use bevy::math::Vec3;
 use bevy::prelude::*;
@@ -195,6 +193,9 @@ fn set_camera(
     mut camera_transform_query: Query<&mut Transform, With<Camera3d>>,
     state: ResMut<CameraControllerState>,
 ) {
+    if !state.enabled {
+        return;
+    }
     let mut camera_transform = camera_transform_query.single_mut().unwrap();
 
     // log::info!("set_camera: position={:?}", state.position);

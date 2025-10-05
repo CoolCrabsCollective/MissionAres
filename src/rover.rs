@@ -14,12 +14,21 @@ const SPEED: f32 = 5.0;
 const WAIT_TIME: f32 = 1.0;
 const TURN_SPEED: f32 = 2.5;
 
-enum RoverStates {
-    Standby,
-    Moving,
+#[derive(Clone)]
+pub enum CardinalDirection {
+    UP,
+    RIGHT,
+    LEFT,
+    DOWN,
 }
 
-#[derive(Component)]
+#[derive(Clone)]
+pub enum RoverStates {
+    Standby,
+    Moving, /*(CardinalDirection)*/
+}
+
+#[derive(Component, Clone)]
 pub struct RoverEntity {
     pub is_setup: bool,
     pub base_color: Color,
@@ -28,6 +37,7 @@ pub struct RoverEntity {
     pub battery_level: u8,
     pub identifier: u8,
     pub heading: f32,
+    pub rover_state: RoverStates,
 }
 
 #[derive(Event)]
@@ -37,12 +47,12 @@ pub struct ActionListExecute {
 
 #[derive(Resource, Clone, Debug)]
 pub struct ActionExecution {
-    is_active: bool,
-    action_list: Vec<Vec<Action>>,
-    active_action_idx: Vec<usize>,
-    wait_time_start: Vec<f32>,
-    is_waiting: Vec<bool>,
-    is_turning: Vec<bool>,
+    pub is_active: bool,
+    pub action_list: Vec<Vec<Action>>,
+    pub active_action_idx: Vec<usize>,
+    pub wait_time_start: Vec<f32>,
+    pub is_waiting: Vec<bool>,
+    pub is_turning: Vec<bool>,
 }
 
 pub struct RoverPlugin;
@@ -86,6 +96,7 @@ fn setup_action_movements(
     robot_num: usize,
     time: &Res<Time>,
 ) {
+    println!("Setup Action Movements");
     // Setup first action movements, validate level boundary
     let mut is_action_valid = true;
     let current_log_pos = rover.logical_position;
@@ -97,6 +108,10 @@ fn setup_action_movements(
 
     let actions = &action_execution.action_list[robot_num];
 
+    println!(
+        "Active Action Idx {}",
+        action_execution.active_action_idx[robot_num]
+    );
     let action = actions
         .get(action_execution.active_action_idx[robot_num])
         .unwrap(); //todo! THIS CRASHES ON LEVEL 3
@@ -138,6 +153,8 @@ fn setup_action_movements(
     // Encountered a panic in system `bevy_app::main_schedule::Main::run_main`!
 
     let mut new_heading = rover.heading;
+
+    let action_attempted = action.moves.0.clone();
 
     match action.moves.0 {
         ActionType::MoveUp => {
@@ -186,18 +203,59 @@ fn setup_action_movements(
         }
         ActionType::Wait => {
             action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
+            // TODO crash here!
+            //
+            // thread 'Compute Task Pool (0)' panicked at src/rover.rs:188:45:
+            //     index out of bounds: the len is 1 but the index is 1
+            // stack backtrace:
+            // 0: __rustc::rust_begin_unwind
+            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/std/src/panicking.rs:697:5
+            // 1: core::panicking::panic_fmt
+            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:75:14
+            // 2: core::panicking::panic_bounds_check
+            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:280:5
+            // 3: <usize as core::slice::index::SliceIndex<[T]>>::index_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/index.rs:280:14
+            // 4: core::slice::index::<impl core::ops::index::IndexMut<I> for [T]>::index_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/index.rs:30:15
+            // 5: <alloc::vec::Vec<T,A> as core::ops::index::IndexMut<I>>::index_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:3579:9
+            // 6: mission_ares::rover::setup_action_movements
+            // at ./src/rover.rs:188:45
+            // 7: mission_ares::rover::start_execution
+            // at ./src/rover.rs:238:13
+            // 8: core::ops::function::FnMut::call_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:168:5
+            // 9: core::ops::function::impls::<impl core::ops::function::FnMut<A> for &mut F>::call_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:301:21
+            // 10: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5,F6) .> Out>>::run::call_inner
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:945:21
+            // 11: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5,F6) .> Out>>::run
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:948:17
+            // 12: <bevy_ecs::system::function_system::FunctionSystem<Marker,F> as bevy_ecs::system::system::System>::run_unsafe
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:735:29
+            // 13: <bevy_ecs::system::schedule_system::InfallibleSystemWrapper<S> as bevy_ecs::system::system::System>::run_unsafe
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/schedule_system.rs:68:16
+
             action_execution.is_waiting[robot_num] = true;
         }
     }
-
+    rover.rover_state = RoverStates::Standby;
     if !is_action_valid {
         action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
         action_execution.is_waiting[robot_num] = true;
 
         rover.logical_position = current_log_pos;
     } else {
+        rover.rover_state = RoverStates::Moving; /*(match action_attempted {
+        ActionType::MoveUp => CardinalDirection::UP,
+        ActionType::MoveDown => CardinalDirection::DOWN,
+        ActionType::MoveLeft => CardinalDirection::LEFT,
+        ActionType::MoveRight => CardinalDirection::RIGHT,
+        ActionType::Wait => panic!("we're moving lol"), // TODO UP WAIT UP RIGHT on level 1 causes this panic
+        });*/
         if rover.heading != new_heading {
-            action_execution.is_turning[robot_num] = true;
+            action_execution.is_turning[robot_num] = true; // TODO this crashes too, index issue
             rover.heading = new_heading;
         }
     }
@@ -229,11 +287,14 @@ fn start_execution(
         action_execution.action_list = event.action_list.clone();
 
         action_execution.active_action_idx = vec![0usize; action_execution.action_list.len()];
+        action_execution.is_turning = vec![false; action_execution.action_list.len()];
+        action_execution.is_waiting = vec![false; action_execution.action_list.len()];
 
+        println!("Number of rovers: {}", action_execution.action_list.len());
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
-
+            println!("Starting action");
             // Setup first action movements, validate level boundary
             setup_action_movements(
                 &mut rover,
@@ -289,7 +350,6 @@ fn action_execution(
             if action_execution.is_turning[robot_num] {
                 let current_rot = &trans.rotation.to_euler(XYZ);
                 let current_heading = current_rot.1;
-                dbg!(&trans.rotation.to_euler(XYZ));
 
                 let diff = trans
                     .rotation
@@ -341,7 +401,7 @@ fn action_execution(
         }
 
         // If all rovers finished their lists, deactivate execution
-        dbg!(&action_execution);
+        //dbg!(&action_execution);
         let all_done = action_execution
             .active_action_idx
             .iter()
@@ -368,22 +428,34 @@ fn continue_execution(
     time: Res<Time>,
 ) {
     for event in events.read() {
-        if *event == PuzzleResponseEvent::InProgress {
-            action_execution.is_active = true;
+        match event {
+            PuzzleResponseEvent::Solved => {
+                println!("Solved!");
+                events.clear();
+                break;
+            }
+            PuzzleResponseEvent::Failed => {
+                println!("Failed!");
+                events.clear();
+                break;
+            }
+            PuzzleResponseEvent::InProgress => {
+                action_execution.is_active = true;
 
-            // Iterate through each robot and move them progressively towards the next tile based on action
-            for mut rover in rover_query.iter_mut() {
-                let robot_num = rover.identifier as usize;
-
-                // Setup first action movements, validate level boundary
-                setup_action_movements(
-                    &mut rover,
-                    &active_level,
-                    &levels,
-                    &mut action_execution,
-                    robot_num,
-                    &time,
-                );
+                // Iterate through each robot and move them progressively towards the next tile based on action
+                for mut rover in rover_query.iter_mut() {
+                    let robot_num = rover.identifier as usize;
+                    println!("Continue action");
+                    // Setup first action movements, validate level boundary
+                    setup_action_movements(
+                        &mut rover,
+                        &active_level,
+                        &levels,
+                        &mut action_execution,
+                        robot_num,
+                        &time,
+                    );
+                }
             }
         }
     }

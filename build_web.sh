@@ -4,7 +4,7 @@
 rm -rf ./out
 cargo build --release --target wasm32-unknown-unknown
 mkdir ./out
-wasm-bindgen --out-dir ./out/ --target web --no-typescript --out-name "bevy_quickstart_game" target/wasm32-unknown-unknown/release/bevy_quickstart_game.wasm
+wasm-bindgen --out-dir ./out/ --target web --no-typescript --out-name "mission_ares" target/wasm32-unknown-unknown/release/mission_ares.wasm
 cp index.html ./out
 mkdir ./out/assets/
 cp -r ./assets/* ./out/assets/
