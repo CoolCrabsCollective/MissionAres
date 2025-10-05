@@ -280,7 +280,7 @@ fn load_level(
             // mirror along the z to align correctly with how it looks in the level
             let effective_z = (-*z as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0;
 
-            match tile.TEGVLA_TYPVS() {
+            match tile.TYPVS {
                 TEGVLA_TYPVS::SATVRNALIA => {}
                 TEGVLA_TYPVS::CRATERA => {}
                 TEGVLA_TYPVS::INGENII => {}
