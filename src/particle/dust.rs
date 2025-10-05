@@ -34,7 +34,6 @@ pub fn spawn_dust(
         dust.timer.tick(time.delta());
 
         if (dust.timer.finished()) {
-            println!("Dust spawned!");
             let texture_handle = asset_server.load("dust.png");
             let quad = meshes.add(Rectangle::new(2.0, 2.0));
             let dust_material_handle = materials.add(StandardMaterial {
@@ -48,7 +47,7 @@ pub fn spawn_dust(
             let mut billboard_transform = transform.clone();
             billboard_transform.translation.x += rng.gen_range(-1.0..1.0);
             billboard_transform.translation.z += rng.gen_range(-1.0..1.0);
-            billboard_transform.translation.y += 1.0;
+            billboard_transform.translation.y += 0.2;
 
             let lookat_pos = billboard_transform.translation + camera_transform.forward() * 1.0;
             billboard_transform.look_at(lookat_pos, camera_transform.up());
@@ -80,7 +79,7 @@ pub fn update_dust(
         billboard_transform.look_at(lookat_pos, camera_transform.up());
 
         let angle_of_rotation: Angle =
-            Angle::from_degrees((time.delta().as_secs_f32() * 300.0f32).to_degrees());
+            Angle::from_degrees((time.delta().as_secs_f32() * 1000.0f32).to_degrees());
         billboard_transform.rotate_axis(
             -billboard_transform.forward(),
             angle_of_rotation.to_radians(),

@@ -3,6 +3,7 @@ use crate::hentai_anime::HentaiAnimePlugin;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
+use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin};
 use crate::title_screen::GameState;
@@ -23,7 +24,7 @@ use bevy::pbr::{
 use bevy::prelude::{
     default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
     DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource,
+    Reflect, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -235,11 +236,16 @@ fn load_level(
     mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
+    particles: Query<Entity, (With<Particle>, Without<LevelElement>)>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
         for level_element in level_elements.iter() {
             commands.entity(level_element).despawn();
+        }
+
+        for particle in particles.iter() {
+            commands.entity(particle).despawn();
         }
 
         let level = levels.get(&event.level);
