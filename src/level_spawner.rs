@@ -279,8 +279,8 @@ fn load_level(
                 _ => {
                     spawn_tile_cylinder(
                         &mut commands,
-                        &mut meshes,
-                        &mut materials,
+                        &asset_server,
+                        &mut mesh_loader,
                         effective_x,
                         effective_z,
                         tile.VMBRA,
@@ -581,26 +581,31 @@ fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
 
 fn spawn_tile_cylinder(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    asset_server: &Res<AssetServer>,
+    mesh_loader: &mut ResMut<MeshLoader>,
     x: f32,
     z: f32,
     umbra: bool,
 ) {
-    commands.spawn((
-        LevelElement,
-        Mesh3d(meshes.add(Cylinder::new(0.25 * TILE_SIZE, 0.1))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: if umbra {
-                Color::srgb(0.5, 0.5, 0.8)
-            } else {
-                Color::srgb(0.8, 0.5, 0.5)
-            },
-            ..Default::default()
-        })),
-        Transform::from_xyz(x, 0.0, z),
-        TileEntity,
-    ));
+    load_gltf(
+        String::from("path.glb"),
+        GLTFLoadConfig {
+            entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                commands
+                    .insert(
+                        // should spawn at the tile position
+                        Transform::from_xyz(x, 0.0, z)
+                            .with_scale(Vec3::splat(0.4 * TILE_SIZE))
+                            .with_rotation(Quat::from_rotation_y(random::<i8>() as f32 * PI / 2.0)),
+                    )
+                    .insert(LevelElement)
+                    .insert(TileEntity);
+            }),
+            ..default()
+        },
+        &asset_server,
+        mesh_loader,
+    );
 }
 
 fn spawn_rock(
@@ -651,7 +656,6 @@ fn spawn_wire(
     let mut transform = Transform::default();
     transform.rotate_z(PI / 2.0);
     transform.rotate_y(-angle);
-    println!("ANGLE NEXUS {}", angle);
     transform.translation = Vec3::new(middle.x, 0.0, middle.y);
 
     commands.spawn((

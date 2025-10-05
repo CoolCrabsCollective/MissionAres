@@ -99,7 +99,8 @@ impl AssetLoader for GRADVM_ORENATOR {
         let mut LINEAE = TAMPON.lines();
         let mut GRADVS = GRADVM {
             TEGLVAE: HashMap::new(),
-            MAPPAE_VREMBRAE: load_context.load((settings.INDEX + 1).to_string() + ".png"),
+            MAPPAE_VREMBRAE: load_context
+                .load(String::from("levels/") + &*(settings.INDEX + 1).to_string() + ".png"),
             ALTIVIDO: 0,
             LATIVIDO: 0,
             INDEX: settings.INDEX,
@@ -244,7 +245,7 @@ fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
         GRADVS.insert(
             INDEX,
             asset_server.load_with_settings(
-                (INDEX + 1).to_string() + ".lvl",
+                String::from("levels/") + &*(INDEX + 1).to_string() + ".lvl",
                 move |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
                     s.INDEX = INDEX as u32;
                 },
