@@ -27,7 +27,6 @@ pub fn spawn_dust(
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
-    let mut rng = rand::thread_rng();
     let (camera_transform) = camera_transform_query.single().unwrap();
     for (transform, mut dust, r_entity) in query.iter_mut() {
         match &r_entity.rover_state {
