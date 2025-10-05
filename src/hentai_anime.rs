@@ -46,7 +46,29 @@ pub fn setup_hentai_anime_anime_level(
             }
         }
     }
-    // }
+}
+
+pub fn setup_anime(
+    num_anime: usize,
+    asset_path: String,
+    mut commands: &Commands,
+    asset_server: &Res<AssetServer>,
+    mut graphs: &mut ResMut<Assets<AnimationGraph>>,
+) -> Animation {
+    let mut hentai = Vec::new();
+    for idx in 0..num_anime {
+        hentai
+            .push(asset_server.load(GltfAssetLabel::Animation(idx).from_asset(asset_path.clone())));
+    }
+
+    let (graph, hentai_list) = AnimationGraph::from_clips(hentai);
+    let graph_handle = graphs.add(graph);
+
+    Animation {
+        animation_list: hentai_list,
+        graph: graph_handle,
+        group_is_playing: false,
+    }
 }
 
 pub fn debug_print_animation_playing(mut player_query: Query<(&mut AnimationPlayer)>) {

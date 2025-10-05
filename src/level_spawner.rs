@@ -1,7 +1,7 @@
 use crate::game_control::actions::{ActionList, ActionType};
 use crate::hentai_anime;
-use crate::hentai_anime::Animation;
 use crate::hentai_anime::HentaiAnimePlugin;
+use crate::hentai_anime::{setup_anime, Animation};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
@@ -263,29 +263,6 @@ fn choose_level_by_num_keys(
         events.write(LevelSpawnRequestEvent {
             level: levels.GRADVS[9].clone(),
         });
-    }
-}
-
-fn setup_anime(
-    num_anime: usize,
-    asset_path: String,
-    mut commands: &Commands,
-    asset_server: &Res<AssetServer>,
-    mut graphs: &mut ResMut<Assets<AnimationGraph>>,
-) -> Animation {
-    let mut hentai = Vec::new();
-    for idx in 0..num_anime {
-        hentai
-            .push(asset_server.load(GltfAssetLabel::Animation(idx).from_asset(asset_path.clone())));
-    }
-
-    let (graph, hentai_list) = AnimationGraph::from_clips(hentai);
-    let graph_handle = graphs.add(graph);
-
-    Animation {
-        animation_list: hentai_list,
-        graph: graph_handle,
-        group_is_playing: false,
     }
 }
 
