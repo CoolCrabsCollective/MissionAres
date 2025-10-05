@@ -1,6 +1,7 @@
 use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::GRADVM;
 use crate::level_spawner::ActiveLevel;
+use crate::rover::ActionListExecute;
 use crate::title_screen::GameState;
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
@@ -12,6 +13,9 @@ const MAX_COMMANDS: u16 = 12;
 
 #[derive(Component)]
 pub struct ControlUI;
+
+#[derive(Component)]
+pub struct ExecuteButton;
 
 #[derive(Resource)]
 pub struct RoverColors(Vec<Color>);
@@ -31,12 +35,12 @@ impl Plugin for ControlUIPlugin {
                 command_button_feedback,
             ),
         );
+        app.add_systems(Update, execute_button_handler);
         app.insert_resource(RoverColors(vec![
             Color::srgba(1.0, 0.0, 0.0, 1.0),
             Color::srgba(0.0, 0.0, 1.0, 1.0),
             Color::srgba(0.0, 1.0, 0.0, 1.0),
         ]));
-        // app.add_systems(OnExit(GameState::Game), clean)
     }
 }
 
@@ -158,7 +162,73 @@ fn update_action_list_ui(
                         }
                     }
                 });
+
+                parent
+                    .spawn((
+                        ControlUI,
+                        ExecuteButton,
+                        Button,
+                        Node {
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+                            border: UiRect::all(Val::Px(5.0)),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Center,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
+                    ))
+                    .with_children(|parent| {
+                        parent.spawn((
+                            Text::new("Egg Z Cute"),
+                            TextFont {
+                                font: asset_server.load("font.ttf"),
+                                font_size: 40.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                            TextShadow::default(),
+                        ));
+                    });
             });
+    }
+}
+
+fn execute_button_handler(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &Children),
+        (Changed<Interaction>, With<ExecuteButton>),
+    >,
+    mut text_query: Query<(&Text, &mut TextColor)>,
+    mut events: EventWriter<ActionListExecute>,
+    action_list: Res<ActionList>,
+) {
+    for (interaction, mut bg_color, children) in &mut interaction_query {
+        let color = match *interaction {
+            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
+            Interaction::Hovered => Color::srgb(0.8, 0.8, 0.8),
+            Interaction::None => Color::srgb(0.9, 0.9, 0.9),
+        };
+
+        for child in children {
+            if let Ok(mut text) = text_query.get_mut(*child) {
+                text.1.0 = color;
+            }
+        }
+
+        bg_color.0 = match *interaction {
+            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
+            Interaction::Hovered => Color::srgb(0.8, 0.1, 0.1),
+            Interaction::None => Color::srgba(1.0, 0.2, 0.2, 1.0),
+        };
+
+        if *interaction == Interaction::Pressed {
+            events.write(ActionListExecute {
+                action_list: action_list.actions.clone(),
+            });
+        }
     }
 }
 
@@ -173,6 +243,7 @@ fn ui_sidebar_node() -> Node {
             GridTrack::flex(2.0),
             GridTrack::flex(1.0),
             GridTrack::flex(4.0),
+            GridTrack::flex(1.0),
         ],
         row_gap: Val::Px(15.0),
         column_gap: Val::Px(5.0),
