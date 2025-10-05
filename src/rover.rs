@@ -6,6 +6,9 @@ use crate::title_screen::GameState;
 use bevy::math::I8Vec2;
 use bevy::prelude::*;
 
+const SPEED: f32 = 5.0;
+const WAIT_TIME: f32 = 1.0;
+
 enum RoverStates {
     Standby,
     Moving,
@@ -31,6 +34,7 @@ pub struct ActionExecution {
     is_active: bool,
     action_list: Vec<Vec<Action>>,
     active_action_idx: Vec<usize>,
+    wait_time_start: Vec<f32>,
 }
 
 pub struct RoverPlugin;
@@ -48,6 +52,7 @@ impl Plugin for RoverPlugin {
             is_active: false,
             action_list: vec![],
             active_action_idx: vec![0usize, 0usize],
+            wait_time_start: vec![0.0],
         });
         app.add_event::<ActionListExecute>();
     }
@@ -84,6 +89,7 @@ fn start_execution(
     mut events: EventReader<ActionListExecute>,
     mut action_execution: ResMut<ActionExecution>,
     mut rover_query: Query<(&mut RoverEntity)>,
+    time: Res<Time>,
 ) {
     for event in events.read() {
         action_execution.is_active = true;
@@ -116,7 +122,9 @@ fn start_execution(
                 ActionType::MoveRight => {
                     rover.logical_position += I8Vec2::new(1, 0);
                 }
-                ActionType::Wait => {}
+                ActionType::Wait => {
+                    action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
+                }
             }
         }
     }
@@ -146,6 +154,25 @@ fn action_execution(
 
             let actions = &action_execution.action_list[robot_num];
 
+            let action = actions
+                .get(action_execution.active_action_idx[robot_num])
+                .unwrap();
+
+            // If in wait, skip rest of loop logic
+            if action.moves.0 == ActionType::Wait {
+                let current_time = time.elapsed_secs_wrapped();
+
+                let wait_duration = current_time - action_execution.wait_time_start[robot_num];
+
+                if wait_duration > WAIT_TIME {
+                    action_execution.active_action_idx[robot_num] += 1;
+                    action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
+                    commands.send_event(PuzzleEvaluationRequestEvent);
+                }
+
+                continue;
+            }
+
             let logical_pos = rover.logical_position;
 
             let translation = &mut trans.translation;
@@ -160,8 +187,6 @@ fn action_execution(
             let diff = target - *translation;
 
             // Movement logic
-            let SPEED = 2.0; // move later, dgaf rn
-
             let distance = diff.length();
             let step = SPEED * time.delta_secs();
 
@@ -197,17 +222,17 @@ fn continue_execution(
     mut events: EventReader<PuzzleResponseEvent>,
     mut action_execution: ResMut<ActionExecution>,
     mut rover_query: Query<&mut RoverEntity>,
+    time: Res<Time>,
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::InProgress {
             action_execution.is_active = true;
 
-            // Iterate through each robot
-            for (robot_num, actions) in action_execution.action_list.iter().enumerate() {
-                let mut rovers = rover_query.iter_mut().collect::<Vec<_>>();
-                let Some(rover) = rovers.get_mut(robot_num) else {
-                    continue;
-                };
+            // Iterate through each robot and move them progressively towards the next tile based on action
+            for mut rover in rover_query.iter_mut() {
+                let robot_num = rover.identifier as usize;
+
+                let actions = &action_execution.action_list[robot_num];
 
                 let action = actions
                     .get(action_execution.active_action_idx[robot_num])
@@ -227,7 +252,9 @@ fn continue_execution(
                     ActionType::MoveRight => {
                         rover.logical_position += I8Vec2::new(1, 0);
                     }
-                    ActionType::Wait => {}
+                    ActionType::Wait => {
+                        action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
+                    }
                 }
             }
         }
