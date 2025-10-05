@@ -14,9 +14,15 @@ const SPEED: f32 = 5.0;
 const WAIT_TIME: f32 = 1.0;
 const TURN_SPEED: f32 = 2.5;
 
-enum RoverStates {
+pub enum CardinalDirection {
+    UP,
+    RIGHT,
+    LEFT,
+    DOWN,
+}
+pub enum RoverStates {
     Standby,
-    Moving,
+    Moving(CardinalDirection),
 }
 
 #[derive(Component)]
@@ -28,6 +34,7 @@ pub struct RoverEntity {
     pub battery_level: u8,
     pub identifier: u8,
     pub heading: f32,
+    pub rover_state: RoverStates,
 }
 
 #[derive(Event)]
@@ -139,6 +146,8 @@ fn setup_action_movements(
 
     let mut new_heading = rover.heading;
 
+    let action_attempted = action.moves.0.clone();
+
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
@@ -189,15 +198,23 @@ fn setup_action_movements(
             action_execution.is_waiting[robot_num] = true;
         }
     }
-
+    rover.rover_state = RoverStates::Standby;
     if !is_action_valid {
         action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
         action_execution.is_waiting[robot_num] = true;
 
         rover.logical_position = current_log_pos;
     } else {
+        rover.rover_state = RoverStates::Moving(match action_attempted {
+            ActionType::MoveUp => CardinalDirection::UP,
+            ActionType::MoveDown => CardinalDirection::DOWN,
+            ActionType::MoveLeft => CardinalDirection::LEFT,
+            ActionType::MoveRight => CardinalDirection::RIGHT,
+            ActionType::Wait => panic!("we're moving lol"),
+        });
         if rover.heading != new_heading {
             action_execution.is_turning[robot_num] = true;
+
             rover.heading = new_heading;
         }
     }

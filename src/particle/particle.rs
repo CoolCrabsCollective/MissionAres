@@ -34,7 +34,7 @@ pub fn particle_opacity_update(
         };
         let mut material = materials.get_mut(&material.0.clone()).unwrap();
         let mut col: Srgba = material.base_color.to_srgba();
-        col.alpha = opacity * 0.4;
+        col.alpha = opacity * 0.7;
         material.base_color = Color::Srgba(col);
     }
 }
