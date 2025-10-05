@@ -24,17 +24,15 @@ pub fn setup_hentai_anime_anime_level(
     mut anime_query: Query<(&mut Animation), With<LevelElement>>,
     mut players: Query<(Entity, &mut AnimationPlayer), Added<AnimationPlayer>>,
 ) {
-    for (mut animation) in anime_query.iter_mut() {
+    for mut animation in anime_query.iter_mut() {
         for (entity, mut player) in &mut players {
             if !animation.group_is_playing {
                 let mut transitions = AnimationTransitions::new();
 
-                if animation.animation_list.len() == 1 {
+                if animation.animation_list.len() >= 1 {
                     transitions
                         .play(&mut player, animation.animation_list[0], Duration::ZERO)
                         .repeat();
-
-                    // player.start(animation.animation_list[0].clone()).repeat();
 
                     commands
                         .entity(entity)
@@ -51,7 +49,6 @@ pub fn setup_hentai_anime_anime_level(
 pub fn setup_anime(
     num_anime: usize,
     asset_path: String,
-    mut commands: &Commands,
     asset_server: &Res<AssetServer>,
     mut graphs: &mut ResMut<Assets<AnimationGraph>>,
 ) -> Animation {
