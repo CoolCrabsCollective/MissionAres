@@ -1,4 +1,5 @@
-use crate::rover::RoverEntity;
+use crate::game_control::actions::Action;
+use crate::rover::{ActionExecution, RoverEntity};
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
     level_spawner::ActiveLevel,
@@ -31,6 +32,7 @@ fn on_puzzle_evaluation_request(
     mut evaluation_requests: EventReader<PuzzleEvaluationRequestEvent>,
     mut puzzle_response_event_writer: EventWriter<PuzzleResponseEvent>,
     mut rovers: Query<&mut RoverEntity>,
+    action_execution: Res<ActionExecution>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
 ) {
@@ -130,6 +132,16 @@ fn on_puzzle_evaluation_request(
             break;
         }
 
+        let rover_executions = action_execution.active_action_idx.clone();
+        dbg!(&rover_executions);
+        if let Some(_rover) = rovers
+            .iter()
+            .enumerate()
+            .find(|(idx, rover)| rover_executions[*idx] == action_execution.action_list[*idx].len())
+        {
+            puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
+            break;
+        }
         puzzle_response_event_writer.write(PuzzleResponseEvent::InProgress);
     }
 }

@@ -5,11 +5,14 @@ use crate::rover::ActionListExecute;
 use crate::title_screen::GameState;
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
+use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
+use bevy::picking::hover::HoverMap;
 use bevy::prelude::*;
 
 pub struct ControlUIPlugin;
 
 const MAX_COMMANDS: u16 = 12;
+const LINE_HEIGHT: f32 = 21.0;
 
 #[derive(Component)]
 pub struct ControlUI;
@@ -37,6 +40,7 @@ impl Plugin for ControlUIPlugin {
             ),
         );
         app.add_systems(Update, execute_button_handler);
+        app.add_systems(Update, update_scroll_position);
         app.insert_resource(RoverColors(vec![
             Color::srgba(1.0, 0.0, 0.0, 1.0),
             Color::srgba(0.0, 0.0, 1.0, 1.0),
@@ -44,6 +48,16 @@ impl Plugin for ControlUIPlugin {
         ]));
     }
 }
+
+pub const CONTROL_UI_BACKGROUND_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
+// Red: \(75\div 255\approx 0.2941\)
+// Green: \(89\div 255\approx 0.3490\)
+// Blue: \(62\div 255\approx 0.2431\)
+// Therefore, the result is approximately (0.2941, 0.3490, 0.2431). RGB - Hexadecimal Color ConversionTo calculate hexadecimal colors: Each color will have numerical values for the amounts of Red, Green and Blue that make it up. The...Lycos SearchImage Classification with Convolutional Neural Networks: Introduction to Image DataMay 29, 2024 — By normalizing the RGB values, you ensure compatibility and seamless integration with these tools. The normalisatio...The Carpentries IncubatorELI5: Why do RGB values go from 0 to 255? : r/explainlikeimfiveOct 13, 2021 — RGB color scheme is 8-bit color per channel (R G B) this is known as 16 million colors. Each channel has 8 bit valu...RedditRGB - Hexadecimal Color ConversionTo calculate hexadecimal colors: Each color will have numerical values for the amounts of Red, Green and Blue that make it up. The...Lycos SearchImage Classification with Convolutional Neural Networks: Introduction to Image DataMay 29, 2024 — By normalizing the RGB values, you ensure compatibility and seamless integration with these tools. The normalisatio...The Carpentries IncubatorELI5: Why do RGB values go from 0 to 255? : r/explainlikeimfiveOct 13, 2021 — RGB color scheme is 8-bit color per channel (R G B) this is known as 16 million colors. Each channel has 8 bit valu...RedditShow all   Dive deeper in AI ModeAI responses may include mistakes. Learn morePositive feedbackNegative feedbackThank you
+//      Your feedback helps Google improve. See our Privacy Policy.
+// Share more feedbackReport a problemClose
+pub const CONTROL_UI_SECONDARY_BACKGROUND_COLOR: Color = Color::srgb(0.2941, 0.3490, 0.2431);
+pub const CONTROL_UI_BORDER_COLOR: Color = Color::srgb(0.26, 0.26, 0.26);
 
 fn update_action_list_ui(
     mut commands: Commands,
@@ -78,121 +92,168 @@ fn update_action_list_ui(
         }
 
         let image_robot = asset_server.load("command_icons/robot.png");
+
         commands
-            .spawn((
-                ControlUI,
-                ui_sidebar_node(),
-                BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
-            ))
-            .with_children(|parent| {
-                ui_control_panel(parent, &asset_server);
-
-                let rover_colors = &all_rover_colors.0[0..number_of_rovers];
-                let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
-                parent
+            .spawn((ControlUI, ui_sidebar_container_node()))
+            .with_children(|container_parent| {
+                container_parent
                     .spawn((
                         ControlUI,
-                        Node {
-                            height: Val::Percent(100.0),
-                            width: Val::Percent(100.0),
-                            display: Display::Grid,
-                            padding: UiRect::all(Val::Px(10.0)),
-                            grid_template_columns: columns_template,
-                            grid_template_rows: vec![GridTrack::flex(1.0)],
-                            row_gap: Val::Px(0.0),
-                            column_gap: Val::Px(5.0),
+                        ui_sidebar_node(),
+                        BackgroundColor(CONTROL_UI_BACKGROUND_COLOR),
+                        BorderColor(CONTROL_UI_BORDER_COLOR),
+                        BorderRadius {
+                            top_right: Val::Px(8.0),
+                            bottom_right: Val::Px(8.0),
                             ..default()
                         },
                     ))
                     .with_children(|parent| {
-                        let slicer = TextureSlicer {
-                            border: Default::default(),
-                            center_scale_mode: SliceScaleMode::Stretch,
-                            sides_scale_mode: SliceScaleMode::Stretch,
-                            max_corner_scale: 1.0,
-                        };
-                        let robot_node_for_img = Node {
-                            width: Val::Px(96.0),
-                            height: Val::Px(96.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            margin: UiRect::all(Val::Auto),
-                            ..default()
-                        };
+                        ui_control_panel(parent, &asset_server);
 
-                        for (robot_idx, color) in rover_colors.iter().enumerate() {
-                            let img_robot_node = ImageNode {
-                                image: image_robot.clone(),
-                                image_mode: NodeImageMode::Sliced(slicer.clone()),
-                                color: *color,
-                                ..default()
-                            };
+                        let rover_colors = &all_rover_colors.0[0..number_of_rovers];
+                        // let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
 
-                            let robot_bg_color = Color::srgba(
-                                0.75,
-                                0.75,
-                                0.75,
-                                if (robot_idx == selected_robot_index) {
-                                    1.0
-                                } else {
-                                    0.0
-                                },
-                            );
-                            parent.spawn((
+                        parent
+                            .spawn((
                                 ControlUI,
-                                Button,
-                                RobotButton(robot_idx as i32),
-                                robot_node_for_img.clone(),
-                                img_robot_node.clone(),
-                                BackgroundColor(robot_bg_color),
-                            ));
-                        }
-                    });
+                                Node {
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    flex_grow: 1.0, // Take remaining space after other siblings
+                                    flex_shrink: 1.0, // Allow shrinking if needed
+                                    min_height: Val::Px(0.0), // Important: allows flex item to shrink below content size
+                                    // height: Val::Percent(100.0),
+                                    // max_height: Val::Px(200.0),
+                                    // flex_grow: 1.0,
+                                    ..default()
+                                },
+                                BackgroundColor(CONTROL_UI_SECONDARY_BACKGROUND_COLOR),
+                            ))
+                            .with_children(|parent| {
+                                parent
+                                    .spawn((
+                                        ControlUI,
+                                        Node {
+                                            display: Display::Flex,
+                                            flex_direction: FlexDirection::Row,
+                                            justify_content: JustifyContent::Center,
+                                            padding: UiRect::all(Val::Px(10.0)),
+                                            // max_height: Val::Percent(100.0),
+                                            ..default()
+                                        },
+                                    ))
+                                    .with_children(|parent| {
+                                        // let slicer = TextureSlicer {
+                                        //     border: Default::default(),
+                                        //     center_scale_mode: SliceScaleMode::Stretch,
+                                        //     sides_scale_mode: SliceScaleMode::Stretch,
+                                        //     max_corner_scale: 1.0,
+                                        // };
+                                        let robot_node_for_img = Node {
+                                            width: Val::Px(56.0),
+                                            height: Val::Px(56.0),
+                                            justify_content: JustifyContent::Center,
+                                            align_items: AlignItems::Center,
+                                            ..default()
+                                        };
 
-                let mut actions = event.clone().actions;
-                //actions.resize(number_of_rovers, Vec::new());
-                assert_eq!(actions.len(), number_of_rovers);
-                let mut multi_robot_command_list =
-                    parent.spawn((ControlUI, multi_robot_command_list(number_of_rovers)));
-                multi_robot_command_list.with_children(|parent| {
-                    for i in 0..number_of_rovers {
-                        let mut ui_commands = ui_command_list(parent);
-                        for action in actions[i].iter() {
-                            ui_commands.with_children(|parent| {
-                                ui_command_statement(parent, action, &asset_server);
+                                        for (robot_idx, color) in rover_colors.iter().enumerate() {
+                                            let img_robot_node = ImageNode {
+                                                image: image_robot.clone(),
+                                                // image_mode: NodeImageMode::Sliced(slicer.clone()),
+                                                image_mode: NodeImageMode::Auto,
+                                                color: *color,
+                                                ..default()
+                                            };
+
+                                            let robot_bg_color = Color::srgba(
+                                                0.75,
+                                                0.75,
+                                                0.75,
+                                                if (robot_idx == selected_robot_index) {
+                                                    1.0
+                                                } else {
+                                                    0.0
+                                                },
+                                            );
+                                            parent.spawn((
+                                                ControlUI,
+                                                Button,
+                                                RobotButton(robot_idx as i32),
+                                                robot_node_for_img.clone(),
+                                                img_robot_node.clone(),
+                                                BackgroundColor(robot_bg_color),
+                                            ));
+                                        }
+                                    });
+
+                                parent
+                                    .spawn((
+                                        ControlUI,
+                                        Node {
+                                            // height: Val::Px(200.0),
+                                            // max_height: Val::Px(200.0),
+                                            display: Display::Flex,
+                                            flex_direction: FlexDirection::Row,
+                                            justify_content: JustifyContent::Center,
+                                            overflow: Overflow::scroll_y(),
+                                            ..default()
+                                        },
+                                    ))
+                                    .with_children(|parent| {
+                                        for (robot_idx, color) in rover_colors.iter().enumerate() {
+                                            let mut multi_robot_command_list = parent.spawn((
+                                                ControlUI,
+                                                multi_robot_command_list(number_of_rovers),
+                                                Pickable {
+                                                    should_block_lower: false,
+                                                    ..default()
+                                                },
+                                            ));
+                                            log::info!("Number of actions to draw in the UI for rover {}: {}", robot_idx, event.actions[robot_idx].len());
+                                            multi_robot_command_list.with_children(|parent| {
+                                                for action in event.actions[robot_idx].iter() {
+                                                    ui_command_statement(
+                                                        parent,
+                                                        action,
+                                                        &asset_server,
+                                                    );
+                                                }
+                                            });
+                                        }
+                                    });
                             });
-                        }
-                    }
-                });
-
-                parent
-                    .spawn((
-                        ControlUI,
-                        ExecuteButton,
-                        Button,
-                        Node {
-                            width: Val::Percent(100.0),
-                            height: Val::Percent(100.0),
-                            border: UiRect::all(Val::Px(5.0)),
-                            // horizontally center child text
-                            justify_content: JustifyContent::Center,
-                            // vertically center child text
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
-                    ))
-                    .with_children(|parent| {
-                        parent.spawn((
-                            Text::new("Egg Z Cute"),
-                            TextFont {
-                                font: asset_server.load("font.ttf"),
-                                font_size: 40.0,
-                                ..default()
-                            },
-                            TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-                            TextShadow::default(),
-                        ));
+                        parent
+                            .spawn((
+                                ControlUI,
+                                ExecuteButton,
+                                Button,
+                                Node {
+                                    width: Val::Percent(100.0),
+                                    height: Val::Px(60.0),
+                                    border: UiRect::all(Val::Px(5.0)),
+                                    // horizontally center child text
+                                    justify_content: JustifyContent::Center,
+                                    // vertically center child text
+                                    align_items: AlignItems::Center,
+                                    align_self: AlignSelf::FlexEnd,
+                                    ..default()
+                                },
+                                BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
+                            ))
+                            .with_children(|parent| {
+                                parent.spawn((
+                                    Text::new("Egg Z Cute"),
+                                    TextFont {
+                                        font: asset_server.load("font.ttf"),
+                                        font_size: 40.0,
+                                        ..default()
+                                    },
+                                    TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                                    TextShadow::default(),
+                                ));
+                            });
                     });
             });
     }
@@ -234,21 +295,40 @@ fn execute_button_handler(
     }
 }
 
-fn ui_sidebar_node() -> Node {
+fn ui_sidebar_container_node() -> Node {
     Node {
         height: Val::Percent(100.0),
-        width: Val::Percent(30.0),
-        display: Display::Grid,
+        width: Val::Px(250.0),
+        display: Display::Flex,
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::Center,
+        ..default()
+    }
+}
+
+fn ui_sidebar_node() -> Node {
+    Node {
+        height: Val::Px(500.0),
+        // max_height: Val::Px(500.0),
+        width: Val::Percent(100.0),
+        display: Display::Flex,
+        flex_direction: FlexDirection::Column,
         padding: UiRect::all(Val::Px(10.0)),
-        grid_template_columns: vec![GridTrack::flex(1.0)],
-        grid_template_rows: vec![
-            GridTrack::flex(2.0),
-            GridTrack::flex(1.0),
-            GridTrack::flex(4.0),
-            GridTrack::flex(1.0),
-        ],
-        row_gap: Val::Px(15.0),
-        column_gap: Val::Px(5.0),
+        // grid_template_columns: vec![GridTrack::flex(1.0)],
+        // grid_template_rows: vec![
+        //     GridTrack::flex(2.0),
+        //     GridTrack::flex(1.0),
+        //     GridTrack::flex(4.0),
+        //     GridTrack::flex(1.0),
+        // ],
+        border: UiRect {
+            right: Val::Px(6.0),
+            top: Val::Px(6.0),
+            bottom: Val::Px(6.0),
+            ..default()
+        },
+        // row_gap: Val::Px(15.0),
+        // column_gap: Val::Px(5.0),
         ..default()
     }
 }
@@ -266,31 +346,54 @@ fn ui_command_statement(
         max_corner_scale: 1.0,
     };
     let move_node_for_img = Node {
-        height: Val::Percent(100.0),
+        height: Val::Px(24.0),
+        width: Val::Px(24.0),
         aspect_ratio: Some(1.0f32),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
-        margin: UiRect::all(Val::Auto),
+        // margin: UiRect::all(Val::Auto),
         ..default()
     };
 
     let img_move_node = ImageNode {
         image: image_move.clone(),
-        image_mode: NodeImageMode::Sliced(slicer.clone()),
+        // image_mode: NodeImageMode::Sliced(slicer.clone()),
+        image_mode: NodeImageMode::Auto,
         ..default()
     };
-    parent.spawn((ControlUI, move_node_for_img.clone(), img_move_node.clone()));
+    parent
+        .spawn(Node {
+            min_height: Val::Px(LINE_HEIGHT),
+            max_height: Val::Px(LINE_HEIGHT),
+            ..default()
+        })
+        .insert(Pickable {
+            should_block_lower: false,
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn((
+                ControlUI,
+                move_node_for_img.clone(),
+                img_move_node.clone(),
+                Pickable {
+                    should_block_lower: false,
+                    ..default()
+                },
+            ));
+        });
 }
 
 fn multi_robot_command_list(num_rovers: usize) -> Node {
     Node {
-        height: Val::Percent(100.0),
-        width: Val::Percent(100.0),
-        display: Display::Grid,
-        grid_template_columns: vec![GridTrack::flex(1.0); num_rovers],
-        grid_template_rows: GridTrack::flex(1.0),
-        row_gap: Val::Px(0.0),
-        column_gap: Val::Px(0.0),
+        width: Val::Px(56.0),
+        display: Display::Flex,
+        flex_direction: FlexDirection::Column,
+        align_items: AlignItems::Center,
+        // height: Val::Px(200.0),
+        // max_height: Val::Px(200.0),
+        // overflow: Overflow::scroll_y(),
+        row_gap: Val::Px(12.0),
         ..default()
     }
 }
@@ -308,7 +411,7 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
             align_items: AlignItems::Center,
             ..default()
         },
-        BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
+        BackgroundColor(CONTROL_UI_BACKGROUND_COLOR),
     ))
 }
 
@@ -369,9 +472,9 @@ fn robot_button_feedback(
 }
 
 fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: &Res<AssetServer>) {
-    let image_move_up = asset_server.load("command_icons/move_up.png");
-    let image_move_right = asset_server.load("command_icons/move_right.png");
-    let image_wait = asset_server.load("command_icons/wait.png");
+    let image_move_up = asset_server.load("command_icons/arrow_up_outlined.png");
+    let image_move_right = asset_server.load("command_icons/arrow_right_outlined.png");
+    let image_wait = asset_server.load("command_icons/clock_outlined.png");
     let slicer = TextureSlicer {
         border: Default::default(),
         center_scale_mode: SliceScaleMode::Stretch,
@@ -383,7 +486,8 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
         .spawn((
             ControlUI,
             Node {
-                height: Val::Percent(100.0),
+                height: Val::Px(160.0),
+                min_height: Val::Px(160.0),
                 width: Val::Percent(100.0),
                 display: Display::Grid,
                 grid_template_columns: vec![
@@ -496,4 +600,37 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
 
             parent.spawn((ControlUI, Node::default()));
         });
+}
+
+/// Updates the scroll position of scrollable nodes in response to mouse input
+pub fn update_scroll_position(
+    mut mouse_wheel_events: EventReader<MouseWheel>,
+    hover_map: Res<HoverMap>,
+    mut scrolled_node_query: Query<&mut ScrollPosition>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+) {
+    for mouse_wheel_event in mouse_wheel_events.read() {
+        let (mut dx, mut dy) = match mouse_wheel_event.unit {
+            MouseScrollUnit::Line => (
+                mouse_wheel_event.x * LINE_HEIGHT,
+                mouse_wheel_event.y * LINE_HEIGHT,
+            ),
+            MouseScrollUnit::Pixel => (mouse_wheel_event.x, mouse_wheel_event.y),
+        };
+
+        if keyboard_input.pressed(KeyCode::ControlLeft)
+            || keyboard_input.pressed(KeyCode::ControlRight)
+        {
+            std::mem::swap(&mut dx, &mut dy);
+        }
+
+        for (_pointer, pointer_map) in hover_map.iter() {
+            for (entity, _hit) in pointer_map.iter() {
+                if let Ok(mut scroll_position) = scrolled_node_query.get_mut(*entity) {
+                    scroll_position.offset_x -= dx;
+                    scroll_position.offset_y -= dy;
+                }
+            }
+        }
+    }
 }
