@@ -6,6 +6,7 @@ mod hentai_anime;
 mod level;
 mod level_spawner;
 mod mesh_loader;
+mod particle;
 mod puzzle_evaluation;
 mod rover;
 mod title_screen;
@@ -17,6 +18,8 @@ use crate::game_control::control_ui::ControlUIPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
+use crate::particle::dust::DustPlugin;
+use crate::particle::particle::ParticlePlugin;
 use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
@@ -77,6 +80,8 @@ fn main() {
     app.add_plugins(LevelSpawnerPlugin);
     app.add_plugins(PuzzleEvaluationPlugin);
     app.add_plugins(BatteryUIPlugin);
+    app.add_plugins(DustPlugin);
+    app.add_plugins(ParticlePlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 

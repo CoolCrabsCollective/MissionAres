@@ -1,6 +1,7 @@
 use crate::game_control::actions::{Action, ActionList, ActionType};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::particle::dust::DustSpawner;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin};
 use crate::title_screen::GameState;
@@ -25,6 +26,7 @@ use bevy::prelude::{
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
+use bevy::time::{Timer, TimerMode};
 use bevy::{
     app::{App, Plugin, Update},
     asset::AssetServer,
@@ -39,6 +41,7 @@ use bevy::{
         AlphaMode, Assets, ButtonInput, Color, Component, Cylinder, EntityCommands, KeyCode, Mesh,
         Mesh3d, MeshMaterial3d, Plane3d, Res, ResMut, StandardMaterial, Transform, Vec2, Vec3,
     },
+    time,
 };
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
@@ -321,7 +324,10 @@ fn load_level(
                                     battery_level: 3,
                                     identifier: num_rovers - 1,
                                 })
-                                .insert(LevelElement);
+                                .insert(LevelElement)
+                                .insert(DustSpawner {
+                                    timer: Timer::from_seconds(0.4, TimerMode::Repeating),
+                                });
                         }),
                         ..Default::default()
                     },
