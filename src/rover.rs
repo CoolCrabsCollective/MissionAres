@@ -247,7 +247,7 @@ fn setup_action_movements(
             ActionType::MoveDown => CardinalDirection::DOWN,
             ActionType::MoveLeft => CardinalDirection::LEFT,
             ActionType::MoveRight => CardinalDirection::RIGHT,
-            ActionType::Wait => panic!("we're moving lol"),
+            ActionType::Wait => panic!("we're moving lol"), // TODO UP WAIT UP RIGHT on level 1 causes this panic
         });
         if rover.heading != new_heading {
             action_execution.is_turning[robot_num] = true; // TODO this crashes too, index issue

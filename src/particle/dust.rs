@@ -1,23 +1,18 @@
 use crate::particle::particle::Particle;
-use crate::rover::{CardinalDirection, RoverEntity, RoverStates};
+use crate::rover::{RoverEntity, RoverStates};
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
-use bevy::text::cosmic_text::Angle;
-use rand::Rng;
 
 #[derive(Component)]
 pub struct DustSpawner {
     pub(crate) timer: Timer,
 }
 
-#[derive(Component, Copy, Clone)]
-pub struct Dust;
-
 pub struct DustPlugin;
 
 impl Plugin for DustPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (spawn_dust, update_dust));
+        app.add_systems(Update, spawn_dust);
     }
 }
 
@@ -50,17 +45,21 @@ pub fn spawn_dust(
                     });
 
                     let mut billboard_transform = transform.clone();
-                    billboard_transform.translation.x += match direction {
-                        CardinalDirection::LEFT => 0.8 + rng.gen_range(-0.2..0.2),
-                        CardinalDirection::RIGHT => -0.8 + rng.gen_range(-0.2..0.2),
-                        _ => rng.gen_range(-1.0..1.0),
-                    };
-                    billboard_transform.translation.z += match direction {
-                        CardinalDirection::DOWN => 0.8 + rng.gen_range(-0.2..0.2),
-                        CardinalDirection::UP => -0.8 + rng.gen_range(-0.2..0.2),
-                        _ => rng.gen_range(-1.0..1.0),
-                    };
-                    billboard_transform.translation.y += 0.2;
+                    billboard_transform.translation.y += 0.25;
+                    billboard_transform.translation += transform.forward() * -1.0;
+
+                    // GARBAGE
+                    //billboard_transform.translation.x += match direction {
+                    //    CardinalDirection::LEFT => 0.8 + rng.random_range(-0.2..0.2),
+                    //    CardinalDirection::RIGHT => -0.8 + rng.random_range(-0.2..0.2),
+                    //    _ => rng.random_range(-1.0..1.0),
+                    //};
+                    //billboard_transform.translation.z += match direction {
+                    //    CardinalDirection::DOWN => 0.8 + rng.random_range(-0.2..0.2),
+                    //    CardinalDirection::UP => -0.8 + rng.random_range(-0.2..0.2),
+                    //    _ => rng.random_range(-1.0..1.0),
+                    //};
+                    //billboard_transform.translation.y += 0.2;
 
                     let lookat_pos =
                         billboard_transform.translation + camera_transform.forward() * 1.0;
@@ -68,9 +67,10 @@ pub fn spawn_dust(
 
                     dust.timer.reset();
                     commands.spawn((
-                        Dust {},
                         Particle {
                             lifetime: Timer::from_seconds(0.5, TimerMode::Once),
+                            velocity: transform.forward() * -1.0,
+                            angular_velocity: 20.0f32,
                         },
                         billboard_transform,
                         Mesh3d(quad),
@@ -80,28 +80,5 @@ pub fn spawn_dust(
                 }
             }
         }
-    }
-}
-
-pub fn update_dust(
-    mut query: Query<&mut Transform, (With<Dust>, Without<Camera3d>)>,
-    camera_transform_query: Query<&Transform, With<Camera3d>>,
-    time: Res<Time>,
-) {
-    let (camera_transform) = camera_transform_query.single().unwrap();
-    for (mut transform) in query.iter_mut() {
-        let mut billboard_transform: Transform = transform.clone();
-
-        let lookat_pos = billboard_transform.translation + camera_transform.forward() * 1.0;
-        billboard_transform.look_at(lookat_pos, camera_transform.up());
-
-        let angle_of_rotation: Angle =
-            Angle::from_degrees((time.delta().as_secs_f32() * 1000.0f32).to_degrees());
-        billboard_transform.rotate_axis(
-            -billboard_transform.forward(),
-            angle_of_rotation.to_radians(),
-        );
-
-        *transform = billboard_transform.clone();
     }
 }
