@@ -1,12 +1,12 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{GRADVM, is_pos_in_level};
+use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
+use bevy::math::ops::abs;
 use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
-use bevy::math::ops::abs;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -287,6 +287,8 @@ fn start_execution(
         action_execution.action_list = event.action_list.clone();
 
         action_execution.active_action_idx = vec![0usize; action_execution.action_list.len()];
+        action_execution.is_turning = vec![false; action_execution.action_list.len()];
+        action_execution.is_waiting = vec![false; action_execution.action_list.len()];
 
         println!("Number of rovers: {}", action_execution.action_list.len());
         // Iterate through each robot
