@@ -99,7 +99,6 @@ fn update_action_list_ui(
             .with_children(|container_parent| {
                 container_parent
                     .spawn((
-
                         ui_sidebar_node(),
                         BackgroundColor(CONTROL_UI_BACKGROUND_COLOR),
                         BorderColor(CONTROL_UI_BORDER_COLOR),
@@ -141,17 +140,14 @@ fn update_action_list_ui(
                             ))
                             .with_children(|parent| {
                                 parent
-                                    .spawn((
-
-                                        Node {
-                                            display: Display::Flex,
-                                            flex_direction: FlexDirection::Row,
-                                            justify_content: JustifyContent::Center,
-                                            padding: UiRect::all(Val::Px(10.0)),
-                                            // max_height: Val::Percent(100.0),
-                                            ..default()
-                                        },
-                                    ))
+                                    .spawn((Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::Center,
+                                        padding: UiRect::all(Val::Px(10.0)),
+                                        // max_height: Val::Percent(100.0),
+                                        ..default()
+                                    },))
                                     .with_children(|parent| {
                                         // let slicer = TextureSlicer {
                                         //     border: Default::default(),
@@ -187,7 +183,6 @@ fn update_action_list_ui(
                                                 },
                                             );
                                             parent.spawn((
-
                                                 Button,
                                                 RobotButton(robot_idx as i32),
                                                 robot_node_for_img.clone(),
@@ -198,29 +193,28 @@ fn update_action_list_ui(
                                     });
 
                                 parent
-                                    .spawn((
-
-                                        Node {
-                                            // height: Val::Px(200.0),
-                                            // max_height: Val::Px(200.0),
-                                            display: Display::Flex,
-                                            flex_direction: FlexDirection::Row,
-                                            justify_content: JustifyContent::Center,
-                                            overflow: Overflow::scroll_y(),
+                                    .spawn((Node {
+                                        // height: Val::Px(200.0),
+                                        // max_height: Val::Px(200.0),
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::Center,
+                                        padding: UiRect {
+                                            bottom: Val::Px(8.0),
                                             ..default()
                                         },
-                                    ))
+                                        overflow: Overflow::scroll_y(),
+                                        ..default()
+                                    },))
                                     .with_children(|parent| {
                                         for (robot_idx, color) in rover_colors.iter().enumerate() {
                                             let mut multi_robot_command_list = parent.spawn((
-
                                                 multi_robot_command_list(number_of_rovers),
                                                 Pickable {
                                                     should_block_lower: false,
                                                     ..default()
                                                 },
                                             ));
-                                            log::info!("Number of actions to draw in the UI for rover {}: {}", robot_idx, event.actions[robot_idx].len());
                                             multi_robot_command_list.with_children(|parent| {
                                                 for action in event.actions[robot_idx].iter() {
                                                     ui_command_statement(
@@ -235,12 +229,12 @@ fn update_action_list_ui(
                             });
                         parent
                             .spawn((
-
                                 ExecuteButton,
                                 Button,
                                 Node {
                                     width: Val::Percent(100.0),
                                     height: Val::Px(60.0),
+                                    min_height: Val::Px(60.0),
                                     border: UiRect::all(Val::Px(5.0)),
                                     // horizontally center child text
                                     justify_content: JustifyContent::Center,
