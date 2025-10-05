@@ -113,7 +113,7 @@ impl Plugin for LevelSpawnerPlugin {
 
 fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
     commands.spawn((
-        AudioPlayer::new(asset_server.load("test_song.ogg")),
+        AudioPlayer::new(asset_server.load("Space Program.ogg")),
         PlaybackSettings::LOOP,
     ));
 
