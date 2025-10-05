@@ -1,4 +1,4 @@
-use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
+use crate::game_control::actions::{Action, ActionList, ActionType};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::puzzle_evaluation::{PuzzleFailedEvent, PuzzleSolvedEvent};
@@ -413,18 +413,9 @@ fn load_level(
         active_level.0 = Some(event.level.clone());
 
         action_list.actions.clear();
-        action_list.actions.push(vec![]);
-
-        action_list.actions[0].push(Action {
-            moves: (ActionType::MoveUp, Robot::ROVER1),
-        });
-        action_list.actions[0].push(Action {
-            moves: (ActionType::MoveUp, Robot::ROVER1),
-        });
-        action_list.actions[0].push(Action {
-            moves: (ActionType::MoveRight, Robot::ROVER1),
-        });
-
+        for i in 0..num_rovers {
+            action_list.actions.push(vec![]);
+        }
         let action_event = action_list.clone();
         println!("Sending event with {} rovers", action_list.actions.len());
         commands.send_event(action_event);

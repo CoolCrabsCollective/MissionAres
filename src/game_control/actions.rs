@@ -2,14 +2,6 @@ use crate::rover::ActionListExecute;
 use bevy::prelude::*;
 
 #[derive(Clone)]
-pub enum Robot {
-    ROVER1,
-    ROVER2,
-    DRONE1,
-    DRONE2,
-}
-
-#[derive(Clone)]
 pub enum ActionType {
     MoveUp,
     MoveDown,
@@ -22,7 +14,7 @@ pub struct ActionController;
 
 #[derive(Clone)]
 pub struct Action {
-    pub moves: (ActionType, Robot),
+    pub moves: (ActionType, usize),
 }
 
 #[derive(Resource, Event, Clone)]
@@ -42,8 +34,6 @@ impl ActionType {
         }
     }
 }
-
-impl Robot {}
 
 impl Plugin for ActionController {
     fn build(&self, app: &mut App) {
