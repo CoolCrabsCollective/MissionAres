@@ -1,4 +1,5 @@
 use crate::level_spawner::LevelElement;
+use crate::mesh_loader::MeshLoader;
 use bevy::prelude::*;
 use std::time::Duration;
 
@@ -14,35 +15,37 @@ pub struct HentaiAnimePlugin;
 impl Plugin for HentaiAnimePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, setup_hentai_anime_anime_level);
-        // app.add_systems(Update, debug_print_animation_playing);
+        app.add_systems(Update, debug_print_animation_playing);
     }
 }
 
 pub fn setup_hentai_anime_anime_level(
     mut commands: Commands,
-    mut anime_query: Query<(Entity, &mut AnimationPlayer, &mut Animation), With<LevelElement>>,
-    // mut player_query: Query<&mut AnimationPlayer>,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
-    clips_res: Res<Assets<AnimationClip>>,
+    asset_server: Res<AssetServer>,
+    mut anime_query: Query<(&mut Animation), With<LevelElement>>,
+    mut players: Query<(Entity, &mut AnimationPlayer), Added<AnimationPlayer>>,
+    // mut graphs: ResMut<Assets<AnimationGraph>>,
+    // clips_res: Res<Assets<AnimationClip>>,
 ) {
-    for (entity, mut player, mut animation) in anime_query.iter_mut() {
-        // for mut player in player_query.iter_mut() {
-        if !animation.group_is_playing {
-            let mut transitions = AnimationTransitions::new();
+    for (mut animation) in anime_query.iter_mut() {
+        for (entity, mut player) in &mut players {
+            if !animation.group_is_playing {
+                let mut transitions = AnimationTransitions::new();
 
-            if animation.animation_list.len() == 1 {
-                // transitions
-                //     .play(&mut player, animation.animation_list[0], Duration::ZERO)
-                //     .repeat();
+                if animation.animation_list.len() == 1 {
+                    transitions
+                        .play(&mut player, animation.animation_list[0], Duration::ZERO)
+                        .repeat();
 
-                player.start(animation.animation_list[0].clone()).repeat();
+                    // player.start(animation.animation_list[0].clone()).repeat();
 
-                commands
-                    .entity(entity)
-                    .insert(AnimationGraphHandle(animation.graph.clone()));
-                // .insert(transitions);
+                    commands
+                        .entity(entity)
+                        .insert(AnimationGraphHandle(animation.graph.clone()))
+                        .insert(transitions);
 
-                animation.group_is_playing = true;
+                    animation.group_is_playing = true;
+                }
             }
 
             // let mut transitions = AnimationTransitions::new();

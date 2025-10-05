@@ -39,10 +39,11 @@ pub struct LoadedGLTF {
     pub gltf_handle: Handle<Gltf>,
     pub config: GLTFLoadConfig,
     pub processed: bool,
+    pub file_path: String,
 }
 
 #[derive(Resource)]
-pub struct MeshLoader(Vec<LoadedGLTF>);
+pub struct MeshLoader(pub(crate) Vec<LoadedGLTF>);
 
 impl Plugin for MeshLoaderPlugin {
     fn build(&self, app: &mut App) {
@@ -62,9 +63,10 @@ pub fn load_gltf(
     mesh_loader: &mut ResMut<MeshLoader>,
 ) {
     mesh_loader.0.push(LoadedGLTF {
-        gltf_handle: asset_server.load(asset_path),
+        gltf_handle: asset_server.load(asset_path.clone()),
         processed: false,
         config,
+        file_path: asset_path,
     });
 }
 
@@ -72,13 +74,11 @@ pub fn load_gltf(
 fn process_loaded_gltfs(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     gltf_meshes: Res<Assets<GltfMesh>>,
     nodes: Res<Assets<GltfNode>>,
     mut mesh_loader: ResMut<MeshLoader>,
     gltf_assets: Res<Assets<Gltf>>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
-    mut clips_res: Res<Assets<AnimationClip>>,
 ) {
     for loaded_gltf in mesh_loader.0.iter_mut() {
         if loaded_gltf.processed {
@@ -115,24 +115,14 @@ fn process_loaded_gltfs(
             }
         }
 
-        let hentai = gltf.animations.clone();
-
-        if hentai.len() == 1 {
-            if let Some(clip) = clips_res.get(&hentai.clone()[0]) {
-                dbg!(clip);
-            }
-        }
-
-        let (graph, hentai_list) = AnimationGraph::from_clips(hentai);
-
-        let graph_handle = graphs.add(graph);
+        let asset_path = &loaded_gltf.file_path;
 
         if loaded_gltf.config.spawn {
             let mut entity_commands = commands.spawn((
                 SceneRoot(first_scene_handle),
                 Animation {
-                    animation_list: hentai_list,
-                    graph: graph_handle,
+                    animation_list: vec![],
+                    graph: graphs.reserve_handle(),
                     group_is_playing: false,
                 },
             ));

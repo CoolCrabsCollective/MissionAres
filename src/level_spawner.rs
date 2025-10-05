@@ -1,4 +1,7 @@
+use crate::animation_example::AnimePlugin;
 use crate::game_control::actions::{Action, ActionList, ActionType};
+use crate::hentai_anime;
+use crate::hentai_anime::Animation;
 use crate::hentai_anime::HentaiAnimePlugin;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
@@ -14,6 +17,7 @@ use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
+use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::primitives::Sphere;
 use bevy::math::{I8Vec2, Quat};
@@ -22,8 +26,8 @@ use bevy::pbr::{
     DistanceFog, FogFalloff, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
-    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    default, in_state, AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig,
+    ColorMaterial, DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
     Reflect, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
@@ -107,6 +111,8 @@ impl Plugin for LevelSpawnerPlugin {
         ));
 
         app.add_plugins(RoverPlugin);
+
+        // app.add_plugins(AnimePlugin);
         app.add_plugins(HentaiAnimePlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -225,6 +231,29 @@ fn choose_level_by_num_keys(
     }
 }
 
+fn setup_anime(
+    num_anime: usize,
+    asset_path: String,
+    mut commands: &Commands,
+    asset_server: &Res<AssetServer>,
+    mut graphs: &mut ResMut<Assets<AnimationGraph>>,
+) -> Animation {
+    let mut hentai = Vec::new();
+    for idx in 0..num_anime {
+        hentai
+            .push(asset_server.load(GltfAssetLabel::Animation(idx).from_asset(asset_path.clone())));
+    }
+
+    let (graph, hentai_list) = AnimationGraph::from_clips(hentai);
+    let graph_handle = graphs.add(graph);
+
+    Animation {
+        animation_list: hentai_list,
+        graph: graph_handle,
+        group_is_playing: false,
+    }
+}
+
 fn load_level(
     mut commands: Commands,
     mut events: EventReader<LevelSpawnRequestEvent>,
@@ -237,6 +266,7 @@ fn load_level(
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
     particles: Query<Entity, (With<Particle>, Without<LevelElement>)>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -360,6 +390,13 @@ fn load_level(
             }
 
             if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
+                let anime = setup_anime(
+                    1,
+                    String::from("dish.glb"),
+                    &commands,
+                    &asset_server,
+                    &mut graphs,
+                );
                 load_gltf(
                     String::from("dish.glb"),
                     GLTFLoadConfig {
@@ -371,7 +408,8 @@ fn load_level(
                                         .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
                                 )
                                 .insert(LevelElement)
-                                .insert(AnimationPlayer::default());
+                                .insert(AnimationPlayer::default())
+                                .insert(anime.clone());
                         }),
                         ..Default::default()
                     },
@@ -467,13 +505,13 @@ fn load_level(
                 let effective_x = (x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
                 let effective_z = (y as f32 * TILE_SIZE - level_height / 2.0) + TILE_SIZE / 2.0;
 
-                spawn_rock(
-                    effective_x,
-                    effective_z,
-                    distance,
-                    &asset_server,
-                    &mut mesh_loader,
-                );
+                // spawn_rock(
+                //     effective_x,
+                //     effective_z,
+                //     distance,
+                //     &asset_server,
+                //     &mut mesh_loader,
+                // );
             }
         }
 
