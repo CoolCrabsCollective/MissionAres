@@ -7,14 +7,12 @@ use bevy::prelude::{
 };
 use bevy::ui::Val;
 use bevy::utils::default;
-use std::time::{Duration, Instant};
 
 pub struct BatteryUIPlugin;
 
 #[derive(Component)]
 pub struct BatteryUIElement {
     rover_id: Entity,
-    creation_time: Instant,
 }
 
 #[derive(Component)]
@@ -63,10 +61,7 @@ fn rebuild(
                 image: images.images[0].clone(),
                 ..default()
             },
-            BatteryUIElement {
-                rover_id: entity,
-                creation_time: Instant::now(),
-            },
+            BatteryUIElement { rover_id: entity },
         ));
         commands.entity(entity).insert(BatteryUIAttachment);
     }
@@ -83,11 +78,11 @@ fn update(
         for (id, rover) in &rovers {
             if id == ui_elem.rover_id {
                 found = true;
-                img.image = images.images[3].clone();
+                img.image = images.images[rover.battery_level as usize].clone();
             }
         }
 
-        if !found && ui_elem.creation_time + Duration::from_secs(10) < Instant::now() {
+        if !found {
             commands.entity(ui_entity).despawn();
         }
     }
