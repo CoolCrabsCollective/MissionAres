@@ -1,9 +1,9 @@
 use crate::game_control::actions::{ActionList, ActionType};
 use crate::hentai_anime;
 use crate::hentai_anime::HentaiAnimePlugin;
-use crate::hentai_anime::{setup_anime, Animation};
+use crate::hentai_anime::{Animation, setup_anime};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -13,9 +13,9 @@ use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
@@ -25,9 +25,9 @@ use bevy::pbr::{
     ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig,
-    ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter,
-    PerspectiveProjection, Projection, Reflect, Resource, Without,
+    AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges,
+    GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    Reflect, Resource, Without, default, in_state,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -362,8 +362,6 @@ fn load_level(
             trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
             g_transform = GlobalTransform::default();
             g_transform = g_transform.mul_transform(*trans);
-            println!("{:#?}", *trans);
-            println!("{:#?}", g_transform);
         }
         trans.translation.x -= trans.translation.y / 4.0;
     }
