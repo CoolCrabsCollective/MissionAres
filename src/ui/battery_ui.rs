@@ -55,8 +55,8 @@ fn rebuild(
                 position_type: PositionType::Absolute,
                 left: Val::Percent(90.0),
                 top: Val::Percent(5.0),
-                width: Val::Px(50.0),
-                height: Val::Px(50.0),
+                width: Val::Px(40.0),
+                height: Val::Px(40.0),
                 ..default()
             },
             ImageNode {
@@ -86,10 +86,10 @@ fn update(
 
                 if let Ok(ui_pos) = camera.0.world_to_viewport(
                     camera.1,
-                    rover_transform.translation() + Vec3::new(0.0, 1.0, 0.0),
+                    rover_transform.translation() + Vec3::new(0.0, 1.0, 1.0),
                 ) {
-                    node.left = Val::Px(ui_pos.x);
-                    node.top = Val::Px(ui_pos.y);
+                    node.left = Val::Px(ui_pos.x - 20.0);
+                    node.top = Val::Px(ui_pos.y - 60.0);
                 }
             }
         }

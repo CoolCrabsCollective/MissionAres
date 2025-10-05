@@ -195,6 +195,40 @@ fn setup_action_movements(
         }
         ActionType::Wait => {
             action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
+            // TODO crash here!
+            //
+            // thread 'Compute Task Pool (0)' panicked at src/rover.rs:188:45:
+            //     index out of bounds: the len is 1 but the index is 1
+            // stack backtrace:
+            // 0: __rustc::rust_begin_unwind
+            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/std/src/panicking.rs:697:5
+            // 1: core::panicking::panic_fmt
+            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:75:14
+            // 2: core::panicking::panic_bounds_check
+            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:280:5
+            // 3: <usize as core::slice::index::SliceIndex<[T]>>::index_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/index.rs:280:14
+            // 4: core::slice::index::<impl core::ops::index::IndexMut<I> for [T]>::index_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/index.rs:30:15
+            // 5: <alloc::vec::Vec<T,A> as core::ops::index::IndexMut<I>>::index_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:3579:9
+            // 6: mission_ares::rover::setup_action_movements
+            // at ./src/rover.rs:188:45
+            // 7: mission_ares::rover::start_execution
+            // at ./src/rover.rs:238:13
+            // 8: core::ops::function::FnMut::call_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:168:5
+            // 9: core::ops::function::impls::<impl core::ops::function::FnMut<A> for &mut F>::call_mut
+            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:301:21
+            // 10: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5,F6) .> Out>>::run::call_inner
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:945:21
+            // 11: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5,F6) .> Out>>::run
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:948:17
+            // 12: <bevy_ecs::system::function_system::FunctionSystem<Marker,F> as bevy_ecs::system::system::System>::run_unsafe
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:735:29
+            // 13: <bevy_ecs::system::schedule_system::InfallibleSystemWrapper<S> as bevy_ecs::system::system::System>::run_unsafe
+            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/schedule_system.rs:68:16
+
             action_execution.is_waiting[robot_num] = true;
         }
     }
