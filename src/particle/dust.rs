@@ -66,9 +66,10 @@ pub fn spawn_dust(
                     commands.spawn((
                         Particle {
                             lifetime: Timer::from_seconds(0.5, TimerMode::Once),
-                            velocity: -shoot_direction * (0.5 * random::<f32>() + 0.5) * 0.5,
+                            velocity: -shoot_direction * (0.5 * random::<f32>() + 0.5),
                             angular_velocity: 20.0f32,
                             opacity_function: Box::new(|p| 1.0 - p),
+                            scale_function: Box::new(|p| p / 2.0),
                         },
                         billboard_transform,
                         Mesh3d(quad),

@@ -16,6 +16,7 @@ pub struct Particle {
     pub velocity: Vec3,
     pub angular_velocity: f32,
     pub opacity_function: Box<dyn Fn(f32) -> f32 + Send + Sync>,
+    pub scale_function: Box<dyn Fn(f32) -> f32 + Send + Sync>,
 }
 
 impl Plugin for ParticlePlugin {
@@ -43,23 +44,16 @@ pub fn update_particle(
         let angle_of_rotation: Angle =
             Angle::from_degrees((δ * particle.angular_velocity).to_degrees());
         transform.rotate_axis(-forward, angle_of_rotation.to_radians());
-        transform.scale = dust_scale(particle.lifetime.elapsed_secs());
+        let scale_func = &particle.scale_function;
+        let s = scale_func(particle.lifetime.elapsed_secs());
+        transform.scale = Vec3::new(s, s, s);
         transform.translation += δ * particle.velocity;
 
         let fraction = particle.lifetime.fraction();
-        let func = &particle.opacity_function;
+        let op_func = &particle.opacity_function;
         materials.get_mut(&mat.0.clone()).unwrap().base_color =
-            Color::srgba(1.0, 1.0, 1.0, func(fraction));
+            Color::srgba(1.0, 1.0, 1.0, op_func(fraction));
     }
-}
-
-// todo scale_function in Particle
-fn dust_scale(elapsed_time: f32) -> Vec3 {
-    Vec3::new(
-        1.0f32.min(elapsed_time * elapsed_time),
-        1.0f32.min(elapsed_time * elapsed_time),
-        1.0f32.min(elapsed_time * elapsed_time),
-    )
 }
 
 pub fn particle_remove(
