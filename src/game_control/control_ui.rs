@@ -12,7 +12,7 @@ use bevy::prelude::*;
 pub struct ControlUIPlugin;
 
 const MAX_COMMANDS: u16 = 12;
-const LINE_HEIGHT: f32 = 21.0;
+const LINE_HEIGHT: f32 = 24.0;
 
 #[derive(Component)]
 pub struct ControlUI;
@@ -58,6 +58,7 @@ pub const CONTROL_UI_BACKGROUND_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
 // Share more feedbackReport a problemClose
 pub const CONTROL_UI_SECONDARY_BACKGROUND_COLOR: Color = Color::srgb(0.2941, 0.3490, 0.2431);
 pub const CONTROL_UI_BORDER_COLOR: Color = Color::srgb(0.26, 0.26, 0.26);
+pub const ACTION_SECTIONS_BORDER_COLOR: Color = Color::srgb(0.36, 0.36, 0.36);
 
 fn update_action_list_ui(
     mut commands: Commands,
@@ -123,12 +124,21 @@ fn update_action_list_ui(
                                     flex_grow: 1.0, // Take remaining space after other siblings
                                     flex_shrink: 1.0, // Allow shrinking if needed
                                     min_height: Val::Px(0.0), // Important: allows flex item to shrink below content size
-                                    // height: Val::Percent(100.0),
-                                    // max_height: Val::Px(200.0),
-                                    // flex_grow: 1.0,
+                                    margin: UiRect {
+                                        right: Val::Px(4.0),
+                                        left: Val::Px(4.0),
+                                        bottom: Val::Px(8.0),
+                                        ..default()
+                                    },
+                                    padding: UiRect {
+                                        top: Val::Px(8.0),
+                                        ..default()
+                                    },
+                                    border: UiRect::all(Val::Px(2.0)),
                                     ..default()
                                 },
                                 BackgroundColor(CONTROL_UI_SECONDARY_BACKGROUND_COLOR),
+                                BorderColor(ACTION_SECTIONS_BORDER_COLOR),
                             ))
                             .with_children(|parent| {
                                 parent
@@ -240,18 +250,19 @@ fn update_action_list_ui(
                                     align_self: AlignSelf::FlexEnd,
                                     ..default()
                                 },
-                                BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
+                                BackgroundColor::from(Color::srgba(0.6627, 0.0745, 0.0745, 1.0)),
                             ))
                             .with_children(|parent| {
                                 parent.spawn((
-                                    Text::new("Egg Z Cute"),
+                                    Text::new("Execute"),
                                     TextFont {
-                                        font: asset_server.load("font.ttf"),
-                                        font_size: 40.0,
+                                        font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
+                                        font_size: 26.0,
                                         ..default()
                                     },
-                                    TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-                                    TextShadow::default(),
+                                    // \(R=\frac{169}{255}\approx 0.6627\)\(G=\frac{19}{255}\approx 0.0745\)\(B=\frac{19}{255}\approx 0.0745\)
+                                    TextColor(Color::srgba(0.835, 8.835, 0.835, 1.0)),
+                                    // TextShadow::default(),
                                 ));
                             });
                     });
@@ -298,7 +309,7 @@ fn execute_button_handler(
 fn ui_sidebar_container_node() -> Node {
     Node {
         height: Val::Percent(100.0),
-        width: Val::Px(250.0),
+        width: Val::Px(300.0),
         display: Display::Flex,
         align_items: AlignItems::Center,
         justify_content: JustifyContent::Center,
@@ -308,7 +319,7 @@ fn ui_sidebar_container_node() -> Node {
 
 fn ui_sidebar_node() -> Node {
     Node {
-        height: Val::Px(500.0),
+        height: Val::Percent(80.0),
         // max_height: Val::Px(500.0),
         width: Val::Percent(100.0),
         display: Display::Flex,
@@ -363,8 +374,8 @@ fn ui_command_statement(
     };
     parent
         .spawn(Node {
-            min_height: Val::Px(LINE_HEIGHT),
-            max_height: Val::Px(LINE_HEIGHT),
+            // min_height: Val::Px(LINE_HEIGHT),
+            // max_height: Val::Px(LINE_HEIGHT),
             ..default()
         })
         .insert(Pickable {
@@ -498,6 +509,10 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                 grid_template_rows: RepeatedGridTrack::flex(1, 1.0),
                 row_gap: Val::Px(0.0),
                 column_gap: Val::Px(0.0),
+                margin: UiRect {
+                    bottom: Val::Px(16.0),
+                    ..default()
+                },
                 ..default()
             },
         ))
