@@ -103,11 +103,9 @@ fn execute_actions(
                     + TILE_SIZE / 2.0;
 
                 // TODO: smoothly move between current and target locations, execute one action at a time
-                commands.entity(entity).insert(Transform::from_xyz(
-                    effective_x as f32,
-                    0.5,
-                    effective_z as f32,
-                ));
+                commands
+                    .entity(entity)
+                    .insert(Transform::from_xyz(effective_x, 0.5, effective_z));
             }
         }
     }
