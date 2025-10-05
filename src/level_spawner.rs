@@ -254,8 +254,8 @@ fn load_level(
 
         log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
 
-        let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
-        let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+        let level_width = level.LATIVIDO as f32 * TILE_SIZE;
+        let level_height = level.ALTIVIDO as f32 * TILE_SIZE;
 
         commands.spawn((
             LevelElement,
@@ -273,11 +273,9 @@ fn load_level(
         for ((x, z), tile) in level.TEGLVAE.iter() {
             let logical_x = *x as i32;
             let logical_z = *z as i32;
-            let effective_x =
-                (*x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+            let effective_x = (*x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
             // mirror along the z to align correctly with how it looks in the level
-            let effective_z =
-                (-*z as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
+            let effective_z = (-*z as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0;
 
             spawn_tile_cylinder(
                 &mut commands,
@@ -290,7 +288,7 @@ fn load_level(
 
             // Store rover spawn position for the start tile
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::INITIVM) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::INITIVM) {
                 num_rovers += 1;
                 load_gltf(
                     String::from("rover.glb"),
@@ -323,7 +321,7 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::FINIS) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS) {
                 load_gltf(
                     String::from("mineral.glb"),
                     GLTFLoadConfig {
@@ -346,7 +344,7 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::SATVRNALIA) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
                 load_gltf(
                     String::from("dish.glb"),
                     GLTFLoadConfig {
@@ -366,7 +364,7 @@ fn load_level(
                 );
             }
 
-            if matches!(tile.TEGVLA_TYPVS(), TEGVLA_TYPVS::CRATER) {
+            if matches!(tile.TYPVS, TEGVLA_TYPVS::CRATER) {
                 load_gltf(
                     String::from("crater.glb"),
                     GLTFLoadConfig {
@@ -374,7 +372,7 @@ fn load_level(
                             commands
                                 .insert(
                                     // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, -effective_z)
+                                    Transform::from_xyz(effective_x, 0.0, effective_z)
                                         .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
                                 )
                                 .insert(LevelElement);
@@ -385,6 +383,22 @@ fn load_level(
                     &mut mesh_loader,
                 );
             }
+        }
+
+        for (start, end) in level.NEXVS.iter() {
+            if start > end {
+                continue;
+            }
+
+            let start = Vec2::new(
+                (start.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
+                (-start.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
+            );
+            let end = Vec2::new(
+                (end.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
+                (-end.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
+            );
+            spawn_wire(&mut commands, &mut meshes, &mut materials, start, end);
         }
 
         log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
@@ -414,10 +428,8 @@ fn load_level(
                     continue;
                 }
 
-                let effective_x =
-                    (x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
-                let effective_z =
-                    (y as f32 * TILE_SIZE - effective_level_height / 2.0) + TILE_SIZE / 2.0;
+                let effective_x = (x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
+                let effective_z = (y as f32 * TILE_SIZE - level_height / 2.0) + TILE_SIZE / 2.0;
 
                 spawn_rock(
                     effective_x,
@@ -430,8 +442,8 @@ fn load_level(
         }
 
         let plane_mesh_handle = meshes.add(create_mappae_umbrae_mesh(Vec2::new(
-            effective_level_width,
-            effective_level_height,
+            level_width,
+            level_height,
         )));
         commands.spawn((
             LevelElement,
@@ -559,6 +571,35 @@ fn spawn_rock(
         &asset_server,
         mesh_loader,
     );
+}
+
+fn spawn_wire(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    start: Vec2,
+    end: Vec2,
+) {
+    let middle = (start + end) / 2.0;
+    let angle = (end - start).to_angle();
+    let len = (end - start).length();
+
+    let mut transform = Transform::default();
+    transform.rotate_z(PI / 2.0);
+    transform.rotate_y(-angle);
+    println!("ANGLE NEXUS {}", angle);
+    transform.translation = Vec3::new(middle.x, 0.0, middle.y);
+
+    commands.spawn((
+        LevelElement,
+        Mesh3d(meshes.add(Cylinder::new(0.02 * TILE_SIZE, len))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.1, 0.1, 0.1),
+            ..Default::default()
+        })),
+        transform,
+        TileEntity,
+    ));
 }
 
 fn debug_render_toggle(mut context: ResMut<DebugRenderContext>, keys: Res<ButtonInput<KeyCode>>) {

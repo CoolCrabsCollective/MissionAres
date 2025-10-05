@@ -43,12 +43,6 @@ pub enum TEGVLA_TYPVS {
     CRATER,
 }
 
-impl TEGVLA {
-    pub fn TEGVLA_TYPVS(&self) -> &TEGVLA_TYPVS {
-        &self.TYPVS
-    }
-}
-
 // level (grade -> gradvs)
 #[derive(Asset, TypePath, Debug, Clone)]
 pub struct GRADVM {
@@ -59,6 +53,7 @@ pub struct GRADVM {
     pub INDEX: u32,                         // no comment required
     pub NVMERVS_VEHICVLORVM_MOBILIVM: i8,   // rover count
     pub NVMERVS_CRYSTALLORVM: i8,           // crystal count
+    pub NEXVS: HashMap<(i8, i8), (i8, i8)>, // connections
 }
 
 // loaded level
@@ -109,7 +104,9 @@ impl AssetLoader for GRADVM_ORENATOR {
             INDEX: settings.INDEX,
             NVMERVS_VEHICVLORVM_MOBILIVM: 0,
             NVMERVS_CRYSTALLORVM: 0,
+            NEXVS: HashMap::new(),
         };
+        let mut NEXVS_MAPPAE: HashMap<char, (i8, i8)> = HashMap::new();
 
         loop {
             let LINEA = LINEAE.next();
@@ -142,6 +139,23 @@ impl AssetLoader for GRADVM_ORENATOR {
                         GRADVS.NVMERVS_CRYSTALLORVM += 1;
                     }
                     'P' => {
+                        GRADVS.TEGLVAE.insert(
+                            (X, -GRADVS.ALTIVIDO),
+                            TEGVLA {
+                                TYPVS: TEGVLA_TYPVS::SEMITA,
+                                VMBRA: false,
+                            },
+                        );
+                    }
+                    '1'..'9' => {
+                        if let Some(INITIVM) = NEXVS_MAPPAE.remove(&ITERATOR) {
+                            let FINIS = (X, -GRADVS.ALTIVIDO);
+                            GRADVS.NEXVS.insert(INITIVM, FINIS);
+                            GRADVS.NEXVS.insert(FINIS, INITIVM);
+                        } else {
+                            NEXVS_MAPPAE.insert(ITERATOR, (X, -GRADVS.ALTIVIDO));
+                        }
+
                         GRADVS.TEGLVAE.insert(
                             (X, -GRADVS.ALTIVIDO),
                             TEGVLA {
@@ -187,13 +201,23 @@ impl AssetLoader for GRADVM_ORENATOR {
             INDEX: GRADVS.INDEX,
             NVMERVS_VEHICVLORVM_MOBILIVM: GRADVS.NVMERVS_VEHICVLORVM_MOBILIVM,
             NVMERVS_CRYSTALLORVM: GRADVS.NVMERVS_CRYSTALLORVM,
+            NEXVS: HashMap::new(),
         };
+
         for ITERATOR in GRADVS.TEGLVAE.iter() {
             let mut COORDINATAE = ITERATOR.0.clone();
             COORDINATAE.1 += GRADVS.ALTIVIDO;
             GRADVS_MODIFICATVS
                 .TEGLVAE
                 .insert(COORDINATAE, ITERATOR.1.clone());
+        }
+
+        for ITERATOR in GRADVS.NEXVS.iter() {
+            let mut COORDINATAE = ITERATOR.0.clone();
+            let mut DESTINATIO = ITERATOR.1.clone();
+            COORDINATAE.1 += GRADVS.ALTIVIDO;
+            DESTINATIO.1 += GRADVS.ALTIVIDO;
+            GRADVS_MODIFICATVS.NEXVS.insert(COORDINATAE, DESTINATIO);
         }
 
         Ok(GRADVS_MODIFICATVS)
@@ -204,22 +228,21 @@ impl AssetLoader for GRADVM_ORENATOR {
 }
 
 fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(GRADVM_ONVSTVS {
-        GRADVS: vec![
-            asset_server.load_with_settings("1.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 0;
-            }),
-            asset_server.load_with_settings("2.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 1;
-            }),
-            asset_server.load_with_settings("3.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 2;
-            }),
-            asset_server.load_with_settings("4.lvl", |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
-                s.INDEX = 3;
-            }),
-        ],
-    });
+    let mut GRADVS = Vec::new();
+
+    for INDEX in 0..4 {
+        GRADVS.insert(
+            INDEX,
+            asset_server.load_with_settings(
+                (INDEX + 1).to_string() + ".lvl",
+                move |s: &mut GRADVM_ORENATOR_CONFIGVRATIONES| {
+                    s.INDEX = INDEX as u32;
+                },
+            ),
+        );
+    }
+
+    commands.insert_resource(GRADVM_ONVSTVS { GRADVS });
 }
 
 fn UMBRAE_COLLOCATOR(
