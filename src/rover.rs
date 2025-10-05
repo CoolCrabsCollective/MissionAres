@@ -192,9 +192,11 @@ fn continue_execution(
                     continue;
                 };
 
-                let action = actions
-                    .get(action_execution.active_action_idx[robot_num])
-                    .unwrap();
+                let Some(action) = actions.get(action_execution.active_action_idx[robot_num])
+                else {
+                    log::error!("No more actions for robot {}", robot_num);
+                    continue;
+                };
 
                 // Setup first action movements, validate level boundary
                 match action.moves.0 {
