@@ -325,8 +325,6 @@ fn load_level(
                                     heading: -PI / 2.0,
                                 })
                                 .insert(LevelElement)
-                                .insert(AnimationPlayer::default())
-                                .insert(LevelElement)
                                 .insert(DustSpawner {
                                     timer: Timer::from_seconds(0.4, TimerMode::Repeating),
                                 });
@@ -372,7 +370,8 @@ fn load_level(
                                     Transform::from_xyz(effective_x, 0.0, effective_z)
                                         .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
                                 )
-                                .insert(LevelElement);
+                                .insert(LevelElement)
+                                .insert(AnimationPlayer::default());
                         }),
                         ..Default::default()
                     },

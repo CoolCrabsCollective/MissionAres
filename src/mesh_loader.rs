@@ -78,6 +78,7 @@ fn process_loaded_gltfs(
     mut mesh_loader: ResMut<MeshLoader>,
     gltf_assets: Res<Assets<Gltf>>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
+    mut clips_res: Res<Assets<AnimationClip>>,
 ) {
     for loaded_gltf in mesh_loader.0.iter_mut() {
         if loaded_gltf.processed {
@@ -116,19 +117,23 @@ fn process_loaded_gltfs(
 
         let hentai = gltf.animations.clone();
 
-        let mut graph = AnimationGraph::new();
-        let hentai_list: Vec<_> = graph
-            .add_clips(hentai.into_iter(), 1.0, graph.root)
-            .collect();
+        if hentai.len() == 1 {
+            if let Some(clip) = clips_res.get(&hentai.clone()[0]) {
+                dbg!(clip);
+            }
+        }
 
-        let graph = graphs.add(graph);
+        let (graph, hentai_list) = AnimationGraph::from_clips(hentai);
+
+        let graph_handle = graphs.add(graph);
 
         if loaded_gltf.config.spawn {
             let mut entity_commands = commands.spawn((
                 SceneRoot(first_scene_handle),
                 Animation {
-                    animation_list: hentai_list.clone(),
-                    graph,
+                    animation_list: hentai_list,
+                    graph: graph_handle,
+                    group_is_playing: false,
                 },
             ));
             let func = &loaded_gltf.config.entity_initializer;
