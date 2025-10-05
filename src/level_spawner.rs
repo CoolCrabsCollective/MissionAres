@@ -471,13 +471,7 @@ fn load_level(
         }
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
-            let anime = setup_anime(
-                1,
-                String::from("dish.glb"),
-                &commands,
-                &asset_server,
-                &mut graphs,
-            );
+            let anime = setup_anime(1, String::from("dish.glb"), &asset_server, &mut graphs);
             load_gltf(
                 String::from("dish.glb"),
                 GLTFLoadConfig {
