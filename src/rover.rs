@@ -99,7 +99,43 @@ fn setup_action_movements(
 
     let action = actions
         .get(action_execution.active_action_idx[robot_num])
-        .unwrap();
+        .unwrap(); //todo! THIS CRASHES ON LEVEL 3
+    // stack trace:
+    // plz fix
+    // 2025-10-05T15:59:42.139519Z  INFO bevy_quickstart_game::puzzle_evaluation: Rover 0 in position [4, 3] battery level from 3 to: 2
+    //
+    // thread 'Compute Task Pool (1)' panicked at src/rover.rs:102:10:
+    // called `Option::unwrap()` on a `None` value
+    // stack backtrace:
+    //    0: __rustc::rust_begin_unwind
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/std/src/panicking.rs:697:5
+    //    1: core::panicking::panic_fmt
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:75:14
+    //    2: core::panicking::panic
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:145:5
+    //    3: core::option::unwrap_failed
+    //              at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/option.rs:2130:5
+    //    4: core::option::Option<T>::unwrap
+    //              at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1009:21
+    //    5: bevy_quickstart_game::rover::setup_action_movements
+    //              at ./src/rover.rs:102:10
+    //    6: bevy_quickstart_game::rover::continue_execution
+    //              at ./src/rover.rs:343:17
+    //    7: core::ops::function::FnMut::call_mut
+    //              at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:168:5
+    //    8: core::ops::function::impls::<impl core::ops::function::FnMut<A> for &mut F>::call_mut
+    //              at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:301:21
+    //    9: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5) .> Out>>::run::call_inner
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:945:21
+    //   10: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5) .> Out>>::run
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:948:17
+    //   11: <bevy_ecs::system::function_system::FunctionSystem<Marker,F> as bevy_ecs::system::system::System>::run_unsafe
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:735:29
+    //   12: <bevy_ecs::system::schedule_system::InfallibleSystemWrapper<S> as bevy_ecs::system::system::System>::run_unsafe
+    //              at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/schedule_system.rs:68:16
+    // note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+    // Encountered a panic in system `bevy_quickstart_game::rover::continue_execution`!
+    // Encountered a panic in system `bevy_app::main_schedule::Main::run_main`!
 
     let mut new_heading = rover.heading;
 

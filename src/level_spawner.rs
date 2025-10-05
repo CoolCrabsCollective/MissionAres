@@ -473,23 +473,14 @@ fn load_level(
             }
         }
 
-        let plane_mesh_handle = meshes.add(create_mappae_umbrae_mesh(Vec2::new(
+        spawn_umbra(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
             level_width,
             level_height,
-        )));
-        commands.spawn((
-            LevelElement,
-            TileEntity,
-            Mesh3d::from(plane_mesh_handle),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(level.MAPPAE_VREMBRAE.clone()),
-                alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
-                cull_mode: None,
-                unlit: true,
-                ..Default::default()
-            })),
-            Transform::from_xyz(0.0, 30.0, 0.0),
-        ));
+            level.MAPPAE_VREMBRAE.clone(),
+        );
 
         // debug sphere to show the center of the level
         commands.spawn((
@@ -517,7 +508,35 @@ fn load_level(
     }
 }
 
+fn spawn_umbra(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    level_width: f32,
+    level_height: f32,
+    image: Handle<Image>,
+) {
+    let plane_mesh_handle = meshes.add(create_mappae_umbrae_mesh(Vec2::new(
+        level_width,
+        level_height,
+    )));
+    commands.spawn((
+        LevelElement,
+        TileEntity,
+        Mesh3d::from(plane_mesh_handle),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(image),
+            alpha_mode: AlphaMode::Mask(LEVEL_SHADOW_ALPHA_MASK),
+            cull_mode: None,
+            unlit: true,
+            ..Default::default()
+        })),
+        Transform::from_xyz(0.0, 30.0, 0.0),
+    ));
+}
+
 fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
+    let uv_padding = 20.0;
     Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
@@ -525,15 +544,36 @@ fn create_mappae_umbrae_mesh(size: Vec2) -> Mesh {
     .with_inserted_attribute(
         Mesh::ATTRIBUTE_POSITION,
         vec![
-            [-0.5 * size.x, 0.0, -0.5 * size.y],
-            [0.5 * size.x, 0.0, -0.5 * size.y],
-            [0.5 * size.x, 0.0, 0.5 * size.y],
-            [-0.5 * size.x, 0.0, 0.5 * size.y],
+            [
+                -0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                -0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
+            [
+                0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                -0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
+            [
+                0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
+            [
+                -0.5 * size.x * (uv_padding * 2.0 + 1.0),
+                0.0,
+                0.5 * size.y * (uv_padding * 2.0 + 1.0),
+            ],
         ],
     )
     .with_inserted_attribute(
         Mesh::ATTRIBUTE_UV_0,
-        vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+        vec![
+            [-uv_padding, -uv_padding],
+            [1.0 + uv_padding, -uv_padding],
+            [1.0 + uv_padding, 1.0 + uv_padding],
+            [-uv_padding, 1.0 + uv_padding],
+        ],
     )
     .with_inserted_attribute(
         Mesh::ATTRIBUTE_NORMAL,
