@@ -25,7 +25,7 @@ pub enum CardinalDirection {
 #[derive(Clone)]
 pub enum RoverStates {
     Standby,
-    Moving(CardinalDirection),
+    Moving, /*(CardinalDirection)*/
 }
 
 #[derive(Component, Clone)]
@@ -242,13 +242,13 @@ fn setup_action_movements(
 
         rover.logical_position = current_log_pos;
     } else {
-        rover.rover_state = RoverStates::Moving(match action_attempted {
-            ActionType::MoveUp => CardinalDirection::UP,
-            ActionType::MoveDown => CardinalDirection::DOWN,
-            ActionType::MoveLeft => CardinalDirection::LEFT,
-            ActionType::MoveRight => CardinalDirection::RIGHT,
-            ActionType::Wait => panic!("we're moving lol"), // TODO UP WAIT UP RIGHT on level 1 causes this panic
-        });
+        rover.rover_state = RoverStates::Moving; /*(match action_attempted {
+        ActionType::MoveUp => CardinalDirection::UP,
+        ActionType::MoveDown => CardinalDirection::DOWN,
+        ActionType::MoveLeft => CardinalDirection::LEFT,
+        ActionType::MoveRight => CardinalDirection::RIGHT,
+        ActionType::Wait => panic!("we're moving lol"), // TODO UP WAIT UP RIGHT on level 1 causes this panic
+        });*/
         if rover.heading != new_heading {
             action_execution.is_turning[robot_num] = true; // TODO this crashes too, index issue
             rover.heading = new_heading;

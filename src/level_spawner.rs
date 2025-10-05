@@ -431,7 +431,7 @@ fn load_level(
                                 .insert(AnimationPlayer::default())
                                 .insert(LevelElement)
                                 .insert(DustSpawner {
-                                    timer: Timer::from_seconds(0.4, TimerMode::Repeating),
+                                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                                 });
                         }),
                         ..Default::default()

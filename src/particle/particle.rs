@@ -1,6 +1,5 @@
 use bevy::app::{App, Plugin, Update};
 use bevy::asset::Assets;
-use bevy::math::ops::fract;
 use bevy::math::Vec3;
 use bevy::pbr::{MeshMaterial3d, StandardMaterial};
 use bevy::prelude::{
@@ -16,6 +15,7 @@ pub struct Particle {
     pub lifetime: Timer,
     pub velocity: Vec3,
     pub angular_velocity: f32,
+    pub opacity_function: Box<dyn Fn(f32) -> f32 + Send + Sync>,
 }
 
 impl Plugin for ParticlePlugin {
@@ -47,19 +47,13 @@ pub fn update_particle(
         transform.translation += δ * particle.velocity;
 
         let fraction = particle.lifetime.fraction();
-        let slerp_x = fract(2.0 * fraction);
-        let slerp_val = 3.0 * slerp_x.powf(2.0) - 2.0 * slerp_x.powf(3.0);
-
-        let opacity = if fraction < 0.5 {
-            slerp_val
-        } else {
-            1.0 - slerp_val
-        };
+        let func = &particle.opacity_function;
         materials.get_mut(&mat.0.clone()).unwrap().base_color =
-            Color::srgba(1.0, 1.0, 1.0, 0.5 * opacity);
+            Color::srgba(1.0, 1.0, 1.0, func(fraction));
     }
 }
 
+// todo scale_function in Particle
 fn dust_scale(elapsed_time: f32) -> Vec3 {
     Vec3::new(
         1.0f32.min(elapsed_time * elapsed_time),

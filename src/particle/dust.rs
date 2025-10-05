@@ -2,6 +2,8 @@ use crate::particle::particle::Particle;
 use crate::rover::{RoverEntity, RoverStates};
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
+use rand::random;
+use std::f32::consts::PI;
 
 #[derive(Component)]
 pub struct DustSpawner {
@@ -30,7 +32,7 @@ pub fn spawn_dust(
     for (transform, mut dust, r_entity) in query.iter_mut() {
         match &r_entity.rover_state {
             RoverStates::Standby => {}
-            RoverStates::Moving(direction) => {
+            RoverStates::Moving => {
                 dust.timer.tick(time.delta());
 
                 if (dust.timer.finished()) {
@@ -44,22 +46,17 @@ pub fn spawn_dust(
                         ..default()
                     });
 
+                    // because rover's model has 90 degree offset
+                    let mut tmp_transform = Transform::default();
+                    tmp_transform.rotate_y(PI / 2.0);
+                    let mut shoot_direction = tmp_transform * (transform.forward() * 1.0);
+                    shoot_direction +=
+                        Vec3::new(random::<f32>(), random::<f32>(), random::<f32>()) * 0.25;
+
                     let mut billboard_transform = transform.clone();
                     billboard_transform.translation.y += 0.25;
-                    billboard_transform.translation += transform.forward() * -1.0;
-
-                    // GARBAGE
-                    //billboard_transform.translation.x += match direction {
-                    //    CardinalDirection::LEFT => 0.8 + rng.random_range(-0.2..0.2),
-                    //    CardinalDirection::RIGHT => -0.8 + rng.random_range(-0.2..0.2),
-                    //    _ => rng.random_range(-1.0..1.0),
-                    //};
-                    //billboard_transform.translation.z += match direction {
-                    //    CardinalDirection::DOWN => 0.8 + rng.random_range(-0.2..0.2),
-                    //    CardinalDirection::UP => -0.8 + rng.random_range(-0.2..0.2),
-                    //    _ => rng.random_range(-1.0..1.0),
-                    //};
-                    //billboard_transform.translation.y += 0.2;
+                    billboard_transform.translation +=
+                        transform.forward() * (random::<f32>() * 2.0 - 1.0) * 0.5;
 
                     let lookat_pos =
                         billboard_transform.translation + camera_transform.forward() * 1.0;
@@ -69,8 +66,9 @@ pub fn spawn_dust(
                     commands.spawn((
                         Particle {
                             lifetime: Timer::from_seconds(0.5, TimerMode::Once),
-                            velocity: transform.forward() * -1.0,
+                            velocity: -shoot_direction * (0.5 * random::<f32>() + 0.5) * 0.5,
                             angular_velocity: 20.0f32,
+                            opacity_function: Box::new(|p| 1.0 - p),
                         },
                         billboard_transform,
                         Mesh3d(quad),
