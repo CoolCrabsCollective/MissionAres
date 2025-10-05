@@ -10,7 +10,7 @@ pub struct HentaiAnimePlugin;
 
 impl Plugin for HentaiAnimePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, setup_hentai_anime_repeat_all_anime);
+        // app.add_systems(Update, setup_hentai_anime_repeat_all_anime);
     }
 }
 
@@ -18,6 +18,7 @@ pub fn setup_hentai_anime_repeat_all_anime(
     mut player_query: Query<(&mut AnimationPlayer, &mut Animation), Added<AnimationPlayer>>,
 ) {
     for (mut player, animation) in player_query.iter_mut() {
+        dbg!(&animation.animation_list);
         for hentai in &animation.animation_list {
             player.play(hentai.clone()).repeat();
         }

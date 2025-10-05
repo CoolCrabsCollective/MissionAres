@@ -1,13 +1,18 @@
 use crate::game_control::actions::{Action, ActionType};
+use crate::hentai_anime::Animation;
 use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
+use bevy::math::ops::abs;
+use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
 use bevy::prelude::*;
+use std::f32::consts::PI;
 
 const SPEED: f32 = 5.0;
 const WAIT_TIME: f32 = 1.0;
+const TURN_SPEED: f32 = 2.5;
 
 enum RoverStates {
     Standby,
@@ -22,6 +27,7 @@ pub struct RoverEntity {
     pub logical_position: I8Vec2,
     pub battery_level: u8,
     pub identifier: u8,
+    pub heading: f32,
 }
 
 #[derive(Event)]
@@ -36,6 +42,7 @@ pub struct ActionExecution {
     active_action_idx: Vec<usize>,
     wait_time_start: Vec<f32>,
     is_waiting: Vec<bool>,
+    is_turning: Vec<bool>,
 }
 
 pub struct RoverPlugin;
@@ -51,6 +58,7 @@ impl Plugin for RoverPlugin {
             active_action_idx: vec![0usize, 0usize],
             wait_time_start: vec![0.0],
             is_waiting: vec![false],
+            is_turning: vec![false],
         });
         app.add_event::<ActionListExecute>();
     }
@@ -93,9 +101,13 @@ fn setup_action_movements(
         .get(action_execution.active_action_idx[robot_num])
         .unwrap();
 
+    let mut new_heading = rover.heading;
+
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
+
+            new_heading = -PI / 2.0;
 
             if !is_pos_in_level(level, &rover.logical_position) {
                 is_action_valid = false;
@@ -106,6 +118,8 @@ fn setup_action_movements(
                 is_action_valid = false;
             } else {
                 rover.logical_position -= I8Vec2::new(0, 1);
+
+                new_heading = PI / 2.0;
 
                 if !is_pos_in_level(level, &rover.logical_position) {
                     is_action_valid = false;
@@ -118,6 +132,8 @@ fn setup_action_movements(
             } else {
                 rover.logical_position -= I8Vec2::new(1, 0);
 
+                new_heading = -PI;
+
                 if !is_pos_in_level(level, &rover.logical_position) {
                     is_action_valid = false;
                 }
@@ -125,6 +141,8 @@ fn setup_action_movements(
         }
         ActionType::MoveRight => {
             rover.logical_position += I8Vec2::new(1, 0);
+
+            new_heading = PI;
 
             if !is_pos_in_level(level, &rover.logical_position) {
                 is_action_valid = false;
@@ -136,12 +154,16 @@ fn setup_action_movements(
         }
     }
 
-    dbg!(is_action_valid);
     if !is_action_valid {
         action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
         action_execution.is_waiting[robot_num] = true;
 
         rover.logical_position = current_log_pos;
+    } else {
+        if rover.heading != new_heading {
+            action_execution.is_turning[robot_num] = true;
+            rover.heading = new_heading;
+        }
     }
 }
 
@@ -152,8 +174,20 @@ fn start_execution(
     time: Res<Time>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
+    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), With<RoverEntity>>,
 ) {
     for event in events.read() {
+        if action_execution.is_active {
+            return; // Avoid double execution
+        }
+
+        // Start animations
+        for (mut player, animation) in player_query.iter_mut() {
+            for hentai in &animation.animation_list {
+                player.play(hentai.clone()).repeat();
+            }
+        }
+
         action_execution.is_active = true;
 
         action_execution.action_list = event.action_list.clone();
@@ -184,6 +218,7 @@ fn action_execution(
     levels: Res<Assets<GRADVM>>,
     mut action_execution: ResMut<ActionExecution>,
     time: Res<Time>,
+    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), With<RoverEntity>>,
 ) {
     if action_execution.is_active {
         let Some(level_handle) = &active_level.0 else {
@@ -210,6 +245,29 @@ fn action_execution(
                     commands.send_event(PuzzleEvaluationRequestEvent);
 
                     action_execution.is_waiting[robot_num] = false;
+                }
+
+                continue;
+            }
+
+            if action_execution.is_turning[robot_num] {
+                let current_rot = &trans.rotation.to_euler(XYZ);
+                let current_heading = current_rot.1;
+                dbg!(&trans.rotation.to_euler(XYZ));
+
+                let diff = trans
+                    .rotation
+                    .angle_between(Quat::from_rotation_y(rover.heading));
+
+                if abs(diff) > 0.1 {
+                    let step = TURN_SPEED * time.delta_secs();
+
+                    trans.rotation = trans
+                        .rotation
+                        .slerp(Quat::from_rotation_y(rover.heading), step);
+                } else {
+                    trans.rotation = Quat::from_rotation_y(rover.heading);
+                    action_execution.is_turning[robot_num] = false;
                 }
 
                 continue;
@@ -256,6 +314,11 @@ fn action_execution(
 
         if all_done {
             action_execution.is_active = false;
+
+            // Stop animations
+            for (mut player, _) in player_query.iter_mut() {
+                player.stop_all();
+            }
         }
     }
 }

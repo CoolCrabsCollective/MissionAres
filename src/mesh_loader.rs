@@ -130,7 +130,6 @@ fn process_loaded_gltfs(
                     animation_list: hentai_list.clone(),
                     graph,
                 },
-                AnimationPlayer::default(),
             ));
             let func = &loaded_gltf.config.entity_initializer;
             func(&mut entity_commands);

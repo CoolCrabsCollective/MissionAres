@@ -5,6 +5,7 @@ use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin};
 use crate::title_screen::GameState;
+use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
@@ -315,8 +316,10 @@ fn load_level(
                                     ),
                                     battery_level: 3,
                                     identifier: num_rovers - 1,
+                                    heading: -PI / 2.0,
                                 })
-                                .insert(LevelElement);
+                                .insert(LevelElement)
+                                .insert(AnimationPlayer::default());
                         }),
                         ..Default::default()
                     },
