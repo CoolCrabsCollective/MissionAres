@@ -9,12 +9,6 @@ pub struct DebugCameraControllerPlugin;
 impl Plugin for DebugCameraControllerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (process_inputs, update_state, set_camera));
-        app.add_systems(
-            OnEnter(GameState::Game),
-            |mut c: ResMut<CameraControllerState>| {
-                c.enabled = true;
-            },
-        );
         app.insert_resource(CameraControllerState::new());
     }
 }
@@ -85,10 +79,18 @@ impl CameraControllerState {
 
 fn process_inputs(
     mut mouse_motion_events: EventReader<MouseMotion>,
-    mut keyboard_input_events: EventReader<KeyboardInput>,
+    keys: Res<ButtonInput<KeyCode>>,
     mut state: ResMut<CameraControllerState>,
 ) {
     if !state.enabled {
+        for key in keys.get_just_pressed() {
+            match key {
+                KeyCode::F5 => {
+                    state.enabled = true;
+                }
+                _ => {}
+            }
+        }
         return;
     }
 
@@ -99,28 +101,34 @@ fn process_inputs(
         };
     }
 
-    for event in keyboard_input_events.read() {
-        match event.key_code {
+    for (key, pressed) in keys
+        .get_just_pressed()
+        .map(|key| (key.clone(), true))
+        .chain(keys.get_just_released().map(|key| (key.clone(), false)))
+    {
+        match key {
             KeyCode::F5 => {
-                state.enabled = true;
+                if pressed {
+                    state.enabled = false;
+                }
             }
             KeyCode::KeyW => {
-                state.is_forward_pressed = event.state.is_pressed();
+                state.is_forward_pressed = pressed;
             }
             KeyCode::KeyS => {
-                state.is_backward_pressed = event.state.is_pressed();
+                state.is_backward_pressed = pressed;
             }
             KeyCode::KeyA => {
-                state.is_left_pressed = event.state.is_pressed();
+                state.is_left_pressed = pressed;
             }
             KeyCode::KeyD => {
-                state.is_right_pressed = event.state.is_pressed();
+                state.is_right_pressed = pressed;
             }
             KeyCode::KeyE | KeyCode::Space => {
-                state.is_up_pressed = event.state.is_pressed();
+                state.is_up_pressed = pressed;
             }
             KeyCode::KeyQ | KeyCode::ShiftLeft | KeyCode::ShiftRight => {
-                state.is_down_pressed = event.state.is_pressed();
+                state.is_down_pressed = pressed;
             }
             _ => {}
         }

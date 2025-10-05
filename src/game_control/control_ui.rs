@@ -1,4 +1,4 @@
-use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
+use crate::game_control::actions::{Action, ActionList, ActionType};
 use crate::level::GRADVM;
 use crate::level_spawner::ActiveLevel;
 use crate::rover::ActionListExecute;
@@ -33,6 +33,7 @@ impl Plugin for ControlUIPlugin {
             (
                 update_action_list_ui.run_if(in_state(GameState::Game)),
                 command_button_feedback,
+                robot_button_feedback,
             ),
         );
         app.add_systems(Update, execute_button_handler);
@@ -139,6 +140,7 @@ fn update_action_list_ui(
                             );
                             parent.spawn((
                                 ControlUI,
+                                Button,
                                 RobotButton(robot_idx as i32),
                                 robot_node_for_img.clone(),
                                 img_robot_node.clone(),
@@ -148,7 +150,7 @@ fn update_action_list_ui(
                     });
 
                 let mut actions = event.clone().actions;
-                actions.resize(number_of_rovers, Vec::new());
+                //actions.resize(number_of_rovers, Vec::new());
                 assert_eq!(actions.len(), number_of_rovers);
                 let mut multi_robot_command_list =
                     parent.spawn((ControlUI, multi_robot_command_list(number_of_rovers)));
@@ -326,7 +328,7 @@ fn command_button_feedback(
 
                 if action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize {
                     action_list.actions[action_list_selection].push(Action {
-                        moves: (command.0.clone(), Robot::ROVER1),
+                        moves: (command.0.clone(), action_list_selection),
                     });
                     action_writer.write(action_list.clone());
                 }
@@ -338,6 +340,31 @@ fn command_button_feedback(
                 image.color = Color::WHITE;
             }
         }
+    }
+}
+
+fn robot_button_feedback(
+    mut interaction_query: Query<
+        (&Interaction, &RobotButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut action_list: ResMut<ActionList>,
+    mut action_writer: EventWriter<ActionList>,
+) {
+    let mut has_to_update: bool = false;
+    for (interaction, robot_button) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                action_list.current_selection = robot_button.0 as usize;
+                has_to_update = true;
+            }
+            Interaction::Hovered => {}
+            Interaction::None => {}
+        }
+    }
+
+    if has_to_update {
+        action_writer.write(action_list.clone());
     }
 }
 
