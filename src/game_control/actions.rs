@@ -28,37 +28,29 @@ pub struct Action {
 #[derive(Resource, Event, Clone)]
 pub struct ActionList {
     pub actions: Vec<Vec<Action>>,
+    pub current_selection: i32,
 }
 
-// TODO: instead of putting strings we should list icons
 impl ActionType {
-    pub(crate) fn as_str(&self) -> &'static str {
+    pub(crate) fn img_path(&self) -> &'static str {
         match self {
-            ActionType::MoveUp => "UP",
-            ActionType::MoveDown => "DOWN",
-            ActionType::MoveLeft => "LEFT",
-            ActionType::MoveRight => "RIGHT",
-            ActionType::Wait => "WAIT",
+            ActionType::MoveUp => "command_icons/up.png",
+            ActionType::MoveDown => "command_icons/down.png",
+            ActionType::MoveLeft => "command_icons/left.png",
+            ActionType::MoveRight => "command_icons/right.png",
+            ActionType::Wait => "command_icons/wait.png",
         }
     }
 }
 
-impl Robot {
-    pub(crate) fn as_str(&self) -> &'static str {
-        match self {
-            Robot::ROVER1 => "R1",
-            Robot::ROVER2 => "R2",
-            Robot::DRONE1 => "D1",
-            Robot::DRONE2 => "D2",
-        }
-    }
-}
+impl Robot {}
 
 impl Plugin for ActionController {
     fn build(&self, app: &mut App) {
         app.add_event::<ActionList>();
         app.insert_resource(ActionList {
             actions: vec![vec![]],
+            current_selection: 0,
         });
     }
 }

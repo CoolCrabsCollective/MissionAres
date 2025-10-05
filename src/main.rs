@@ -19,6 +19,7 @@ use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
+use crate::ui::battery_ui::BatteryUIPlugin;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
@@ -75,6 +76,7 @@ fn main() {
     app.add_plugins(GRADVS_ONERATOR_PLUGIN);
     app.add_plugins(LevelSpawnerPlugin);
     app.add_plugins(PuzzleEvaluationPlugin);
+    app.add_plugins(BatteryUIPlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 

@@ -1,4 +1,6 @@
-use crate::game_control::actions::{Action, ActionList};
+use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
+use crate::level::GRADVM;
+use crate::level_spawner::ActiveLevel;
 use crate::title_screen::GameState;
 use bevy::color::palettes::css::{GOLD, ORANGE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
@@ -13,6 +15,9 @@ pub struct ControlUI;
 
 #[derive(Resource)]
 pub struct RoverColors(Vec<Color>);
+
+#[derive(Component)]
+pub struct CommandButton(pub ActionType);
 
 impl Plugin for ControlUIPlugin {
     fn build(&self, app: &mut App) {
@@ -38,14 +43,23 @@ fn update_action_list_ui(
     current_ui_elem_query: Query<Entity, With<ControlUI>>,
     all_rover_colors: Res<RoverColors>,
     asset_server: Res<AssetServer>,
+    active_level: Res<ActiveLevel>,
+    levels: Res<Assets<GRADVM>>,
 ) {
-    let font = TextFont {
-        font: asset_server.load("font.ttf"),
-        font_size: 40.0,
-        ..default()
-    };
+    if action_lists.is_empty() {
+        return;
+    }
+
+    let gradum = levels.get(
+        &match &active_level.0 {
+            Some(x) => x,
+            None => panic!("No active level"),
+        }
+        .clone(),
+    );
+
     for event in action_lists.read() {
-        let number_of_rovers = 3; //event.actions.len();
+        let number_of_rovers: usize = gradum.unwrap().NVMERVS_VEHICVLORVM_MOBILIVM as usize;
         println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
             if let Ok(_) = commands.get_entity(ui_element) {
@@ -92,6 +106,7 @@ fn update_action_list_ui(
                             height: Val::Px(96.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
+                            margin: UiRect::all(Val::Auto),
                             ..default()
                         };
 
@@ -117,7 +132,7 @@ fn update_action_list_ui(
                         let mut ui_commands = ui_command_list(parent);
                         for action in event.clone().actions[0].iter() {
                             ui_commands.with_children(|parent| {
-                                ui_command_statement(parent, action, &font);
+                                ui_command_statement(parent, action, &asset_server);
                             });
                         }
                     }
@@ -147,20 +162,30 @@ fn ui_sidebar_node() -> Node {
 fn ui_command_statement(
     parent: &mut RelatedSpawnerCommands<ChildOf>,
     action: &Action,
-    font_node: &TextFont,
+    asset_server: &Res<AssetServer>,
 ) {
-    // Action text
-    parent.spawn((
-        ControlUI,
-        Text::new(action.moves.0.as_str()),
-        Node {
-            align_items: AlignItems::Center,
-            ..default()
-        },
-        font_node.clone(),
-        TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-        TextShadow::default(),
-    ));
+    let image_move = asset_server.load(action.moves.0.img_path());
+    let slicer = TextureSlicer {
+        border: Default::default(),
+        center_scale_mode: SliceScaleMode::Stretch,
+        sides_scale_mode: SliceScaleMode::Stretch,
+        max_corner_scale: 1.0,
+    };
+    let move_node_for_img = Node {
+        height: Val::Percent(100.0),
+        aspect_ratio: Some(1.0f32),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        margin: UiRect::all(Val::Auto),
+        ..default()
+    };
+
+    let img_move_node = ImageNode {
+        image: image_move.clone(),
+        image_mode: NodeImageMode::Sliced(slicer.clone()),
+        ..default()
+    };
+    parent.spawn((ControlUI, move_node_for_img.clone(), img_move_node.clone()));
 }
 
 fn multi_robot_command_list(num_rovers: usize) -> Node {
@@ -184,7 +209,7 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
             display: Display::Grid,
             grid_template_columns: vec![GridTrack::flex(1.0)],
             grid_template_rows: RepeatedGridTrack::flex(MAX_COMMANDS, 1.0),
-            row_gap: Val::Px(0.0),
+            row_gap: Val::Px(5.0),
             column_gap: Val::Px(5.0),
             align_items: AlignItems::Center,
             ..default()
@@ -195,14 +220,20 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
 
 fn button_feedback(
     mut interaction_query: Query<
-        (&Interaction, &mut ImageNode),
+        (&Interaction, &mut ImageNode, &CommandButton),
         (Changed<Interaction>, With<Button>),
     >,
+    mut action_list: ResMut<ActionList>,
+    mut action_writer: EventWriter<ActionList>,
 ) {
-    for (interaction, mut image) in &mut interaction_query {
+    for (interaction, mut image, command) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 image.color = GOLD.into();
+                action_list.actions[0].push(Action {
+                    moves: (command.0.clone(), Robot::ROVER1),
+                });
+                action_writer.write(action_list.clone());
             }
             Interaction::Hovered => {
                 image.color = ORANGE.into();
@@ -300,13 +331,43 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                     };
 
                     parent.spawn((ControlUI, Node::default()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_up.clone()));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::MoveUp)),
+                        node_for_img.clone(),
+                        img_up.clone(),
+                    ));
                     parent.spawn((ControlUI, Node::default()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_left.clone()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_wait.clone()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_right.clone()));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::MoveLeft)),
+                        node_for_img.clone(),
+                        img_left.clone(),
+                    ));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::Wait)),
+                        node_for_img.clone(),
+                        img_wait.clone(),
+                    ));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::MoveRight)),
+                        node_for_img.clone(),
+                        img_right.clone(),
+                    ));
                     parent.spawn((ControlUI, Node::default()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_down.clone()));
+                    parent.spawn((
+                        ControlUI,
+                        CommandButton((ActionType::MoveDown)),
+                        Button,
+                        node_for_img.clone(),
+                        img_down.clone(),
+                    ));
                     parent.spawn((ControlUI, Node::default()));
                 });
 
