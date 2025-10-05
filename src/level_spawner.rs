@@ -13,6 +13,7 @@ use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
+use bevy::math::ops::abs;
 use bevy::math::primitives::Sphere;
 use bevy::math::{I8Vec2, Quat};
 use bevy::pbr::{
@@ -21,7 +22,7 @@ use bevy::pbr::{
 };
 use bevy::prelude::{
     default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial,
-    DetectChanges, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
     Reflect, Resource,
 };
 use bevy::render::camera::TemporalJitter;
@@ -44,6 +45,7 @@ use bevy::{
 };
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
+use log::debug;
 use rand::random;
 use std::cmp::{max, min};
 use std::f32::consts::PI;
@@ -164,7 +166,7 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
             fov: 55.0f32.to_radians(),
             ..default()
         }),
-        Transform::from_xyz(-0.5, 5.0, 10.5).with_rotation(Quat::from_axis_angle(Vec3::Y, 0.0)),
+        Transform::default(),
         Skybox {
             image: skybox_handle.clone(),
             brightness: 1000.0,
@@ -219,6 +221,42 @@ fn choose_level_by_num_keys(
             level: levels.GRADVS[3].clone(),
         });
     }
+
+    if input.just_pressed(KeyCode::Numpad5) || input.just_pressed(KeyCode::Digit5) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[4].clone(),
+        });
+    }
+
+    if input.just_pressed(KeyCode::Numpad6) || input.just_pressed(KeyCode::Digit6) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[5].clone(),
+        });
+    }
+
+    if input.just_pressed(KeyCode::Numpad7) || input.just_pressed(KeyCode::Digit7) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[6].clone(),
+        });
+    }
+
+    if input.just_pressed(KeyCode::Numpad8) || input.just_pressed(KeyCode::Digit8) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[7].clone(),
+        });
+    }
+
+    if input.just_pressed(KeyCode::Numpad9) || input.just_pressed(KeyCode::Digit9) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[8].clone(),
+        });
+    }
+
+    if input.just_pressed(KeyCode::Numpad0) || input.just_pressed(KeyCode::Digit0) {
+        events.write(LevelSpawnRequestEvent {
+            level: levels.GRADVS[9].clone(),
+        });
+    }
 }
 
 fn load_level(
@@ -232,6 +270,7 @@ fn load_level(
     mut action_list: ResMut<ActionList>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
+    mut camera_transform: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera3d>>,
 ) {
     for event in events.read() {
         // remove all tiles and rovers
@@ -251,6 +290,68 @@ fn load_level(
 
         let level_width = level.LATIVIDO as f32 * TILE_SIZE;
         let level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+
+        for (cam, mut trans, g_trans) in camera_transform.iter_mut() {
+            trans.translation = Vec3::new(0.0, 8.0, 5.0);
+            trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
+
+            let mut g_transform = *g_trans;
+
+            loop {
+                let mut any_out = false;
+                let out = Vec3::new(-2.0, -2.0, -2.0);
+
+                let ndc1 = cam
+                    .world_to_ndc(
+                        &g_transform,
+                        Vec3::new(-level_width / 2.0, 0.0, -level_height / 2.0),
+                    )
+                    .unwrap_or(out);
+
+                let ndc2 = cam
+                    .world_to_ndc(
+                        &g_transform,
+                        Vec3::new(level_width / 2.0, 0.0, -level_height / 2.0),
+                    )
+                    .unwrap_or(out);
+
+                let ndc3 = cam
+                    .world_to_ndc(
+                        &g_transform,
+                        Vec3::new(-level_width / 2.0, 0.0, level_height / 2.0),
+                    )
+                    .unwrap_or(out);
+
+                let ndc4 = cam
+                    .world_to_ndc(
+                        &g_transform,
+                        Vec3::new(level_width / 2.0, 0.0, level_height / 2.0),
+                    )
+                    .unwrap_or(out);
+
+                println!("{}", ndc1);
+                println!("{}", ndc2);
+                println!("{}", ndc3);
+                println!("{}", ndc4);
+
+                any_out |= abs(ndc1.x) > 0.6 || abs(ndc1.y) > 1.0;
+                any_out |= abs(ndc2.x) > 0.6 || abs(ndc2.y) > 1.0;
+                any_out |= abs(ndc3.x) > 0.6 || abs(ndc3.y) > 1.0;
+                any_out |= abs(ndc4.x) > 0.6 || abs(ndc4.y) > 1.0;
+
+                if !any_out {
+                    break;
+                }
+
+                trans.translation.y += 2.0;
+                trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
+                g_transform = GlobalTransform::default();
+                g_transform = g_transform.mul_transform(*trans);
+                println!("{:#?}", *trans);
+                println!("{:#?}", g_transform);
+            }
+            trans.translation.x -= trans.translation.y / 4.0;
+        }
 
         commands.spawn((
             LevelElement,
@@ -427,9 +528,12 @@ fn load_level(
 
         log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
 
+        let rock_padding_x = max(ROCK_PADDING, (level.LATIVIDO / 4) as i32);
+        let rock_padding_y = max(ROCK_PADDING, (level.ALTIVIDO / 4) as i32);
+
         // Spawn boundary rocks
-        for x in -ROCK_PADDING..level.LATIVIDO as i32 + ROCK_PADDING {
-            for y in -ROCK_PADDING..level.ALTIVIDO as i32 + ROCK_PADDING {
+        for x in -rock_padding_x..level.LATIVIDO as i32 + rock_padding_x {
+            for y in -rock_padding_y..level.ALTIVIDO as i32 + rock_padding_y {
                 let key = (x as i8, level.ALTIVIDO - y as i8);
                 if x >= 0 && x < level.LATIVIDO as i32 && y >= 0 && y < level.ALTIVIDO as i32
                 //&& level.TEGLVAE.contains_key(&key)
@@ -475,16 +579,16 @@ fn load_level(
         );
 
         // debug sphere to show the center of the level
-        commands.spawn((
-            LevelElement,
-            TileEntity,
-            Mesh3d(meshes.add(Sphere::new(0.1))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.0, 1.0, 0.0),
-                ..Default::default()
-            })),
-            Transform::from_xyz(random::<f32>(), 0.0, random::<f32>()),
-        ));
+        //commands.spawn((
+        //    LevelElement,
+        //    TileEntity,
+        //    Mesh3d(meshes.add(Sphere::new(0.1))),
+        //    MeshMaterial3d(materials.add(StandardMaterial {
+        //        base_color: Color::srgb(0.0, 1.0, 0.0),
+        //        ..Default::default()
+        //    })),
+        //    Transform::from_xyz(random::<f32>(), 0.0, random::<f32>()),
+        //));
 
         active_level.0 = Some(event.level.clone());
 
