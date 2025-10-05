@@ -23,8 +23,7 @@ use bevy::pbr::{
 };
 use bevy::prelude::{
     default, in_state, Camera, Camera3d, ClearColor, ClearColorConfig, GlobalTransform,
-    Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Reflect, Resource,
-    Without,
+    IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
