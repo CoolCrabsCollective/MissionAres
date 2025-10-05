@@ -28,7 +28,7 @@ pub struct Action {
 #[derive(Resource, Event, Clone)]
 pub struct ActionList {
     pub actions: Vec<Vec<Action>>,
-    pub current_selection: i32,
+    pub current_selection: usize,
 }
 
 impl ActionType {

@@ -19,13 +19,16 @@ pub struct RoverColors(Vec<Color>);
 #[derive(Component)]
 pub struct CommandButton(pub ActionType);
 
+#[derive(Component)]
+pub struct RobotButton(pub i32);
+
 impl Plugin for ControlUIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
             (
                 update_action_list_ui.run_if(in_state(GameState::Game)),
-                button_feedback,
+                command_button_feedback,
             ),
         );
         app.insert_resource(RoverColors(vec![
@@ -60,6 +63,8 @@ fn update_action_list_ui(
 
     for event in action_lists.read() {
         let number_of_rovers: usize = gradum.unwrap().NVMERVS_VEHICVLORVM_MOBILIVM as usize;
+
+        let selected_robot_index = event.current_selection;
         println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
             if let Ok(_) = commands.get_entity(ui_element) {
@@ -68,7 +73,7 @@ fn update_action_list_ui(
         }
 
         let image_robot = asset_server.load("command_icons/robot.png");
-        let side_bar = commands
+        commands
             .spawn((
                 ControlUI,
                 ui_sidebar_node(),
@@ -110,27 +115,43 @@ fn update_action_list_ui(
                             ..default()
                         };
 
-                        for color in rover_colors {
+                        for (robot_idx, color) in rover_colors.iter().enumerate() {
                             let img_robot_node = ImageNode {
                                 image: image_robot.clone(),
                                 image_mode: NodeImageMode::Sliced(slicer.clone()),
                                 color: *color,
                                 ..default()
                             };
+
+                            let robot_bg_color = Color::srgba(
+                                0.75,
+                                0.75,
+                                0.75,
+                                if (robot_idx == selected_robot_index) {
+                                    1.0
+                                } else {
+                                    0.0
+                                },
+                            );
                             parent.spawn((
                                 ControlUI,
+                                RobotButton(robot_idx as i32),
                                 robot_node_for_img.clone(),
                                 img_robot_node.clone(),
+                                BackgroundColor(robot_bg_color),
                             ));
                         }
                     });
 
+                let mut actions = event.clone().actions;
+                actions.resize(number_of_rovers, Vec::new());
+                assert_eq!(actions.len(), number_of_rovers);
                 let mut multi_robot_command_list =
                     parent.spawn((ControlUI, multi_robot_command_list(number_of_rovers)));
                 multi_robot_command_list.with_children(|parent| {
                     for i in 0..number_of_rovers {
                         let mut ui_commands = ui_command_list(parent);
-                        for action in event.clone().actions[0].iter() {
+                        for action in actions[i].iter() {
                             ui_commands.with_children(|parent| {
                                 ui_command_statement(parent, action, &asset_server);
                             });
@@ -218,7 +239,7 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
     ))
 }
 
-fn button_feedback(
+fn command_button_feedback(
     mut interaction_query: Query<
         (&Interaction, &mut ImageNode, &CommandButton),
         (Changed<Interaction>, With<Button>),
@@ -227,13 +248,17 @@ fn button_feedback(
     mut action_writer: EventWriter<ActionList>,
 ) {
     for (interaction, mut image, command) in &mut interaction_query {
+        let action_list_selection = action_list.current_selection;
         match *interaction {
             Interaction::Pressed => {
                 image.color = GOLD.into();
-                action_list.actions[0].push(Action {
-                    moves: (command.0.clone(), Robot::ROVER1),
-                });
-                action_writer.write(action_list.clone());
+
+                if action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize {
+                    action_list.actions[action_list_selection].push(Action {
+                        moves: (command.0.clone(), Robot::ROVER1),
+                    });
+                    action_writer.write(action_list.clone());
+                }
             }
             Interaction::Hovered => {
                 image.color = ORANGE.into();
@@ -334,7 +359,7 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                     parent.spawn((
                         ControlUI,
                         Button,
-                        CommandButton((ActionType::MoveUp)),
+                        CommandButton(ActionType::MoveUp),
                         node_for_img.clone(),
                         img_up.clone(),
                     ));
@@ -342,28 +367,28 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                     parent.spawn((
                         ControlUI,
                         Button,
-                        CommandButton((ActionType::MoveLeft)),
+                        CommandButton(ActionType::MoveLeft),
                         node_for_img.clone(),
                         img_left.clone(),
                     ));
                     parent.spawn((
                         ControlUI,
                         Button,
-                        CommandButton((ActionType::Wait)),
+                        CommandButton(ActionType::Wait),
                         node_for_img.clone(),
                         img_wait.clone(),
                     ));
                     parent.spawn((
                         ControlUI,
                         Button,
-                        CommandButton((ActionType::MoveRight)),
+                        CommandButton(ActionType::MoveRight),
                         node_for_img.clone(),
                         img_right.clone(),
                     ));
                     parent.spawn((ControlUI, Node::default()));
                     parent.spawn((
                         ControlUI,
-                        CommandButton((ActionType::MoveDown)),
+                        CommandButton(ActionType::MoveDown),
                         Button,
                         node_for_img.clone(),
                         img_down.clone(),
