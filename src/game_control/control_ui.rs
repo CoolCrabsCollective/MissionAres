@@ -1,4 +1,4 @@
-use crate::game_control::actions::{Action, ActionList};
+use crate::game_control::actions::{Action, ActionList, ActionType, Robot};
 use crate::level::GRADVM;
 use crate::level_spawner::ActiveLevel;
 use crate::title_screen::GameState;
@@ -15,6 +15,9 @@ pub struct ControlUI;
 
 #[derive(Resource)]
 pub struct RoverColors(Vec<Color>);
+
+#[derive(Component)]
+pub struct CommandButton(pub ActionType);
 
 impl Plugin for ControlUIPlugin {
     fn build(&self, app: &mut App) {
@@ -217,14 +220,20 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
 
 fn button_feedback(
     mut interaction_query: Query<
-        (&Interaction, &mut ImageNode),
+        (&Interaction, &mut ImageNode, &CommandButton),
         (Changed<Interaction>, With<Button>),
     >,
+    mut action_list: ResMut<ActionList>,
+    mut action_writer: EventWriter<ActionList>,
 ) {
-    for (interaction, mut image) in &mut interaction_query {
+    for (interaction, mut image, command) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 image.color = GOLD.into();
+                action_list.actions[0].push(Action {
+                    moves: (command.0.clone(), Robot::ROVER1),
+                });
+                action_writer.write(action_list.clone());
             }
             Interaction::Hovered => {
                 image.color = ORANGE.into();
@@ -322,13 +331,43 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                     };
 
                     parent.spawn((ControlUI, Node::default()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_up.clone()));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::MoveUp)),
+                        node_for_img.clone(),
+                        img_up.clone(),
+                    ));
                     parent.spawn((ControlUI, Node::default()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_left.clone()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_wait.clone()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_right.clone()));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::MoveLeft)),
+                        node_for_img.clone(),
+                        img_left.clone(),
+                    ));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::Wait)),
+                        node_for_img.clone(),
+                        img_wait.clone(),
+                    ));
+                    parent.spawn((
+                        ControlUI,
+                        Button,
+                        CommandButton((ActionType::MoveRight)),
+                        node_for_img.clone(),
+                        img_right.clone(),
+                    ));
                     parent.spawn((ControlUI, Node::default()));
-                    parent.spawn((ControlUI, Button, node_for_img.clone(), img_down.clone()));
+                    parent.spawn((
+                        ControlUI,
+                        CommandButton((ActionType::MoveDown)),
+                        Button,
+                        node_for_img.clone(),
+                        img_down.clone(),
+                    ));
                     parent.spawn((ControlUI, Node::default()));
                 });
 
