@@ -127,10 +127,9 @@ fn process_loaded_gltfs(
             let mut entity_commands = commands.spawn((
                 SceneRoot(first_scene_handle),
                 Animation {
-                    animation_list: hentai_list,
+                    animation_list: hentai_list.clone(),
                     graph,
                 },
-                AnimationPlayer::default(),
             ));
             let func = &loaded_gltf.config.entity_initializer;
             func(&mut entity_commands);
