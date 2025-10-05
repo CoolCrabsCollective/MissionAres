@@ -275,348 +275,349 @@ fn load_level(
     mut camera_transform: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera3d>>,
     particles: Query<Entity, (With<Particle>, Without<LevelElement>)>,
 ) {
-    for event in events.read() {
-        // remove all tiles and rovers
-        for level_element in level_elements.iter() {
-            commands.entity(level_element).despawn();
+    if events.is_empty() {
+        return;
+    }
+
+    for particle in particles.iter() {
+        commands.entity(particle).despawn();
+    }
+    // remove all tiles and rovers
+    for level_element in level_elements.iter() {
+        commands.entity(level_element).despawn();
+    }
+    let event = events.read().last().unwrap();
+    let level = levels.get(&event.level);
+
+    if level.is_none() {
+        return;
+    }
+
+    let level = level.unwrap();
+
+    log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
+
+    let level_width = level.LATIVIDO as f32 * TILE_SIZE;
+    let level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+
+    for (cam, mut trans, g_trans) in camera_transform.iter_mut() {
+        trans.translation = Vec3::new(0.0, 8.0, 5.0);
+        trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
+
+        let mut g_transform = *g_trans;
+
+        loop {
+            let mut any_out = false;
+            let out = Vec3::new(-2.0, -2.0, -2.0);
+
+            let ndc1 = cam
+                .world_to_ndc(
+                    &g_transform,
+                    Vec3::new(-level_width / 2.0, 0.0, -level_height / 2.0),
+                )
+                .unwrap_or(out);
+
+            let ndc2 = cam
+                .world_to_ndc(
+                    &g_transform,
+                    Vec3::new(level_width / 2.0, 0.0, -level_height / 2.0),
+                )
+                .unwrap_or(out);
+
+            let ndc3 = cam
+                .world_to_ndc(
+                    &g_transform,
+                    Vec3::new(-level_width / 2.0, 0.0, level_height / 2.0),
+                )
+                .unwrap_or(out);
+
+            let ndc4 = cam
+                .world_to_ndc(
+                    &g_transform,
+                    Vec3::new(level_width / 2.0, 0.0, level_height / 2.0),
+                )
+                .unwrap_or(out);
+
+            println!("{}", ndc1);
+            println!("{}", ndc2);
+            println!("{}", ndc3);
+            println!("{}", ndc4);
+
+            any_out |= abs(ndc1.x) > 0.6 || abs(ndc1.y) > 1.0;
+            any_out |= abs(ndc2.x) > 0.6 || abs(ndc2.y) > 1.0;
+            any_out |= abs(ndc3.x) > 0.6 || abs(ndc3.y) > 1.0;
+            any_out |= abs(ndc4.x) > 0.6 || abs(ndc4.y) > 1.0;
+
+            if !any_out {
+                break;
+            }
+
+            trans.translation.y += 2.0;
+            trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
+            g_transform = GlobalTransform::default();
+            g_transform = g_transform.mul_transform(*trans);
+            println!("{:#?}", *trans);
+            println!("{:#?}", g_transform);
+        }
+        trans.translation.x -= trans.translation.y / 4.0;
+    }
+
+    commands.spawn((
+        LevelElement,
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1000.0)))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
+            perceptual_roughness: 0.9,
+            metallic: 0.0,
+            ..Default::default()
+        })),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    ));
+    let mut num_rovers = 0;
+    // Spawn cylinders at each tile position
+    for ((x, z), tile) in level.TEGLVAE.iter() {
+        let logical_x = *x as i32;
+        let logical_z = *z as i32;
+        let effective_x = (*x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
+        // mirror along the z to align correctly with how it looks in the level
+        let effective_z = (-*z as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0;
+
+        let tile_pos = (*x, *z);
+
+        match tile.TYPVS {
+            TEGVLA_TYPVS::SATVRNALIA => {}
+            TEGVLA_TYPVS::CRATERA => {}
+            TEGVLA_TYPVS::INGENII => {}
+            _ => {
+                spawn_tile(
+                    &mut commands,
+                    &asset_server,
+                    &mut mesh_loader,
+                    effective_x,
+                    effective_z,
+                    tile.VMBRA,
+                    level.NEXVS.contains_key(&tile_pos),
+                );
+            }
         }
 
-        for particle in particles.iter() {
-            commands.entity(particle).despawn();
+        // Store rover spawn position for the start tile
+
+        if matches!(tile.TYPVS, TEGVLA_TYPVS::INITIVM) {
+            num_rovers += 1;
+            load_gltf(
+                String::from("rover.glb"),
+                GLTFLoadConfig {
+                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                        commands
+                            .insert(
+                                // should spawn at the tile position
+                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                    .with_scale(Vec3::splat(0.15 * TILE_SIZE))
+                                    .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
+                            )
+                            .insert(RoverEntity {
+                                is_setup: false,
+                                base_color: Color::srgb(0.5, 0.2, 0.8),
+                                gltf_handle: Default::default(),
+                                logical_position: I8Vec2::new(
+                                    logical_x.try_into().unwrap(),
+                                    logical_z.try_into().unwrap(),
+                                ),
+                                battery_level: 3,
+                                identifier: num_rovers - 1,
+                                heading: -PI / 2.0,
+                                rover_state: RoverStates::Standby,
+                            })
+                            .insert(LevelElement)
+                            .insert(AnimationPlayer::default())
+                            .insert(LevelElement)
+                            .insert(DustSpawner {
+                                timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                            });
+                    }),
+                    ..Default::default()
+                },
+                &asset_server,
+                &mut mesh_loader,
+            );
         }
 
-        let level = levels.get(&event.level);
+        if matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS) {
+            load_gltf(
+                String::from("mineral.glb"),
+                GLTFLoadConfig {
+                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                        commands
+                            .insert(
+                                // should spawn at the tile position
+                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                    .with_scale(Vec3::splat(0.05 * TILE_SIZE))
+                                    .with_rotation(Quat::from_rotation_y(
+                                        random::<f32>() * PI * 2.0,
+                                    )),
+                            )
+                            .insert(LevelElement);
+                    }),
+                    ..Default::default()
+                },
+                &asset_server,
+                &mut mesh_loader,
+            );
+        }
 
-        if level.is_none() {
+        if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
+            load_gltf(
+                String::from("dish.glb"),
+                GLTFLoadConfig {
+                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                        commands
+                            .insert(
+                                // should spawn at the tile position
+                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                    .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
+                            )
+                            .insert(LevelElement);
+                    }),
+                    ..Default::default()
+                },
+                &asset_server,
+                &mut mesh_loader,
+            );
+        }
+
+        if matches!(tile.TYPVS, TEGVLA_TYPVS::INGENII) {
+            load_gltf(
+                String::from("ingenuity.glb"),
+                GLTFLoadConfig {
+                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                        commands
+                            .insert(
+                                // should spawn at the tile position
+                                Transform::from_xyz(effective_x, 1.0 * TILE_SIZE, effective_z)
+                                    .with_scale(Vec3::splat(0.2 * TILE_SIZE)),
+                            )
+                            .insert(LevelElement);
+                    }),
+                    ..Default::default()
+                },
+                &asset_server,
+                &mut mesh_loader,
+            );
+        }
+
+        if matches!(tile.TYPVS, TEGVLA_TYPVS::CRATERA) {
+            load_gltf(
+                String::from("crater.glb"),
+                GLTFLoadConfig {
+                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                        commands
+                            .insert(
+                                // should spawn at the tile position
+                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                    .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
+                            )
+                            .insert(LevelElement);
+                    }),
+                    ..Default::default()
+                },
+                &asset_server,
+                &mut mesh_loader,
+            );
+        }
+    }
+
+    for (start, end) in level.NEXVS.iter() {
+        if start > end {
             continue;
         }
 
-        let level = level.unwrap();
+        let start = Vec2::new(
+            (start.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
+            (-start.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
+        );
+        let end = Vec2::new(
+            (end.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
+            (-end.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
+        );
+        spawn_wire(&mut commands, &mut meshes, &mut materials, start, end);
+    }
 
-        log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
+    log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
 
-        let level_width = level.LATIVIDO as f32 * TILE_SIZE;
-        let level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+    let rock_padding_x = max(ROCK_PADDING, (level.LATIVIDO / 4) as i32);
+    let rock_padding_y = max(ROCK_PADDING, (level.ALTIVIDO / 4) as i32);
 
-        for (cam, mut trans, g_trans) in camera_transform.iter_mut() {
-            trans.translation = Vec3::new(0.0, 8.0, 5.0);
-            trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
-
-            let mut g_transform = *g_trans;
-
-            loop {
-                let mut any_out = false;
-                let out = Vec3::new(-2.0, -2.0, -2.0);
-
-                let ndc1 = cam
-                    .world_to_ndc(
-                        &g_transform,
-                        Vec3::new(-level_width / 2.0, 0.0, -level_height / 2.0),
-                    )
-                    .unwrap_or(out);
-
-                let ndc2 = cam
-                    .world_to_ndc(
-                        &g_transform,
-                        Vec3::new(level_width / 2.0, 0.0, -level_height / 2.0),
-                    )
-                    .unwrap_or(out);
-
-                let ndc3 = cam
-                    .world_to_ndc(
-                        &g_transform,
-                        Vec3::new(-level_width / 2.0, 0.0, level_height / 2.0),
-                    )
-                    .unwrap_or(out);
-
-                let ndc4 = cam
-                    .world_to_ndc(
-                        &g_transform,
-                        Vec3::new(level_width / 2.0, 0.0, level_height / 2.0),
-                    )
-                    .unwrap_or(out);
-
-                println!("{}", ndc1);
-                println!("{}", ndc2);
-                println!("{}", ndc3);
-                println!("{}", ndc4);
-
-                any_out |= abs(ndc1.x) > 0.6 || abs(ndc1.y) > 1.0;
-                any_out |= abs(ndc2.x) > 0.6 || abs(ndc2.y) > 1.0;
-                any_out |= abs(ndc3.x) > 0.6 || abs(ndc3.y) > 1.0;
-                any_out |= abs(ndc4.x) > 0.6 || abs(ndc4.y) > 1.0;
-
-                if !any_out {
-                    break;
-                }
-
-                trans.translation.y += 2.0;
-                trans.look_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
-                g_transform = GlobalTransform::default();
-                g_transform = g_transform.mul_transform(*trans);
-                println!("{:#?}", *trans);
-                println!("{:#?}", g_transform);
+    // Spawn boundary rocks
+    for x in -rock_padding_x..level.LATIVIDO as i32 + rock_padding_x {
+        for y in -rock_padding_y..level.ALTIVIDO as i32 + rock_padding_y {
+            let key = (x as i8, level.ALTIVIDO - y as i8);
+            if x >= 0 && x < level.LATIVIDO as i32 && y >= 0 && y < level.ALTIVIDO as i32
+            //&& level.TEGLVAE.contains_key(&key)
+            {
+                continue;
             }
-            trans.translation.x -= trans.translation.y / 4.0;
-        }
+            let distance_x = if x < 0 {
+                -x
+            } else {
+                x - level.LATIVIDO as i32 + 1
+            };
+            let distance_y = if y < 0 {
+                -y
+            } else {
+                y - level.ALTIVIDO as i32 + 1
+            };
+            let distance = max(0, max(distance_x, distance_y));
 
-        commands.spawn((
-            LevelElement,
-            Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1000.0)))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
-                perceptual_roughness: 0.9,
-                metallic: 0.0,
-                ..Default::default()
-            })),
-            Transform::from_xyz(0.0, 0.0, 0.0),
-        ));
-        let mut num_rovers = 0;
-        // Spawn cylinders at each tile position
-        for ((x, z), tile) in level.TEGLVAE.iter() {
-            let logical_x = *x as i32;
-            let logical_z = *z as i32;
-            let effective_x = (*x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
-            // mirror along the z to align correctly with how it looks in the level
-            let effective_z = (-*z as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0;
-
-            let tile_pos = (*x, *z);
-
-            match tile.TYPVS {
-                TEGVLA_TYPVS::SATVRNALIA => {}
-                TEGVLA_TYPVS::CRATERA => {}
-                TEGVLA_TYPVS::INGENII => {}
-                _ => {
-                    spawn_tile(
-                        &mut commands,
-                        &asset_server,
-                        &mut mesh_loader,
-                        effective_x,
-                        effective_z,
-                        tile.VMBRA,
-                        level.NEXVS.contains_key(&tile_pos),
-                    );
-                }
-            }
-
-            // Store rover spawn position for the start tile
-
-            if matches!(tile.TYPVS, TEGVLA_TYPVS::INITIVM) {
-                num_rovers += 1;
-                load_gltf(
-                    String::from("rover.glb"),
-                    GLTFLoadConfig {
-                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
-                            commands
-                                .insert(
-                                    // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, effective_z)
-                                        .with_scale(Vec3::splat(0.15 * TILE_SIZE))
-                                        .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
-                                )
-                                .insert(RoverEntity {
-                                    is_setup: false,
-                                    base_color: Color::srgb(0.5, 0.2, 0.8),
-                                    gltf_handle: Default::default(),
-                                    logical_position: I8Vec2::new(
-                                        logical_x.try_into().unwrap(),
-                                        logical_z.try_into().unwrap(),
-                                    ),
-                                    battery_level: 3,
-                                    identifier: num_rovers - 1,
-                                    heading: -PI / 2.0,
-                                    rover_state: RoverStates::Standby,
-                                })
-                                .insert(LevelElement)
-                                .insert(AnimationPlayer::default())
-                                .insert(LevelElement)
-                                .insert(DustSpawner {
-                                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                                });
-                        }),
-                        ..Default::default()
-                    },
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
-
-            if matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS) {
-                load_gltf(
-                    String::from("mineral.glb"),
-                    GLTFLoadConfig {
-                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
-                            commands
-                                .insert(
-                                    // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, effective_z)
-                                        .with_scale(Vec3::splat(0.05 * TILE_SIZE))
-                                        .with_rotation(Quat::from_rotation_y(
-                                            random::<f32>() * PI * 2.0,
-                                        )),
-                                )
-                                .insert(LevelElement);
-                        }),
-                        ..Default::default()
-                    },
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
-
-            if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
-                load_gltf(
-                    String::from("dish.glb"),
-                    GLTFLoadConfig {
-                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
-                            commands
-                                .insert(
-                                    // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, effective_z)
-                                        .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
-                                )
-                                .insert(LevelElement);
-                        }),
-                        ..Default::default()
-                    },
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
-
-            if matches!(tile.TYPVS, TEGVLA_TYPVS::INGENII) {
-                load_gltf(
-                    String::from("ingenuity.glb"),
-                    GLTFLoadConfig {
-                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
-                            commands
-                                .insert(
-                                    // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 1.0 * TILE_SIZE, effective_z)
-                                        .with_scale(Vec3::splat(0.2 * TILE_SIZE)),
-                                )
-                                .insert(LevelElement);
-                        }),
-                        ..Default::default()
-                    },
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
-
-            if matches!(tile.TYPVS, TEGVLA_TYPVS::CRATERA) {
-                load_gltf(
-                    String::from("crater.glb"),
-                    GLTFLoadConfig {
-                        entity_initializer: Box::new(move |commands: &mut EntityCommands| {
-                            commands
-                                .insert(
-                                    // should spawn at the tile position
-                                    Transform::from_xyz(effective_x, 0.0, effective_z)
-                                        .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
-                                )
-                                .insert(LevelElement);
-                        }),
-                        ..Default::default()
-                    },
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
-        }
-
-        for (start, end) in level.NEXVS.iter() {
-            if start > end {
+            if distance == 1 {
                 continue;
             }
 
-            let start = Vec2::new(
-                (start.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
-                (-start.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
+            let effective_x = (x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
+            let effective_z = (y as f32 * TILE_SIZE - level_height / 2.0) + TILE_SIZE / 2.0;
+
+            spawn_rock(
+                effective_x,
+                effective_z,
+                distance,
+                &asset_server,
+                &mut mesh_loader,
             );
-            let end = Vec2::new(
-                (end.0 as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0,
-                (-end.1 as f32 * TILE_SIZE + level_height / 2.0) + TILE_SIZE / 2.0,
-            );
-            spawn_wire(&mut commands, &mut meshes, &mut materials, start, end);
         }
-
-        log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
-
-        let rock_padding_x = max(ROCK_PADDING, (level.LATIVIDO / 4) as i32);
-        let rock_padding_y = max(ROCK_PADDING, (level.ALTIVIDO / 4) as i32);
-
-        // Spawn boundary rocks
-        for x in -rock_padding_x..level.LATIVIDO as i32 + rock_padding_x {
-            for y in -rock_padding_y..level.ALTIVIDO as i32 + rock_padding_y {
-                let key = (x as i8, level.ALTIVIDO - y as i8);
-                if x >= 0 && x < level.LATIVIDO as i32 && y >= 0 && y < level.ALTIVIDO as i32
-                //&& level.TEGLVAE.contains_key(&key)
-                {
-                    continue;
-                }
-                let distance_x = if x < 0 {
-                    -x
-                } else {
-                    x - level.LATIVIDO as i32 + 1
-                };
-                let distance_y = if y < 0 {
-                    -y
-                } else {
-                    y - level.ALTIVIDO as i32 + 1
-                };
-                let distance = max(0, max(distance_x, distance_y));
-
-                if distance == 1 {
-                    continue;
-                }
-
-                let effective_x = (x as f32 * TILE_SIZE - level_width / 2.0) + TILE_SIZE / 2.0;
-                let effective_z = (y as f32 * TILE_SIZE - level_height / 2.0) + TILE_SIZE / 2.0;
-
-                spawn_rock(
-                    effective_x,
-                    effective_z,
-                    distance,
-                    &asset_server,
-                    &mut mesh_loader,
-                );
-            }
-        }
-
-        spawn_umbra(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            level_width,
-            level_height,
-            level.MAPPAE_VREMBRAE.clone(),
-        );
-
-        // debug sphere to show the center of the level
-        //commands.spawn((
-        //    LevelElement,
-        //    TileEntity,
-        //    Mesh3d(meshes.add(Sphere::new(0.1))),
-        //    MeshMaterial3d(materials.add(StandardMaterial {
-        //        base_color: Color::srgb(0.0, 1.0, 0.0),
-        //        ..Default::default()
-        //    })),
-        //    Transform::from_xyz(random::<f32>(), 0.0, random::<f32>()),
-        //));
-
-        active_level.0 = Some(event.level.clone());
-
-        action_list.actions.clear();
-        for i in 0..num_rovers {
-            action_list.actions.push(vec![]);
-        }
-        let action_event = action_list.clone();
-        println!("Sending event with {} rovers", action_list.actions.len());
-        commands.send_event(action_event);
-
-        commands.send_event(AfterLevelSpawnEvent);
     }
+
+    spawn_umbra(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        level_width,
+        level_height,
+        level.MAPPAE_VREMBRAE.clone(),
+    );
+
+    // debug sphere to show the center of the level
+    //commands.spawn((
+    //    LevelElement,
+    //    TileEntity,
+    //    Mesh3d(meshes.add(Sphere::new(0.1))),
+    //    MeshMaterial3d(materials.add(StandardMaterial {
+    //        base_color: Color::srgb(0.0, 1.0, 0.0),
+    //        ..Default::default()
+    //    })),
+    //    Transform::from_xyz(random::<f32>(), 0.0, random::<f32>()),
+    //));
+
+    active_level.0 = Some(event.level.clone());
+
+    action_list.actions.clear();
+    for i in 0..num_rovers {
+        action_list.actions.push(vec![]);
+    }
+    let action_event = action_list.clone();
+    println!("Sending event with {} rovers", action_list.actions.len());
+    commands.send_event(action_event);
+
+    commands.send_event(AfterLevelSpawnEvent);
 }
 
 fn spawn_umbra(

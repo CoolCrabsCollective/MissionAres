@@ -90,20 +90,17 @@ fn update_action_list_ui(
                 let rover_colors = &all_rover_colors.0[0..number_of_rovers];
                 let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
                 parent
-                    .spawn((
-                        ControlUI,
-                        Node {
-                            height: Val::Percent(100.0),
-                            width: Val::Percent(100.0),
-                            display: Display::Grid,
-                            padding: UiRect::all(Val::Px(10.0)),
-                            grid_template_columns: columns_template,
-                            grid_template_rows: vec![GridTrack::flex(1.0)],
-                            row_gap: Val::Px(0.0),
-                            column_gap: Val::Px(5.0),
-                            ..default()
-                        },
-                    ))
+                    .spawn((Node {
+                        height: Val::Percent(100.0),
+                        width: Val::Percent(100.0),
+                        display: Display::Grid,
+                        padding: UiRect::all(Val::Px(10.0)),
+                        grid_template_columns: columns_template,
+                        grid_template_rows: vec![GridTrack::flex(1.0)],
+                        row_gap: Val::Px(0.0),
+                        column_gap: Val::Px(5.0),
+                        ..default()
+                    },))
                     .with_children(|parent| {
                         let slicer = TextureSlicer {
                             border: Default::default(),
@@ -139,7 +136,6 @@ fn update_action_list_ui(
                                 },
                             );
                             parent.spawn((
-                                ControlUI,
                                 Button,
                                 RobotButton(robot_idx as i32),
                                 robot_node_for_img.clone(),
@@ -153,7 +149,7 @@ fn update_action_list_ui(
                 //actions.resize(number_of_rovers, Vec::new());
                 assert_eq!(actions.len(), number_of_rovers);
                 let mut multi_robot_command_list =
-                    parent.spawn((ControlUI, multi_robot_command_list(number_of_rovers)));
+                    parent.spawn((multi_robot_command_list(number_of_rovers)));
                 multi_robot_command_list.with_children(|parent| {
                     for i in 0..number_of_rovers {
                         let mut ui_commands = ui_command_list(parent);
@@ -167,7 +163,6 @@ fn update_action_list_ui(
 
                 parent
                     .spawn((
-                        ControlUI,
                         ExecuteButton,
                         Button,
                         Node {
@@ -279,7 +274,7 @@ fn ui_command_statement(
         image_mode: NodeImageMode::Sliced(slicer.clone()),
         ..default()
     };
-    parent.spawn((ControlUI, move_node_for_img.clone(), img_move_node.clone()));
+    parent.spawn((move_node_for_img.clone(), img_move_node.clone()));
 }
 
 fn multi_robot_command_list(num_rovers: usize) -> Node {
@@ -296,7 +291,6 @@ fn multi_robot_command_list(num_rovers: usize) -> Node {
 }
 fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
     parent.spawn((
-        ControlUI,
         Node {
             height: Val::Percent(100.0),
             width: Val::Percent(100.0),
@@ -380,39 +374,33 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
     };
 
     parent
-        .spawn((
-            ControlUI,
-            Node {
-                height: Val::Percent(100.0),
-                width: Val::Percent(100.0),
-                display: Display::Grid,
-                grid_template_columns: vec![
-                    GridTrack::flex(1.0),
-                    GridTrack::min_content(),
-                    GridTrack::flex(1.0),
-                ],
-                grid_template_rows: RepeatedGridTrack::flex(1, 1.0),
-                row_gap: Val::Px(0.0),
-                column_gap: Val::Px(0.0),
-                ..default()
-            },
-        ))
+        .spawn((Node {
+            height: Val::Percent(100.0),
+            width: Val::Percent(100.0),
+            display: Display::Grid,
+            grid_template_columns: vec![
+                GridTrack::flex(1.0),
+                GridTrack::min_content(),
+                GridTrack::flex(1.0),
+            ],
+            grid_template_rows: RepeatedGridTrack::flex(1, 1.0),
+            row_gap: Val::Px(0.0),
+            column_gap: Val::Px(0.0),
+            ..default()
+        },))
         .with_children(|parent| {
-            parent.spawn((ControlUI, Node::default()));
+            parent.spawn((Node::default()));
             parent
-                .spawn((
-                    ControlUI,
-                    Node {
-                        height: Val::Percent(100.0),
-                        aspect_ratio: Some(1.0f32),
-                        display: Display::Grid,
-                        grid_template_columns: RepeatedGridTrack::flex(3, 1.0),
-                        grid_template_rows: RepeatedGridTrack::flex(3, 1.0),
-                        row_gap: Val::Px(15.0),
-                        column_gap: Val::Px(15.0),
-                        ..default()
-                    },
-                ))
+                .spawn((Node {
+                    height: Val::Percent(100.0),
+                    aspect_ratio: Some(1.0f32),
+                    display: Display::Grid,
+                    grid_template_columns: RepeatedGridTrack::flex(3, 1.0),
+                    grid_template_rows: RepeatedGridTrack::flex(3, 1.0),
+                    row_gap: Val::Px(15.0),
+                    column_gap: Val::Px(15.0),
+                    ..default()
+                },))
                 .with_children(|parent| {
                     let node_for_img = Node {
                         width: Val::Percent(100.0),
@@ -453,47 +441,42 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                         ..default()
                     };
 
-                    parent.spawn((ControlUI, Node::default()));
+                    parent.spawn((Node::default()));
                     parent.spawn((
-                        ControlUI,
                         Button,
                         CommandButton(ActionType::MoveUp),
                         node_for_img.clone(),
                         img_up.clone(),
                     ));
-                    parent.spawn((ControlUI, Node::default()));
+                    parent.spawn((Node::default()));
                     parent.spawn((
-                        ControlUI,
                         Button,
                         CommandButton(ActionType::MoveLeft),
                         node_for_img.clone(),
                         img_left.clone(),
                     ));
                     parent.spawn((
-                        ControlUI,
                         Button,
                         CommandButton(ActionType::Wait),
                         node_for_img.clone(),
                         img_wait.clone(),
                     ));
                     parent.spawn((
-                        ControlUI,
                         Button,
                         CommandButton(ActionType::MoveRight),
                         node_for_img.clone(),
                         img_right.clone(),
                     ));
-                    parent.spawn((ControlUI, Node::default()));
+                    parent.spawn((Node::default()));
                     parent.spawn((
-                        ControlUI,
                         CommandButton(ActionType::MoveDown),
                         Button,
                         node_for_img.clone(),
                         img_down.clone(),
                     ));
-                    parent.spawn((ControlUI, Node::default()));
+                    parent.spawn((Node::default()));
                 });
 
-            parent.spawn((ControlUI, Node::default()));
+            parent.spawn((Node::default()));
         });
 }
