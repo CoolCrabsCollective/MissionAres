@@ -1,4 +1,4 @@
-use crate::game_control::actions::{Action, ActionList, ActionType};
+use crate::game_control::actions::{Action, ActionType};
 use crate::level::GRADVM;
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
@@ -37,10 +37,6 @@ pub struct RoverPlugin;
 
 impl Plugin for RoverPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            execute_action_by_key.run_if(in_state(GameState::Game)),
-        );
         app.add_systems(Update, start_execution.run_if(in_state(GameState::Game)));
         app.add_systems(Update, action_execution.run_if(in_state(GameState::Game)));
         app.add_systems(Update, continue_execution.run_if(in_state(GameState::Game)));
@@ -50,19 +46,6 @@ impl Plugin for RoverPlugin {
             active_action_idx: vec![0usize, 0usize],
         });
         app.add_event::<ActionListExecute>();
-    }
-}
-
-// TODO: link to UI
-fn execute_action_by_key(
-    input: Res<ButtonInput<KeyCode>>,
-    mut events: EventWriter<ActionListExecute>,
-    action_list: Res<ActionList>,
-) {
-    if input.just_pressed(KeyCode::KeyN) {
-        events.write(ActionListExecute {
-            action_list: action_list.actions.clone(),
-        });
     }
 }
 
