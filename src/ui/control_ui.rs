@@ -231,7 +231,12 @@ fn rebuild_control_ui(
                                                 let mut i = 0;
                                                 let mut prev_action = None;
                                                 let mut current_count = 0;
-                                                for action in event.actions[robot_idx].iter() {
+                                                let Some(robot_actions) =
+                                                    event.actions.get(robot_idx)
+                                                else {
+                                                    return;
+                                                };
+                                                for action in robot_actions.iter() {
                                                     if Some(action.moves.0) == prev_action {
                                                         current_count += 1;
                                                     } else {
@@ -561,10 +566,10 @@ fn build_execute_button(
                     ..default()
                 },
                 TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-                TextShadow {
-                    offset: Vec2::splat(2.0),
-                    color: Color::linear_rgba(0., 0., 0., 0.75),
-                },
+                // TextShadow {
+                //     offset: Vec2::splat(2.0),
+                //     color: Color::linear_rgba(0., 0., 0., 0.75),
+                // },
             ));
         });
 }

@@ -27,6 +27,10 @@ use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
 use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
+use bevy::ecs::entity::EntityDoesNotExistError;
+use bevy::ecs::error::{BevyError, ErrorContext, GLOBAL_ERROR_HANDLER};
+use bevy::ecs::query::QueryEntityError;
+use bevy::ecs::world::error::EntityMutableFetchError;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
@@ -35,6 +39,10 @@ use ui::control_ui::ControlUIPlugin;
 
 fn main() {
     let mut app = App::new();
+
+    GLOBAL_ERROR_HANDLER
+        .set(global_error_handler)
+        .expect("The error handler can only be set once.");
 
     let default_sampler = ImageSamplerDescriptor {
         address_mode_u: ImageAddressMode::from(AddressMode::ClampToEdge),
@@ -98,4 +106,21 @@ fn quit_on_escape(
     if keyboard_input.just_pressed(KeyCode::Escape) {
         app_exit_events.write(AppExit::Success);
     }
+}
+
+fn global_error_handler(error: BevyError, ctx: ErrorContext) {
+    // ignore the bullshit issue where modifying an entity causes a crash in dev
+    // if the entity is also de-spawned by another system in the same frame
+    if let Some(entity_fetch_error) = error.downcast_ref::<EntityMutableFetchError>() {
+        if matches!(
+            entity_fetch_error,
+            EntityMutableFetchError::EntityDoesNotExist(_)
+        ) {
+            trace!("EntityDoesNotExist, ignoring.");
+            return;
+        }
+    }
+
+    dbg!(&error, &ctx);
+    bevy::ecs::error::error(error, ctx);
 }

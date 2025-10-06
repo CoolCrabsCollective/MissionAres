@@ -346,7 +346,7 @@ fn apply_scene_color_override(
             for child in children.iter() {
                 commands
                     .entity(child)
-                    .insert(SceneColorOverride(Some((scene_handle.clone(), new_color))));
+                    .try_insert(SceneColorOverride(Some((scene_handle.clone(), new_color))));
             }
         }
 
@@ -372,7 +372,7 @@ fn apply_scene_color_override(
         });
         commands
             .entity(entity)
-            .insert(MeshMaterial3d(new_material_handle));
+            .try_insert(MeshMaterial3d(new_material_handle));
     }
 }
 

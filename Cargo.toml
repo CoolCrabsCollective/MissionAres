@@ -6,7 +6,10 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.16.1", features = ["track_location"] }
+bevy = { version = "0.16.1", features = [
+  "track_location",
+  "configurable_error_handler",
+] }
 
 bevy_rapier3d = "0.31.0"
 thiserror = "2.0.17"
