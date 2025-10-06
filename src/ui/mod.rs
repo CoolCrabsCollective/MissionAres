@@ -7,5 +7,5 @@ pub(crate) mod interactive_button;
 pub(crate) mod win_screen;
 
 pub fn Px_dynamic(i: f32) -> Val {
-    Val::Vw(i / 1920.0 * 100.0)
+    Val::Vw(i / 1600.0 * 100.0)
 }

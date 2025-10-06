@@ -8,4 +8,4 @@ wasm-bindgen --out-dir ./out/ --target web --no-typescript --out-name "mission_a
 cp index.html ./out
 mkdir ./out/assets/
 cp -r ./assets/* ./out/assets/
-zip -rq out.zip out
+zip -rq game.zip out/*
