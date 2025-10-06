@@ -2,7 +2,6 @@ use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
 use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
-use crate::mesh_loader::MeshLoader;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
 use bevy::math::ops::abs;
@@ -77,38 +76,6 @@ impl Plugin for RoverPlugin {
             action_states: vec![],
         });
         app.add_event::<ActionListExecute>();
-    }
-}
-
-fn get_base_material(
-    asset_path: String,
-    mut mesh_loader: ResMut<MeshLoader>,
-    gltf_assets: Res<Assets<Gltf>>,
-) {
-    for loaded_gltf in mesh_loader.0.iter_mut() {
-        if !loaded_gltf.processed {
-            continue;
-        }
-
-        let Some(gltf) = gltf_assets.get(&loaded_gltf.gltf_handle) else {
-            continue;
-        };
-
-        // if let Some(material) get_material_from_gltf_node(node_handle, &gltf_meshes, &nodes)
-    }
-}
-
-fn setup_rover_colors(
-    mut commands: Commands,
-    mut rover_query: Query<(Entity, &mut RoverEntity), With<RoverEntity>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (entity, mut rover_entity) in rover_query.iter_mut() {
-        if !rover_entity.is_setup {
-            // entity.
-
-            rover_entity.is_setup = true;
-        }
     }
 }
 

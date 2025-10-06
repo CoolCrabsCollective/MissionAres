@@ -361,8 +361,8 @@ fn load_level(
         MeshMaterial3d(materials.add(StandardMaterial {
             //base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
             base_color_texture: Some(mars_texture),
-            // perceptual_roughness: 0.9,
-            // metallic: 0.5,
+            perceptual_roughness: 0.9,
+            metallic: 0.5,
             ..Default::default()
         })),
         Transform::from_xyz(0.0, 0.0, 0.0),
