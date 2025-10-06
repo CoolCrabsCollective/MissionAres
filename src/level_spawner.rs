@@ -481,7 +481,7 @@ fn load_level(
                     .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
                 LevelElement,
                 PointLight {
-                    intensity: 1_000_000.0,
+                    intensity: 500_000.0,
                     color: BLUE.into(),
                     shadows_enabled: false,
                     ..default()
