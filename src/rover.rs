@@ -26,7 +26,7 @@ pub enum RoverStates {
 
 #[derive(Component, Clone)]
 pub struct RoverEntity {
-    pub is_setup: bool,
+    pub is_acting: bool,
     pub base_color: Color,
     pub gltf_handle: Handle<Gltf>,
     pub logical_position: I8Vec2,
@@ -192,6 +192,8 @@ fn setup_action_movements(
             action_execution.action_states[robot_num].wait_time = WAIT_ACTION_TIME;
 
             action_execution.action_states[robot_num].is_waiting = true;
+
+            rover.is_acting = true;
         }
     }
     rover.rover_state = RoverStates::Standby;
@@ -203,6 +205,7 @@ fn setup_action_movements(
         rover.collided = true;
     } else {
         rover.rover_state = RoverStates::Moving;
+        rover.is_acting = true;
         if rover.heading != new_heading {
             action_execution.action_states[robot_num].is_turning = true;
             rover.heading = new_heading;
@@ -352,8 +355,11 @@ fn action_execution(
                         {
                             action_execution.action_states[robot_num].active_action_idx += 1;
                         }
+                        rover.is_acting = false;
+                        if action_execution.is_active {
+                            commands.send_event(PuzzleEvaluationRequestEvent);
+                        }
                         action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
-                        commands.send_event(PuzzleEvaluationRequestEvent);
                     }
 
                     action_execution.action_states[robot_num].is_waiting = false;
@@ -411,10 +417,11 @@ fn action_execution(
                 {
                     action_execution.action_states[robot_num].active_action_idx += 1;
                 }
+                rover.is_acting = false;
+                if action_execution.is_active {
+                    commands.send_event(PuzzleEvaluationRequestEvent);
+                }
                 action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
-                commands.send_event(PuzzleEvaluationRequestEvent);
-
-                // TODO: avoid skipping of action steps in other rover that is still in movement
             }
         }
 
@@ -471,6 +478,11 @@ fn continue_execution(
                 // Iterate through each robot and move them progressively towards the next tile based on action
                 for mut rover in rover_query.iter_mut() {
                     let robot_num = rover.identifier as usize;
+
+                    if rover.is_acting {
+                        continue; // Avoid setting up action for rover that is still acting.
+                    }
+
                     // Setup first action movements, validate level boundary
                     setup_action_movements(
                         &mut rover,

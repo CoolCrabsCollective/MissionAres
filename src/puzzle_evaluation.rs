@@ -70,6 +70,10 @@ fn on_puzzle_evaluation_request(
         }
 
         for mut rover in rovers.iter_mut() {
+            if rover.is_acting {
+                continue; // Do not affect battery level for rovers still acting
+            }
+
             let tile_coords = (rover.logical_position.x, rover.logical_position.y);
             if let Some(&other) = active_level.NEXVS.get(&tile_coords) {
                 for (other_pos, other_rover) in rover_positions.iter() {
@@ -103,11 +107,11 @@ fn on_puzzle_evaluation_request(
                 return;
             };
 
-            if tile.VMBRA && rover.battery_level > 0 {
+            if tile.VMBRA && rover.battery_level > 0 && !rover.is_acting {
                 rover.battery_level -= 1;
             }
 
-            if !tile.VMBRA && rover.battery_level < 3 {
+            if !tile.VMBRA && rover.battery_level < 3 && !rover.is_acting {
                 rover.battery_level += 1;
             }
 
@@ -129,6 +133,7 @@ fn on_puzzle_evaluation_request(
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
+
         puzzle_response_event_writer.write(PuzzleResponseEvent::InProgress);
     }
 }

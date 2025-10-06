@@ -418,7 +418,7 @@ fn load_level(
                                     .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                             )
                             .insert(RoverEntity {
-                                is_setup: false,
+                                is_acting: false,
                                 base_color: Color::srgb(0.5, 0.2, 0.8),
                                 gltf_handle: Default::default(),
                                 logical_position: I8Vec2::new(
