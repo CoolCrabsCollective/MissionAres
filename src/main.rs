@@ -24,6 +24,7 @@ use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
 use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
+use crate::ui::win_screen::WinScreenPlugin;
 use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
@@ -91,6 +92,7 @@ fn main() {
     app.add_plugins(LevelSpawnerPlugin);
     app.add_plugins(PuzzleEvaluationPlugin);
     app.add_plugins(BatteryUIPlugin);
+    app.add_plugins(WinScreenPlugin);
     app.add_plugins(DustPlugin);
     app.add_plugins(ParticlePlugin);
     app.insert_state(GameState::TitleScreen);
