@@ -1,9 +1,9 @@
 use crate::game_control::actions::{ActionList, ActionType};
 use crate::hentai_anime;
-use crate::hentai_anime::HentaiAnimePlugin;
-use crate::hentai_anime::{Animation, setup_anime};
+use crate::hentai_anime::Animation;
+use crate::hentai_anime::{play_all_animations_when_ready, setup_anime_when_ready};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -13,9 +13,9 @@ use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
-use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
 use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
@@ -25,9 +25,9 @@ use bevy::pbr::{
     ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges,
-    GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource, Without, default, in_state,
+    default, in_state, AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig,
+    ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter,
+    PerspectiveProjection, Projection, Reflect, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -111,8 +111,6 @@ impl Plugin for LevelSpawnerPlugin {
         ));
 
         app.add_plugins(RoverPlugin);
-
-        app.add_plugins(HentaiAnimePlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(TemporalAntiAliasPlugin);
@@ -436,7 +434,8 @@ fn load_level(
                             .insert(LevelElement)
                             .insert(DustSpawner {
                                 timer: Timer::from_seconds(0.4, TimerMode::Repeating),
-                            });
+                            })
+                            .observe(setup_anime_when_ready);
                     }),
                     ..Default::default()
                 },
@@ -469,7 +468,6 @@ fn load_level(
         }
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
-            let anime = setup_anime(1, String::from("dish.glb"), &asset_server, &mut graphs);
             load_gltf(
                 String::from("dish.glb"),
                 GLTFLoadConfig {
@@ -481,8 +479,7 @@ fn load_level(
                                     .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
                             )
                             .insert(LevelElement)
-                            .insert(AnimationPlayer::default())
-                            .insert(anime.clone());
+                            .observe(play_all_animations_when_ready);
                     }),
                     ..Default::default()
                 },
@@ -500,9 +497,11 @@ fn load_level(
                             .insert(
                                 // should spawn at the tile position
                                 Transform::from_xyz(effective_x, 1.0 * TILE_SIZE, effective_z)
-                                    .with_scale(Vec3::splat(0.2 * TILE_SIZE)),
+                                    .with_scale(Vec3::splat(0.2 * TILE_SIZE))
+                                    .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                             )
-                            .insert(LevelElement);
+                            .insert(LevelElement)
+                            .observe(play_all_animations_when_ready);
                     }),
                     ..Default::default()
                 },
