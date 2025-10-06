@@ -198,7 +198,6 @@ fn set_camera(
     }
     let mut camera_transform = camera_transform_query.single_mut().unwrap();
 
-    // log::info!("set_camera: position={:?}", state.position);
     camera_transform.translation = state.position;
     camera_transform.rotation = state.view_direction.to_quat();
 }

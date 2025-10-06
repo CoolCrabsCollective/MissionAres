@@ -9,12 +9,12 @@ mod mesh_loader;
 mod particle;
 mod puzzle_evaluation;
 mod rover;
+mod scene_hook;
 mod title_screen;
 mod ui;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::game_control::actions::ActionController;
-use crate::game_control::control_ui::ControlUIPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
@@ -23,13 +23,15 @@ use crate::particle::particle::ParticlePlugin;
 use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
+use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
+use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
-use bevy::DefaultPlugins;
+use ui::control_ui::ControlUIPlugin;
 
 fn main() {
     let mut app = App::new();
@@ -71,6 +73,7 @@ fn main() {
                 ..default()
             }),
     );
+    app.add_plugins(InteractiveButtonPlugin);
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(ActionController);
     app.add_plugins(ControlUIPlugin);

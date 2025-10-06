@@ -1,3 +1,4 @@
+use crate::ui::interactive_button::InteractiveButton;
 use bevy::prelude::*;
 
 pub struct TitleScreenPlugin;
@@ -53,15 +54,22 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                     Node {
                         width: Val::Px(250.0),
                         height: Val::Px(65.0),
-                        border: UiRect::all(Val::Px(5.0)),
-                        top: Val::Px(300.0),
+                        border: UiRect::all(Val::Px(15.0)),
+                        top: Val::Percent(35.0),
                         // horizontally center child text
                         justify_content: JustifyContent::Center,
                         // vertically center child text
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    BackgroundColor::from(Color::srgba(0.2, 0.2, 0.2, 1.0)),
+                    BackgroundColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
+                    BorderRadius::all(Val::Px(15.0)),
+                    BorderColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
+                    InteractiveButton::simple(
+                        Color::Srgba(Srgba::hex("3a312e").unwrap()),
+                        Color::WHITE,
+                        false,
+                    ),
                 ))
                 .with_children(|parent| {
                     parent.spawn((
@@ -71,8 +79,9 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                             font_size: 40.0,
                             ..default()
                         },
+                        Transform::default(),
                         TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-                        TextShadow::default(),
+                        //TextShadow::default(),
                     ));
                 });
 
@@ -83,7 +92,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                     font_size: 48.0,
                     ..default()
                 },
-                TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                TextColor(Color::Srgba(Srgba::hex("3a312e").unwrap())),
                 TextLayout::new_with_justify(JustifyText::Center),
                 Node {
                     position_type: PositionType::Absolute,
@@ -109,33 +118,11 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn start_game_click_handler(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &Children),
-        (Changed<Interaction>, With<StartGameButton>),
-    >,
-    mut text_query: Query<(&Text, &mut TextColor)>,
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<StartGameButton>)>,
     mut next_state: ResMut<NextState<GameState>>,
     gamepads: Query<&Gamepad>,
 ) {
-    for (interaction, mut bg_color, children) in &mut interaction_query {
-        let color = match *interaction {
-            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
-            Interaction::Hovered => Color::srgb(0.8, 0.8, 0.8),
-            Interaction::None => Color::srgb(0.9, 0.9, 0.9),
-        };
-
-        for child in children {
-            if let Ok(mut text) = text_query.get_mut(*child) {
-                text.1.0 = color;
-            }
-        }
-
-        bg_color.0 = match *interaction {
-            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
-            Interaction::Hovered => Color::srgb(0.1, 0.1, 0.1),
-            Interaction::None => Color::srgb(0.2, 0.2, 0.2),
-        };
-
+    for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             next_state.set(GameState::Game);
         }

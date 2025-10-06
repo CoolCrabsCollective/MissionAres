@@ -107,33 +107,22 @@ fn on_puzzle_evaluation_request(
                 rover.battery_level += 1;
             }
 
-            log::info!(
-                "Rover {} in position {} battery level from {} to: {}",
-                i,
-                rover.logical_position,
-                prev_battery_level,
-                rover.battery_level
-            );
-
             all_rovers_in_finish_tile &= matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS);
 
             i += 1;
         }
 
         if all_rovers_in_finish_tile {
-            log::info!("All rovers are in the finish tile. Setting win state to win.");
             puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
             break;
         }
 
         if let Some(_rover) = rovers.iter().find(|rover| rover.battery_level == 0) {
-            log::info!("Rover is out of battery. Setting win state to lose.",);
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
 
         let rover_executions = action_execution.action_states.clone();
-        dbg!(&rover_executions);
         if let Some(_rover) = rovers.iter().enumerate().find(|(idx, rover)| {
             rover_executions[*idx].active_action_idx
                 == action_execution.action_states[*idx].action_list.len()
