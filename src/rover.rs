@@ -13,6 +13,7 @@ use std::time::Duration;
 const SPEED: f32 = 7.5;
 const WAIT_ACTION_TIME: f32 = 0.5;
 const TURN_SPEED: f32 = 5.0;
+const WAIT_OTHER_DIPSHITS_TO_TURN_TIME: f32 = 0.5;
 
 const WAIT_BETWEEN_TURNS: f32 = 0.25;
 
@@ -322,6 +323,16 @@ fn action_execution(
     let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
     let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
 
+    let mut any_rover_turning = false;
+
+    for (_, mut rover, _) in rover_query.iter_mut() {
+        let robot_num = rover.identifier as usize;
+
+        if action_execution.action_states[robot_num].is_turning {
+            any_rover_turning = true;
+        }
+    }
+
     // Iterate through each robot and move them progressively towards the next tile based on action
     for (_, mut rover, mut trans) in rover_query.iter_mut() {
         if rover.is_turn_done {
@@ -372,6 +383,10 @@ fn action_execution(
                 action_execution.action_states[robot_num].is_turning = false;
             }
 
+            continue;
+        }
+
+        if any_rover_turning {
             continue;
         }
 
@@ -454,18 +469,6 @@ fn continue_execution(
                 );
 
                 action_execution.is_evaluating = false;
-
-                // // Iterate through each robot and move them progressively towards the next tile based on action
-                // for mut rover in rover_query.iter_mut() {
-                //     let robot_num = rover.identifier as usize;
-                //
-                //     // Make rover wait before performing next action
-                //     action_execution.action_states[robot_num].wait_time_start =
-                //         time.elapsed_secs_wrapped();
-                //     action_execution.action_states[robot_num].wait_time = WAIT_BETWEEN_ACTS;
-                //     action_execution.action_states[robot_num].is_waiting = true;
-                //     println!("bruhhhhhhh");
-                // }
             }
         }
     }
