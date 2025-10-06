@@ -27,6 +27,12 @@ pub struct RoverColors(Vec<Color>);
 pub struct CommandButton(pub ActionType);
 
 #[derive(Component)]
+pub struct ActionDeleteButton {
+    rover_index: usize,
+    action_index: usize,
+}
+
+#[derive(Component)]
 pub struct RobotButton(pub i32);
 
 impl Plugin for ControlUIPlugin {
@@ -34,12 +40,13 @@ impl Plugin for ControlUIPlugin {
         app.add_systems(
             Update,
             (
-                update_action_list_ui.run_if(in_state(GameState::Game)),
-                command_button_feedback,
-                robot_button_feedback,
+                rebuild_control_ui.run_if(in_state(GameState::Game)),
+                command_button_handler,
+                robot_button_handler,
+                delete_action_handler,
             ),
         );
-        app.add_systems(Update, execute_button_handler);
+        app.add_systems(Update, execute_handler);
         app.add_systems(Update, update_scroll_position);
         app.insert_resource(RoverColors(vec![
             Color::srgba(0.25, 1.0, 0.25, 1.0),
@@ -50,17 +57,13 @@ impl Plugin for ControlUIPlugin {
 }
 
 pub const CONTROL_UI_BACKGROUND_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
-// Red: \(75\div 255\approx 0.2941\)
-// Green: \(89\div 255\approx 0.3490\)
-// Blue: \(62\div 255\approx 0.2431\)
-// Therefore, the result is approximately (0.2941, 0.3490, 0.2431). RGB - Hexadecimal Color ConversionTo calculate hexadecimal colors: Each color will have numerical values for the amounts of Red, Green and Blue that make it up. The...Lycos SearchImage Classification with Convolutional Neural Networks: Introduction to Image DataMay 29, 2024 — By normalizing the RGB values, you ensure compatibility and seamless integration with these tools. The normalisatio...The Carpentries IncubatorELI5: Why do RGB values go from 0 to 255? : r/explainlikeimfiveOct 13, 2021 — RGB color scheme is 8-bit color per channel (R G B) this is known as 16 million colors. Each channel has 8 bit valu...RedditRGB - Hexadecimal Color ConversionTo calculate hexadecimal colors: Each color will have numerical values for the amounts of Red, Green and Blue that make it up. The...Lycos SearchImage Classification with Convolutional Neural Networks: Introduction to Image DataMay 29, 2024 — By normalizing the RGB values, you ensure compatibility and seamless integration with these tools. The normalisatio...The Carpentries IncubatorELI5: Why do RGB values go from 0 to 255? : r/explainlikeimfiveOct 13, 2021 — RGB color scheme is 8-bit color per channel (R G B) this is known as 16 million colors. Each channel has 8 bit valu...RedditShow all   Dive deeper in AI ModeAI responses may include mistakes. Learn morePositive feedbackNegative feedbackThank you
-//      Your feedback helps Google improve. See our Privacy Policy.
-// Share more feedbackReport a problemClose
 pub const CONTROL_UI_SECONDARY_BACKGROUND_COLOR: Color = Color::srgb(0.2, 0.2, 0.2);
 pub const CONTROL_UI_BORDER_COLOR: Color = Color::srgb(0.26, 0.26, 0.26);
 pub const ACTION_SECTIONS_BORDER_COLOR: Color = Color::srgb(0.36, 0.36, 0.36);
 
-fn update_action_list_ui(
+// builders
+
+fn rebuild_control_ui(
     mut commands: Commands,
     mut action_lists: EventReader<ActionList>,
     current_ui_elem_query: Query<Entity, With<ControlUI>>,
@@ -111,7 +114,6 @@ fn update_action_list_ui(
                         build_control_panel(parent, &asset_server);
 
                         let rover_colors = &all_rover_colors.0[0..number_of_rovers];
-                        // let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
 
                         parent
                             .spawn((
@@ -219,19 +221,23 @@ fn update_action_list_ui(
                                     .with_children(|parent| {
                                         for (robot_idx, color) in rover_colors.iter().enumerate() {
                                             let mut multi_robot_command_list = parent.spawn((
-                                                multi_robot_command_list(number_of_rovers),
+                                                multi_robot_command_list(),
                                                 Pickable {
                                                     should_block_lower: false,
                                                     ..default()
                                                 },
                                             ));
                                             multi_robot_command_list.with_children(|parent| {
+                                                let mut i = 0;
                                                 for action in event.actions[robot_idx].iter() {
-                                                    ui_command_statement(
+                                                    build_deleteable_action_button(
                                                         parent,
+                                                        selected_robot_index,
+                                                        i,
                                                         action,
                                                         &asset_server,
                                                     );
+                                                    i += 1;
                                                 }
                                             });
                                         }
@@ -245,7 +251,6 @@ fn update_action_list_ui(
                                     width: Val::Percent(100.0),
                                     height: Val::Px(60.0),
                                     min_height: Val::Px(60.0),
-                                    //border: UiRect::all(Val::Px(5.0)),
                                     // horizontally center child text
                                     justify_content: JustifyContent::Center,
                                     // vertically center child text
@@ -281,20 +286,6 @@ fn update_action_list_ui(
     }
 }
 
-fn execute_button_handler(
-    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ExecuteButton>)>,
-    mut events: EventWriter<ActionListExecute>,
-    action_list: Res<ActionList>,
-) {
-    for interaction in &mut interaction_query {
-        if *interaction == Interaction::Pressed {
-            events.write(ActionListExecute {
-                action_list: action_list.actions.clone(),
-            });
-        }
-    }
-}
-
 fn ui_sidebar_container_node() -> Node {
     Node {
         height: Val::Percent(100.0),
@@ -323,18 +314,14 @@ fn ui_sidebar_node() -> Node {
     }
 }
 
-fn ui_command_statement(
+fn build_deleteable_action_button(
     parent: &mut RelatedSpawnerCommands<ChildOf>,
+    rover_index: usize,
+    action_index: usize,
     action: &Action,
     asset_server: &Res<AssetServer>,
 ) {
     let image_move = asset_server.load(action.moves.0.img_path());
-    let slicer = TextureSlicer {
-        border: Default::default(),
-        center_scale_mode: SliceScaleMode::Stretch,
-        sides_scale_mode: SliceScaleMode::Stretch,
-        max_corner_scale: 1.0,
-    };
     let move_node_for_img = Node {
         height: Val::Px(24.0),
         width: Val::Px(24.0),
@@ -358,6 +345,10 @@ fn ui_command_statement(
         .with_children(|parent| {
             parent.spawn((
                 Button,
+                ActionDeleteButton {
+                    rover_index,
+                    action_index,
+                },
                 InteractiveButton::simple_image(
                     Color::srgba(0.0, 0.0, 0.0, 0.0),
                     Color::WHITE,
@@ -375,96 +366,14 @@ fn ui_command_statement(
         });
 }
 
-fn multi_robot_command_list(num_rovers: usize) -> Node {
+fn multi_robot_command_list() -> Node {
     Node {
         width: Val::Px(56.0),
         display: Display::Flex,
         flex_direction: FlexDirection::Column,
         align_items: AlignItems::Center,
-        // height: Val::Px(200.0),
-        // max_height: Val::Px(200.0),
-        // overflow: Overflow::scroll_y(),
         row_gap: Val::Px(12.0),
         ..default()
-    }
-}
-fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
-    parent.spawn((
-        Node {
-            height: Val::Percent(100.0),
-            width: Val::Percent(100.0),
-            display: Display::Grid,
-            grid_template_columns: vec![GridTrack::flex(1.0)],
-            grid_template_rows: RepeatedGridTrack::flex(MAX_COMMANDS, 1.0),
-            row_gap: Val::Px(5.0),
-            column_gap: Val::Px(5.0),
-            align_items: AlignItems::Center,
-            ..default()
-        },
-        BackgroundColor(CONTROL_UI_BACKGROUND_COLOR),
-    ))
-}
-
-fn command_button_feedback(
-    mut interaction_query: Query<
-        (&Interaction, &mut ImageNode, &mut Transform, &CommandButton),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut action_list: ResMut<ActionList>,
-    colors: Res<RoverColors>,
-    mut action_writer: EventWriter<ActionList>,
-) {
-    for (interaction, mut image, mut trans, command) in &mut interaction_query {
-        let action_list_selection = action_list.current_selection;
-        match *interaction {
-            Interaction::Pressed => {
-                image.color = *colors.0.get(action_list_selection).unwrap();
-
-                if action_list.actions.get(action_list_selection).is_some()
-                    && action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize
-                {
-                    action_list.actions[action_list_selection].push(Action {
-                        moves: (command.0.clone(), action_list_selection),
-                    });
-                    action_writer.write(action_list.clone());
-                }
-                trans.scale = Vec3::new(0.9, 0.9, 0.9);
-            }
-            Interaction::Hovered => {
-                image.color = *colors.0.get(action_list_selection).unwrap();
-                trans.scale = Vec3::new(1.1, 1.1, 1.1);
-            }
-            Interaction::None => {
-                image.color = Color::WHITE;
-                trans.scale = Vec3::new(1.0, 1.0, 1.0);
-            }
-        }
-    }
-}
-
-fn robot_button_feedback(
-    mut interaction_query: Query<
-        (&Interaction, &RobotButton),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut action_list: ResMut<ActionList>,
-    mut action_writer: EventWriter<ActionList>,
-) {
-    let mut has_to_update: bool = false;
-    for (interaction, robot_button) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                action_list.current_selection = robot_button.0 as usize;
-                has_to_update = true;
-                //node.
-            }
-            Interaction::Hovered => {}
-            Interaction::None => {}
-        }
-    }
-
-    if has_to_update {
-        action_writer.write(action_list.clone());
     }
 }
 
@@ -598,6 +507,110 @@ fn build_control_panel(
 
             parent.spawn((Node::default()));
         });
+}
+
+// handlers
+
+fn execute_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ExecuteButton>)>,
+    mut events: EventWriter<ActionListExecute>,
+    action_list: Res<ActionList>,
+) {
+    for interaction in &mut interaction_query {
+        if *interaction == Interaction::Pressed {
+            events.write(ActionListExecute {
+                action_list: action_list.actions.clone(),
+            });
+        }
+    }
+}
+
+fn command_button_handler(
+    mut interaction_query: Query<
+        (&Interaction, &mut ImageNode, &mut Transform, &CommandButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut action_list: ResMut<ActionList>,
+    colors: Res<RoverColors>,
+    mut action_writer: EventWriter<ActionList>,
+) {
+    for (interaction, mut image, mut trans, command) in &mut interaction_query {
+        let action_list_selection = action_list.current_selection;
+        match *interaction {
+            Interaction::Pressed => {
+                image.color = *colors.0.get(action_list_selection).unwrap();
+
+                if action_list.actions.get(action_list_selection).is_some()
+                    && action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize
+                {
+                    action_list.actions[action_list_selection].push(Action {
+                        moves: (command.0.clone(), action_list_selection),
+                    });
+                    action_writer.write(action_list.clone());
+                }
+                trans.scale = Vec3::new(0.9, 0.9, 0.9);
+            }
+            Interaction::Hovered => {
+                image.color = *colors.0.get(action_list_selection).unwrap();
+                trans.scale = Vec3::new(1.1, 1.1, 1.1);
+            }
+            Interaction::None => {
+                image.color = Color::WHITE;
+                trans.scale = Vec3::new(1.0, 1.0, 1.0);
+            }
+        }
+    }
+}
+
+fn robot_button_handler(
+    mut interaction_query: Query<
+        (&Interaction, &RobotButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut action_list: ResMut<ActionList>,
+    mut action_writer: EventWriter<ActionList>,
+) {
+    let mut has_to_update: bool = false;
+    for (interaction, robot_button) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                action_list.current_selection = robot_button.0 as usize;
+                has_to_update = true;
+            }
+            Interaction::Hovered => {}
+            Interaction::None => {}
+        }
+    }
+
+    if has_to_update {
+        action_writer.write(action_list.clone());
+    }
+}
+
+fn delete_action_handler(
+    mut interaction_query: Query<(&Interaction, &ActionDeleteButton), Changed<Interaction>>,
+    mut action_list: ResMut<ActionList>,
+    mut action_writer: EventWriter<ActionList>,
+) {
+    let mut has_to_update: bool = false;
+    for (interaction, mut button) in interaction_query.iter_mut() {
+        match *interaction {
+            Interaction::Pressed => {
+                action_list
+                    .actions
+                    .get_mut(button.rover_index)
+                    .unwrap()
+                    .remove(button.action_index);
+                has_to_update = true;
+            }
+            Interaction::Hovered => {}
+            Interaction::None => {}
+        }
+    }
+
+    if has_to_update {
+        action_writer.write(action_list.clone());
+    }
 }
 
 /// Updates the scroll position of scrollable nodes in response to mouse input
