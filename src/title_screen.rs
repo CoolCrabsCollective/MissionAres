@@ -119,7 +119,14 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn start_game_click_handler(
-    interaction_query: Query<&Interaction, (Changed<Interaction>, With<StartGameButton>)>,
+    interaction_query: Query<
+        &Interaction,
+        (
+            Changed<Interaction>,
+            With<StartGameButton>,
+            With<InteractiveButton>,
+        ),
+    >,
     mut next_state: ResMut<NextState<GameState>>,
     gamepads: Query<&Gamepad>,
 ) {

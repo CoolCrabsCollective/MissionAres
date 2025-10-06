@@ -1,11 +1,11 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{is_pos_in_level, GRADVM};
+use crate::level::{GRADVM, is_pos_in_level};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
-use bevy::math::ops::abs;
 use bevy::math::I8Vec2;
+use bevy::math::ops::abs;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 use std::time::Duration;
@@ -211,11 +211,9 @@ fn setup_action_movements(
         if !is_action_valid {
             action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
             action_execution.action_states[robot_num].is_waiting = true;
-            println!("INVALID ACTION FROM ROVER {}", rover.identifier);
             rover.logical_position = current_log_pos;
             rover.collided = true;
         } else {
-            println!("Rover {} starts moving (or waiting)", rover.identifier);
             rover.logical_position = new_pos;
             rover.rover_state = RoverStates::Moving;
             rover.is_acting = true;
@@ -303,7 +301,6 @@ fn detect_move_done(
         }
     }
 
-    println!("PUZZLE EVALUATION QUEUED rover count: {}", i);
     action_execution.is_evaluating = true;
 
     commands.spawn(BetweenTurnsTimer {
@@ -320,7 +317,6 @@ fn update_betweenturns_timer(
         timer.timer.tick(time.delta());
         if timer.timer.just_finished() {
             commands.entity(entity).despawn();
-            println!("PUZZLE EVALUATION SENT");
             commands.send_event(PuzzleEvaluationRequestEvent);
         }
     }
@@ -370,7 +366,6 @@ fn action_execution(
                     }
                     rover.is_acting = false;
                     rover.is_turn_done = true;
-                    println!("End of waiting for rover {}", rover.identifier);
                 }
 
                 action_execution.action_states[robot_num].is_waiting = false;
@@ -428,7 +423,6 @@ fn action_execution(
             }
             rover.is_acting = false;
             rover.is_turn_done = true;
-            println!("End of moving for rover {}", rover.identifier);
         }
     }
 }
