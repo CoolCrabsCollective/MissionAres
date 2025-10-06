@@ -7,8 +7,8 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.16.1", features = [
-  "track_location",
-  "configurable_error_handler",
+    "track_location",
+    "configurable_error_handler",
 ] }
 
 bevy_rapier3d = "0.31.0"
@@ -17,6 +17,7 @@ serde = { version = "1.0.225", features = ["derive"] }
 log = "0.4.28"
 rand = "0.9.2"
 interact = "0.3.6"
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
 
 [profile.dev]
 opt-level = 1
