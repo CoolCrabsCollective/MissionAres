@@ -75,15 +75,15 @@ fn show_win_screen(
                             Button,
                             NextLevelButton,
                             Node {
-                                width: Px_dynamic(250.0),
-                                height: Px_dynamic(65.0),
-                                border: UiRect::all(Px_dynamic(15.0)),
+                                width: Val::Px(250.0),
+                                height: Val::Px(65.0),
+                                border: UiRect::all(Val::Px(15.0)),
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
                                 ..default()
                             },
                             BackgroundColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
-                            BorderRadius::all(Px_dynamic(15.0)),
+                            BorderRadius::all(Val::Px(15.0)),
                             BorderColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
                             InteractiveButton::simple(
                                 Color::Srgba(Srgba::hex("3a312e").unwrap()),
