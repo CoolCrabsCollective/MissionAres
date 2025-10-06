@@ -77,7 +77,6 @@ fn show_win_screen(
                             Node {
                                 width: Val::Px(250.0),
                                 height: Val::Px(65.0),
-                                border: UiRect::all(Val::Px(15.0)),
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
                                 ..default()
