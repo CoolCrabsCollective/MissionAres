@@ -82,6 +82,11 @@ fn update(
             if id == ui_elem.rover_id {
                 found = true;
                 img.image = images.images[rover.battery_level as usize].clone();
+                img.image = images
+                    .images
+                    .get(rover.battery_level as usize)
+                    .unwrap_or(&images.images[0])
+                    .clone();
 
                 if let Ok(ui_pos) = camera.0.world_to_viewport(
                     camera.1,
