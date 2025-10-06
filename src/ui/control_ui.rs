@@ -593,7 +593,7 @@ fn build_deleteable_action_button(
         .with_children(|parent| {
             parent.spawn((
                 Node {
-                    width: Px_dynamic(24.0),
+                    width: Val::Px(24.0),
                     ..default()
                 },
                 Text::from(action_count.to_string() + "x"),
