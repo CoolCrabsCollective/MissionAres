@@ -14,6 +14,7 @@ use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::color::palettes::css::BLUE;
 use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
@@ -23,7 +24,7 @@ use bevy::math::ops::abs;
 use bevy::math::{I8Vec2, Quat};
 use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
-    ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
+    PointLight, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
     AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges,
@@ -367,7 +368,7 @@ fn load_level(
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
             perceptual_roughness: 0.9,
-            metallic: 0.0,
+            metallic: 0.5,
             ..Default::default()
         })),
         Transform::from_xyz(0.0, 0.0, 0.0),
@@ -489,6 +490,19 @@ fn load_level(
                 &asset_server,
                 &mut mesh_loader,
             );
+
+            commands.spawn((
+                Transform::from_xyz(effective_x, 0.0, effective_z)
+                    .with_scale(Vec3::splat(0.05 * TILE_SIZE))
+                    .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
+                LevelElement,
+                PointLight {
+                    intensity: 1_000_000.0,
+                    color: BLUE.into(),
+                    shadows_enabled: false,
+                    ..default()
+                },
+            ));
         }
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {

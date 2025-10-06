@@ -359,17 +359,18 @@ fn apply_scene_color_override(
             continue;
         };
 
+        log::info!(
+            "Applying scene color override for scene {:?} ({:?}) to material {:?} ({:?})",
+            scene_handle,
+            scene_root,
+            material,
+            name
+        );
+
         if !gltf_material_name.contains("col") {
             continue;
         }
 
-        // log::info!(
-        //     "Applying scene color override for scene {:?} ({:?}) to material {:?} ({:?})",
-        //     scene_handle,
-        //     scene_root,
-        //     material,
-        //     name
-        // );
         let new_material_handle = materials.add(StandardMaterial {
             base_color: new_color,
             ..existing_material.clone()

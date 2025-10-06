@@ -4,7 +4,7 @@ use bevy::color::{Color, Luminance, Srgba};
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::{
     default, BackgroundColor, BorderColor, Changed, Children, Component, ImageNode, Interaction,
-    Query, Text, TextColor,
+    Query, Text, TextColor, Without,
 };
 
 #[derive(Component)]
@@ -137,19 +137,28 @@ fn interact(
         ),
         Changed<Interaction>,
     >,
-    mut text_query: Query<(&Text, &mut TextColor)>,
+    mut text_query: Query<
+        (&Text, &mut TextColor),
+        (Without<ImageNode>, Without<InteractiveButton>),
+    >,
+    mut image_query: Query<&mut ImageNode, (Without<Text>, Without<InteractiveButton>)>,
 ) {
     for (interaction, button, transform, bg_color, bor_color, img, children) in &mut button_query {
-        let color = match *interaction {
-            Interaction::Pressed => button.pressed_text_color,
-            Interaction::Hovered => button.hover_text_color,
-            Interaction::None => button.regular_text_color,
-        };
-
         if children.is_some() {
             for child in children.unwrap() {
                 if let Ok(mut text) = text_query.get_mut(*child) {
-                    text.1.0 = color;
+                    text.1.0 = match *interaction {
+                        Interaction::Pressed => button.pressed_text_color,
+                        Interaction::Hovered => button.hover_text_color,
+                        Interaction::None => button.regular_text_color,
+                    };
+                }
+                if let Ok(mut image) = image_query.get_mut(*child) {
+                    image.color = match *interaction {
+                        Interaction::Pressed => button.pressed_image_color,
+                        Interaction::Hovered => button.hover_image_color,
+                        Interaction::None => button.regular_image_color,
+                    };
                 }
             }
         }
