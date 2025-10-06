@@ -1,21 +1,22 @@
 use crate::game_control::actions::{ActionList, ActionType};
 use crate::hentai_anime;
 use crate::hentai_anime::HentaiAnimePlugin;
-use crate::hentai_anime::{setup_anime, Animation};
+use crate::hentai_anime::{Animation, setup_anime};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin, RoverStates};
 use crate::title_screen::GameState;
+use crate::ui::control_ui::RoverColors;
 use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
@@ -25,9 +26,9 @@ use bevy::pbr::{
     ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig,
-    ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter,
-    PerspectiveProjection, Projection, Reflect, Resource, Without,
+    AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges,
+    GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
+    Reflect, Resource, Without, default, in_state,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -275,6 +276,7 @@ fn load_level(
     mut mesh_loader: ResMut<MeshLoader>,
     mut active_level: ResMut<ActiveLevel>,
     mut action_list: ResMut<ActionList>,
+    mut rover_colors: ResMut<RoverColors>,
     levels: Res<Assets<GRADVM>>,
     level_elements: Query<Entity, With<LevelElement>>,
     mut camera_transform: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera3d>>,
@@ -402,10 +404,12 @@ fn load_level(
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::INITIVM) {
             num_rovers += 1;
+            let rover_index = num_rovers - 1;
+            let rover_colors_cloned = rover_colors.0.clone();
             load_gltf(
                 String::from("rover.glb"),
                 GLTFLoadConfig {
-                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                    entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                         commands
                             .insert(
                                 // should spawn at the tile position
@@ -422,7 +426,7 @@ fn load_level(
                                     logical_z.try_into().unwrap(),
                                 ),
                                 battery_level: 3,
-                                identifier: num_rovers - 1,
+                                identifier: rover_index,
                                 heading: -PI / 2.0,
                                 rover_state: RoverStates::Standby,
                             })
@@ -430,7 +434,33 @@ fn load_level(
                             .insert(DustSpawner {
                                 timer: Timer::from_seconds(0.4, TimerMode::Repeating),
                             });
-                    }),
+                    })),
+                    scene_color_override: Some(
+                        rover_colors_cloned
+                            .get(rover_index as usize)
+                            .cloned()
+                            .or_else(|| rover_colors_cloned.get(0).cloned())
+                            // pink
+                            .unwrap_or(Color::srgb(1.0, 0.0, 1.0)),
+                    ),
+                    // material_initializer: Some(Box::new(
+                    //     move |material_handle: Handle<StandardMaterial>,
+                    //           material: &mut StandardMaterial,
+                    //           spawned_entity: Option<Entity>| {
+                    //         if let Some(entity) = spawned_entity {}
+                    //         log::info!(
+                    //             "Setting color for rover index {} and material {:?}",
+                    //             rover_index,
+                    //             material.base_color
+                    //         );
+                    //         material.base_color = rover_colors_cloned
+                    //             .get(rover_index as usize)
+                    //             .cloned()
+                    //             .or_else(|| rover_colors_cloned.get(0).cloned())
+                    //             // pink
+                    //             .unwrap_or(Color::srgb(1.0, 0.0, 1.0));
+                    //     },
+                    // )),
                     ..Default::default()
                 },
                 &asset_server,
@@ -442,7 +472,7 @@ fn load_level(
             load_gltf(
                 String::from("mineral.glb"),
                 GLTFLoadConfig {
-                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                    entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                         commands
                             .insert(
                                 // should spawn at the tile position
@@ -453,7 +483,7 @@ fn load_level(
                                     )),
                             )
                             .insert(LevelElement);
-                    }),
+                    })),
                     ..Default::default()
                 },
                 &asset_server,
@@ -466,7 +496,7 @@ fn load_level(
             load_gltf(
                 String::from("dish.glb"),
                 GLTFLoadConfig {
-                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                    entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                         commands
                             .insert(
                                 // should spawn at the tile position
@@ -476,7 +506,7 @@ fn load_level(
                             .insert(LevelElement)
                             .insert(AnimationPlayer::default())
                             .insert(anime.clone());
-                    }),
+                    })),
                     ..Default::default()
                 },
                 &asset_server,
@@ -488,7 +518,7 @@ fn load_level(
             load_gltf(
                 String::from("ingenuity.glb"),
                 GLTFLoadConfig {
-                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                    entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                         commands
                             .insert(
                                 // should spawn at the tile position
@@ -496,7 +526,7 @@ fn load_level(
                                     .with_scale(Vec3::splat(0.2 * TILE_SIZE)),
                             )
                             .insert(LevelElement);
-                    }),
+                    })),
                     ..Default::default()
                 },
                 &asset_server,
@@ -508,7 +538,7 @@ fn load_level(
             load_gltf(
                 String::from("crater.glb"),
                 GLTFLoadConfig {
-                    entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                    entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                         commands
                             .insert(
                                 // should spawn at the tile position
@@ -516,7 +546,7 @@ fn load_level(
                                     .with_scale(Vec3::splat(0.25 * TILE_SIZE)),
                             )
                             .insert(LevelElement);
-                    }),
+                    })),
                     ..Default::default()
                 },
                 &asset_server,
@@ -694,7 +724,7 @@ fn spawn_tile(
     load_gltf(
         String::from("path.glb"),
         GLTFLoadConfig {
-            entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+            entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                 commands
                     .insert(
                         // should spawn at the tile position
@@ -704,7 +734,7 @@ fn spawn_tile(
                     )
                     .insert(LevelElement)
                     .insert(TileEntity);
-            }),
+            })),
             ..default()
         },
         &asset_server,
@@ -715,7 +745,7 @@ fn spawn_tile(
         load_gltf(
             String::from("plate.glb"),
             GLTFLoadConfig {
-                entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+                entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                     commands
                         .insert(
                             // should spawn at the tile position
@@ -727,7 +757,7 @@ fn spawn_tile(
                         )
                         .insert(LevelElement)
                         .insert(TileEntity);
-                }),
+                })),
                 ..default()
             },
             &asset_server,
@@ -747,7 +777,7 @@ fn spawn_rock(
     load_gltf(
         String::from("rock.glb"),
         GLTFLoadConfig {
-            entity_initializer: Box::new(move |commands: &mut EntityCommands| {
+            entity_initializer: Some(Box::new(move |commands: &mut EntityCommands| {
                 commands
                     .insert(
                         // should spawn at the tile position
@@ -762,7 +792,7 @@ fn spawn_rock(
                         .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
                     )
                     .insert(LevelElement);
-            }),
+            })),
             ..default()
         },
         &asset_server,

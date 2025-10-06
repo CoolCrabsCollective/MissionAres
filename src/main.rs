@@ -9,6 +9,7 @@ mod mesh_loader;
 mod particle;
 mod puzzle_evaluation;
 mod rover;
+mod scene_hook;
 mod title_screen;
 mod ui;
 
@@ -23,13 +24,13 @@ use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
 use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
+use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
-use bevy::DefaultPlugins;
 use ui::control_ui::ControlUIPlugin;
 
 fn main() {
