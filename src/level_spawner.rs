@@ -10,7 +10,7 @@ use crate::title_screen::GameState;
 use crate::ui::control_ui::RoverColors;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
-use bevy::audio::{AudioPlayer, PlaybackSettings};
+use bevy::audio::{AudioPlayer, PlaybackMode, PlaybackSettings, Volume};
 use bevy::color::palettes::css::BLUE;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
@@ -117,10 +117,14 @@ impl Plugin for LevelSpawnerPlugin {
     }
 }
 
-fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
+fn setup_scene(mut commands: Commands, asset_server: ResMut<AssetServer>) {
     commands.spawn((
         AudioPlayer::new(asset_server.load("Space Program.ogg")),
-        PlaybackSettings::LOOP,
+        PlaybackSettings {
+            mode: PlaybackMode::Loop,
+            volume: Volume::Linear(0.3),
+            ..default()
+        },
     ));
 
     let skybox_handle = asset_server.load(CUBEMAPS[0].0);
@@ -905,12 +909,19 @@ fn handle_puzzle_solved_event(
 }
 
 fn handle_puzzle_failed_event(
+    mut commands: Commands,
     mut events: EventReader<PuzzleResponseEvent>,
     mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
     active_level: Res<ActiveLevel>,
+    asset_server: Res<AssetServer>,
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::Failed {
+            commands.spawn((
+                AudioPlayer::new(asset_server.load("sfx/fail.ogg")),
+                PlaybackSettings::DESPAWN,
+            ));
+
             level_spawn_request_writer.write(LevelSpawnRequestEvent {
                 level: active_level.0.clone().unwrap(),
             });
