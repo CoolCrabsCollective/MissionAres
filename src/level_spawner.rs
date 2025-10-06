@@ -418,7 +418,7 @@ fn load_level(
                                     .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                             )
                             .insert(RoverEntity {
-                                is_setup: false,
+                                is_acting: false,
                                 base_color: Color::srgb(0.5, 0.2, 0.8),
                                 gltf_handle: Default::default(),
                                 logical_position: I8Vec2::new(
@@ -430,6 +430,7 @@ fn load_level(
                                 heading: -PI / 2.0,
                                 rover_state: RoverStates::Standby,
                                 collided: false,
+                                spawned_fail_particle: false,
                             })
                             .insert(LevelElement)
                             .insert(DustSpawner {
@@ -498,7 +499,7 @@ fn load_level(
                             .insert(
                                 // should spawn at the tile position
                                 Transform::from_xyz(effective_x, 0.0, effective_z)
-                                    .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
+                                    .with_scale(Vec3::splat(0.25 * TILE_SIZE)),
                             )
                             .insert(LevelElement)
                             .observe(play_all_animations_when_ready);
@@ -860,11 +861,13 @@ fn asset_loaded(
 }
 
 fn handle_puzzle_solved_event(
+    mut commands: Commands,
     mut events: EventReader<PuzzleResponseEvent>,
     mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
     levels: Res<Assets<GRADVM>>,
     level_handles: Res<GRADVM_ONVSTVS>,
-    active_level: Res<ActiveLevel>,
+    mut active_level: ResMut<ActiveLevel>,
+    asset_server: Res<AssetServer>,
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::Solved {
@@ -873,22 +876,28 @@ fn handle_puzzle_solved_event(
                 return;
             };
 
-            let Some(active_level) = levels.get(active_level_handle) else {
+            let Some(current_level) = levels.get(active_level_handle) else {
                 log::error!("No active level.");
                 return;
             };
 
             let Some(next_level_handle) = level_handles
                 .GRADVS
-                .get(active_level.INDEX as usize + 1)
+                .get(current_level.INDEX as usize + 1)
                 .or(level_handles.GRADVS.get(0))
             else {
                 log::error!("No next level.");
                 return;
             };
 
-            level_spawn_request_writer.write(LevelSpawnRequestEvent {
-                level: next_level_handle.clone(),
+            active_level.0 = Some(next_level_handle.clone());
+
+            commands.spawn((
+                AudioPlayer::new(asset_server.load("sfx/win.ogg")),
+                PlaybackSettings::DESPAWN,
+            ));
+            commands.spawn(ResetTimer {
+                timer: Timer::from_seconds(1.0, TimerMode::Once),
             });
         }
     }

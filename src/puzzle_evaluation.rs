@@ -1,5 +1,5 @@
 use crate::game_control::actions::Action;
-use crate::rover::{ActionExecution, RoverEntity};
+use crate::rover::{ActionExecution, RoverCollectable, RoverEntity};
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
     level_spawner::ActiveLevel,
@@ -32,11 +32,17 @@ fn on_puzzle_evaluation_request(
     mut evaluation_requests: EventReader<PuzzleEvaluationRequestEvent>,
     mut puzzle_response_event_writer: EventWriter<PuzzleResponseEvent>,
     mut rovers: Query<&mut RoverEntity>,
+    minerals: Query<&RoverCollectable>,
     action_execution: Res<ActionExecution>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
 ) {
     for _ in evaluation_requests.read() {
+        if minerals.is_empty() {
+            puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
+            break;
+        }
+
         let Some(active_level_handle) = &active_level.0 else {
             log::error!(
                 "No active level. How the FUCK could you request that I evaluate the puzzle?"
@@ -64,6 +70,10 @@ fn on_puzzle_evaluation_request(
         }
 
         for mut rover in rovers.iter_mut() {
+            if rover.is_acting {
+                continue; // Do not affect battery level for rovers still acting
+            }
+
             let tile_coords = (rover.logical_position.x, rover.logical_position.y);
             if let Some(&other) = active_level.NEXVS.get(&tile_coords) {
                 for (other_pos, other_rover) in rover_positions.iter() {
@@ -97,22 +107,17 @@ fn on_puzzle_evaluation_request(
                 return;
             };
 
-            if tile.VMBRA && rover.battery_level > 0 {
+            if tile.VMBRA && rover.battery_level > 0 && !rover.is_acting {
                 rover.battery_level -= 1;
             }
 
-            if !tile.VMBRA && rover.battery_level < 3 {
+            if !tile.VMBRA && rover.battery_level < 3 && !rover.is_acting {
                 rover.battery_level += 1;
             }
 
             all_rovers_in_finish_tile &= matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS);
 
             i += 1;
-        }
-
-        if all_rovers_in_finish_tile {
-            puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
-            break;
         }
 
         if let Some(_rover) = rovers.iter().find(|rover| rover.collided) {
@@ -128,6 +133,7 @@ fn on_puzzle_evaluation_request(
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
+
         puzzle_response_event_writer.write(PuzzleResponseEvent::InProgress);
     }
 }

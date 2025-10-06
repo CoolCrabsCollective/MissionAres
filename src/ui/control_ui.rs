@@ -23,6 +23,9 @@ pub struct ExecuteButton;
 #[derive(Resource)]
 pub struct RoverColors(pub Vec<Color>);
 
+#[derive(Resource)]
+pub struct UIRoverColors(pub Vec<Color>);
+
 #[derive(Component)]
 pub struct CommandButton(pub ActionType);
 
@@ -48,10 +51,21 @@ impl Plugin for ControlUIPlugin {
         );
         app.add_systems(Update, execute_handler);
         app.add_systems(Update, update_scroll_position);
+
+        app.insert_resource(UIRoverColors(vec![
+            Color::srgba(0.25, 1.0, 0.25, 1.0), // green
+            Color::srgba(0.25, 0.5, 1.0, 1.0),  // blue
+            Color::srgba(1.0, 1.0, 0.25, 1.0),  // yellow
+            Color::srgba(1.0, 0.0, 1.0, 1.0),   // purple
+            Color::srgba(1.0, 0.0, 0.0, 1.0),   // red
+        ]));
+
         app.insert_resource(RoverColors(vec![
-            Color::srgba(0.25, 1.0, 0.25, 1.0),
-            Color::srgba(0.25, 0.5, 1.0, 1.0),
-            Color::srgba(1.0, 1.0, 0.25, 1.0),
+            Color::srgba(75.0 / 255.0, 214.0 / 255.0, 75.0 / 255.0, 0.35), // green
+            Color::srgba(68.0 / 255.0, 94.0 / 255.0, 221.0 / 255.0, 0.35), // blue
+            Color::srgba(246.0 / 255.0, 219.0 / 255.0, 53.0 / 255.0, 0.35), // yellow
+            Color::srgba(140.0 / 255.0, 29.0 / 255.0, 140.0 / 255.0, 0.35), // purple
+            Color::srgba(233.0 / 255.0, 38.0 / 255.0, 38.0 / 255.0, 0.35), // red
         ]));
     }
 }
@@ -67,7 +81,7 @@ fn rebuild_control_ui(
     mut commands: Commands,
     mut action_lists: EventReader<ActionList>,
     current_ui_elem_query: Query<Entity, With<ControlUI>>,
-    all_rover_colors: Res<RoverColors>,
+    all_rover_colors: Res<UIRoverColors>,
     asset_server: Res<AssetServer>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
@@ -599,7 +613,7 @@ fn command_button_handler(
         (Changed<Interaction>, With<Button>),
     >,
     mut action_list: ResMut<ActionList>,
-    colors: Res<RoverColors>,
+    colors: Res<UIRoverColors>,
     mut action_writer: EventWriter<ActionList>,
     asset_server: Res<AssetServer>,
 ) {
