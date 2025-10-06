@@ -55,7 +55,6 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                     Node {
                         width: Val::Px(250.0),
                         height: Val::Px(65.0),
-                        border: UiRect::all(Val::Px(15.0)),
                         top: Val::Percent(35.0),
                         // horizontally center child text
                         justify_content: JustifyContent::Center,
@@ -69,7 +68,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                     InteractiveButton::simple(
                         Color::Srgba(Srgba::hex("3a312e").unwrap()),
                         Color::WHITE,
-                        false,
+                        true,
                     ),
                 ))
                 .with_children(|parent| {
@@ -80,9 +79,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                             font_size: 40.0,
                             ..default()
                         },
-                        Transform::default(),
                         TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-                        //TextShadow::default(),
                     ));
                 });
 

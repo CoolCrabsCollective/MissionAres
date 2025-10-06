@@ -1,21 +1,21 @@
 use crate::game_control::actions::ActionList;
 use crate::hentai_anime::*;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverCollectable, RoverEntity, RoverPlugin, RoverStates};
 use crate::title_screen::GameState;
-use crate::ui::control_ui::RoverColors;
+use crate::ui::control_ui::{RoverColors, on_rover_click};
 use crate::ui::win_screen::NextLevelRequestEvent;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackMode, PlaybackSettings, Volume};
 use bevy::color::palettes::css::BLUE;
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
 use bevy::math::{I8Vec2, Quat};
@@ -429,13 +429,16 @@ fn load_level(
                                 rover_state: RoverStates::Standby,
                                 collided: false,
                                 spawned_fail_particle: false,
+                                spawned_wait_particle: false,
                                 is_done: false,
                             })
                             .insert(LevelElement)
                             .insert(DustSpawner {
                                 timer: Timer::from_seconds(0.4, TimerMode::Repeating),
                             })
-                            .observe(play_all_animations_when_ready);
+                            .insert(Pickable::default())
+                            .observe(play_all_animations_when_ready)
+                            .observe(on_rover_click);
                     })),
                     scene_color_override: Some(
                         rover_colors_cloned
