@@ -152,6 +152,7 @@ fn setup_action_movements(
             new_heading = -PI / 2.0;
 
             if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
+                println!("Tried to move up with no battery");
                 is_action_valid = false;
             }
         }
@@ -164,6 +165,7 @@ fn setup_action_movements(
                 new_heading = PI / 2.0;
 
                 if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
+                    println!("Tried to move down with no battery");
                     is_action_valid = false;
                 }
             }
@@ -177,6 +179,7 @@ fn setup_action_movements(
                 new_heading = 0.0;
 
                 if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
+                    println!("Tried to move left with no battery");
                     is_action_valid = false;
                 }
             }
@@ -187,6 +190,7 @@ fn setup_action_movements(
             new_heading = PI;
 
             if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
+                println!("Tried to move right with no battery");
                 is_action_valid = false;
             }
         }
@@ -256,8 +260,8 @@ fn start_execution(
             })
         }
 
-        println!("Start execution");
-        dbg!(&action_execution.action_states);
+        //println!("Start execution");
+        //dbg!(&action_execution.action_states);
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
