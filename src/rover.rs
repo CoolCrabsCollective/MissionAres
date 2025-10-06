@@ -1,12 +1,12 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{is_pos_in_level, GRADVM};
+use crate::level::{GRADVM, is_pos_in_level};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
-use bevy::math::ops::abs;
 use bevy::math::I8Vec2;
+use bevy::math::ops::abs;
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
 use std::f32::consts::PI;
@@ -16,9 +16,6 @@ const WAIT_ACTION_TIME: f32 = 1.0;
 const TURN_SPEED: f32 = 2.5;
 
 const WAIT_BETWEEN_ACTS: f32 = 0.5;
-
-#[derive(Component)]
-struct RoverAudio;
 
 #[derive(Clone)]
 pub enum RoverStates {
@@ -38,6 +35,7 @@ pub struct RoverEntity {
     pub rover_state: RoverStates,
     pub collided: bool,
     pub spawned_fail_particle: bool,
+    pub is_done: bool,
 }
 
 #[derive(Component)]
@@ -238,10 +236,12 @@ fn start_execution(
 
         // Start animations
         for animation in animation.iter_mut() {
-            if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
-                for hentai in &animation.animation_list {
-                    player.play(hentai.clone()).repeat();
-                    //println!("Start rover anime");
+            if let Some(player_entity) = animation.player_entity {
+                if let Ok(mut player) = player_query.get_mut(player_entity) {
+                    for hentai in &animation.animation_list {
+                        player.play(hentai.clone()).repeat();
+                        //println!("Start rover anime");
+                    }
                 }
             }
         }
@@ -446,10 +446,12 @@ fn action_execution(
 
             // Stop animations
             for animation in animation.iter_mut() {
-                if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
-                    for hentai in &animation.animation_list {
-                        player.stop_all();
-                        //println!("Stop rover anime");
+                if let Some(player_entity) = animation.player_entity {
+                    if let Ok(mut player) = player_query.get_mut(player_entity) {
+                        for hentai in &animation.animation_list {
+                            player.stop_all();
+                            //println!("Stop rover anime");
+                        }
                     }
                 }
             }

@@ -61,11 +61,11 @@ impl Plugin for ControlUIPlugin {
         ]));
 
         app.insert_resource(RoverColors(vec![
-            Color::srgba(75.0 / 255.0, 214.0 / 255.0, 75.0 / 255.0, 0.35), // green
-            Color::srgba(68.0 / 255.0, 94.0 / 255.0, 221.0 / 255.0, 0.35), // blue
-            Color::srgba(246.0 / 255.0, 219.0 / 255.0, 53.0 / 255.0, 0.35), // yellow
-            Color::srgba(140.0 / 255.0, 29.0 / 255.0, 140.0 / 255.0, 0.35), // purple
-            Color::srgba(233.0 / 255.0, 38.0 / 255.0, 38.0 / 255.0, 0.35), // red
+            Color::srgba(51.0 / 255.0, 166.0 / 255.0, 51.0 / 255.0, 0.35), // green
+            Color::srgba(51.0 / 255.0, 102.0 / 255.0, 191.0 / 255.0, 0.35), // blue
+            Color::srgba(204.0 / 255.0, 191.0 / 255.0, 51.0 / 255.0, 0.35), // yellow
+            Color::srgba(166.0 / 255.0, 64.0 / 255.0, 166.0 / 255.0, 0.35), // purple
+            Color::srgba(204.0 / 255.0, 51.0 / 255.0, 51.0 / 255.0, 0.35), // red
         ]));
     }
 }
@@ -345,9 +345,9 @@ fn build_control_panel(
         },))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("Plan Rover Actions"),
+                Text::new("Plan Rover Commands"),
                 TextFont {
-                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
+                    font: asset_server.load("fonts/SpaceGrotesk-Medium.ttf"),
                     font_size: 18.0,
                     ..default()
                 },
@@ -639,6 +639,12 @@ fn multi_robot_command_list() -> Node {
         flex_direction: FlexDirection::Column,
         align_items: AlignItems::Center,
         row_gap: Val::Px(12.0),
+        padding: UiRect {
+            top: Val::Px(8.0),
+            bottom: Val::Px(4.0),
+            ..default()
+        },
+        flex_grow: 1.0,
         ..default()
     }
 }
