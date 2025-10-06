@@ -19,12 +19,12 @@ use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::particle::dust::DustPlugin;
+use crate::particle::fail_particle::FailParticlePlugin;
 use crate::particle::particle::ParticlePlugin;
 use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
 use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
-use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::ecs::entity::EntityDoesNotExistError;
@@ -35,6 +35,7 @@ use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
+use bevy::DefaultPlugins;
 use ui::control_ui::ControlUIPlugin;
 
 fn main() {
@@ -93,6 +94,7 @@ fn main() {
     app.add_plugins(BatteryUIPlugin);
     app.add_plugins(DustPlugin);
     app.add_plugins(ParticlePlugin);
+    app.add_plugins(FailParticlePlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 

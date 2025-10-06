@@ -933,7 +933,7 @@ fn update_reset_timer(
     for (entity, mut timer) in query.iter_mut() {
         timer.timer.tick(time.delta());
 
-        if timer.timer.finished() {
+        if timer.timer.just_finished() {
             commands.entity(entity).despawn();
             level_spawn_request_writer.write(LevelSpawnRequestEvent {
                 level: active_level.0.clone().unwrap(),
