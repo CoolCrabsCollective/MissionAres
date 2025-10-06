@@ -66,7 +66,7 @@ fn on_puzzle_evaluation_request(
         }
 
         for mut rover in rovers.iter_mut() {
-            if rover.is_acting {
+            if rover.is_acting || rover.is_done {
                 continue; // Do not affect battery level for rovers still acting
             }
 
@@ -132,6 +132,10 @@ fn on_puzzle_evaluation_request(
 
         let rover_executions = action_execution.action_states.clone();
         for mut rover in rovers.iter_mut() {
+            if rover.is_done {
+                continue;
+            }
+
             let Some(tile) = active_level
                 .TEGLVAE
                 .get(&(rover.logical_position.x, rover.logical_position.y))
@@ -144,6 +148,12 @@ fn on_puzzle_evaluation_request(
 
             let state = rover_executions.get(i).unwrap();
 
+            //println!(
+            //    "Action list len {}, active action index {}",
+            //    state.action_list.len(),
+            //    state.active_action_idx
+            //);
+            rover.is_done = state.action_list.len() == state.active_action_idx;
             if state.active_action_idx > 0
                 && let Some(state) = state.action_list.get(state.active_action_idx - 1)
             {
