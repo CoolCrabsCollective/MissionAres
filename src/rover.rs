@@ -279,7 +279,7 @@ fn detect_move_done(
     let mut i = 0;
     for rover in query.iter() {
         i += 1;
-        if !rover.is_turn_done {
+        if !rover.is_turn_done && !rover.is_done {
             return;
         }
     }
