@@ -588,6 +588,7 @@ fn execute_handler(
 }
 
 fn command_button_handler(
+    mut commands: Commands,
     mut interaction_query: Query<
         (&Interaction, &mut ImageNode, &mut Transform, &CommandButton),
         (Changed<Interaction>, With<Button>),
@@ -595,11 +596,51 @@ fn command_button_handler(
     mut action_list: ResMut<ActionList>,
     colors: Res<RoverColors>,
     mut action_writer: EventWriter<ActionList>,
+    asset_server: Res<AssetServer>,
 ) {
     for (interaction, mut image, mut trans, command) in &mut interaction_query {
         let action_list_selection = action_list.current_selection;
+
         match *interaction {
             Interaction::Pressed => {
+                match command.0 {
+                    ActionType::MoveUp => {
+                        commands.spawn((
+                            AudioPlayer::new(asset_server.load("sfx/up.ogg")),
+                            PlaybackSettings::DESPAWN,
+                        ));
+                    }
+
+                    ActionType::MoveDown => {
+                        commands.spawn((
+                            AudioPlayer::new(asset_server.load("sfx/down.ogg")),
+                            PlaybackSettings::DESPAWN,
+                        ));
+                    }
+
+                    ActionType::MoveRight => {
+                        commands.spawn((
+                            AudioPlayer::new(asset_server.load("sfx/right.ogg")),
+                            PlaybackSettings::DESPAWN,
+                        ));
+                    }
+
+                    ActionType::MoveLeft => {
+                        commands.spawn((
+                            AudioPlayer::new(asset_server.load("sfx/left.ogg")),
+                            PlaybackSettings::DESPAWN,
+                        ));
+                    }
+
+                    ActionType::Wait => {
+                        commands.spawn((
+                            AudioPlayer::new(asset_server.load("sfx/wait.ogg")),
+                            PlaybackSettings::DESPAWN,
+                        ));
+                    }
+                    _ => (),
+                }
+
                 image.color = *colors.0.get(action_list_selection).unwrap();
 
                 if action_list.actions.get(action_list_selection).is_some()
