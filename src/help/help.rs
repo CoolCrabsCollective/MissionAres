@@ -1,5 +1,6 @@
 use crate::title_screen::GameState;
 use crate::ui::interactive_button::InteractiveButton;
+use GameState::TitleScreen;
 use bevy::color::Srgba;
 use bevy::prelude::*;
 
