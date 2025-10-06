@@ -154,8 +154,6 @@ fn setup_action_movements(
                     time.elapsed_secs_wrapped();
                 action_execution.action_states[robot_num].wait_time = WAIT_ACTION_TIME;
                 action_execution.action_states[robot_num].is_waiting = true;
-                println!("cringe af");
-                rover.is_acting = true;
             }
         }
 
@@ -213,10 +211,11 @@ fn setup_action_movements(
         if !is_action_valid {
             action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
             action_execution.action_states[robot_num].is_waiting = true;
-            println!("cringe af: action_invalid");
+            println!("INVALID ACTION FROM ROVER {}", rover.identifier);
             rover.logical_position = current_log_pos;
             rover.collided = true;
         } else {
+            println!("Rover {} starts moving (or waiting)", rover.identifier);
             rover.logical_position = new_pos;
             rover.rover_state = RoverStates::Moving;
             rover.is_acting = true;
@@ -285,10 +284,10 @@ fn start_execution(
 
 fn detect_move_done(
     mut commands: Commands,
-    query: Query<&RoverEntity, Changed<RoverEntity>>,
+    query: Query<&RoverEntity>,
     mut action_execution: ResMut<ActionExecution>,
 ) {
-    if action_execution.is_evaluating {
+    if action_execution.is_evaluating || !action_execution.is_built {
         return;
     }
 
@@ -296,13 +295,15 @@ fn detect_move_done(
         return;
     }
 
+    let mut i = 0;
     for rover in query.iter() {
+        i += 1;
         if !rover.is_turn_done {
             return;
         }
     }
 
-    println!("PUZZLE EVALUATION QUEUED");
+    println!("PUZZLE EVALUATION QUEUED rover count: {}", i);
     action_execution.is_evaluating = true;
 
     commands.spawn(BetweenTurnsTimer {
@@ -350,7 +351,7 @@ fn action_execution(
         }
         let robot_num = rover.identifier as usize;
 
-        dbg!(&action_execution.action_states[robot_num]);
+        //dbg!(&action_execution.action_states[robot_num]);
 
         // If in wait, skip rest of loop logic
         if action_execution.action_states[robot_num].is_waiting {
@@ -369,7 +370,7 @@ fn action_execution(
                     }
                     rover.is_acting = false;
                     rover.is_turn_done = true;
-                    println!("Bruh1");
+                    println!("End of waiting for rover {}", rover.identifier);
                 }
 
                 action_execution.action_states[robot_num].is_waiting = false;
@@ -427,7 +428,7 @@ fn action_execution(
             }
             rover.is_acting = false;
             rover.is_turn_done = true;
-            println!("Bruh2");
+            println!("End of moving for rover {}", rover.identifier);
         }
     }
 }
