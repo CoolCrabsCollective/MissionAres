@@ -4,7 +4,6 @@ use crate::level_spawner::ActiveLevel;
 use crate::rover::ActionListExecute;
 use crate::title_screen::GameState;
 use crate::ui::interactive_button::InteractiveButton;
-use bevy::color::palettes::css::ORANGE;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::picking::hover::HoverMap;
@@ -44,7 +43,7 @@ impl Plugin for ControlUIPlugin {
         app.add_systems(Update, update_scroll_position);
         app.insert_resource(RoverColors(vec![
             Color::srgba(0.25, 1.0, 0.25, 1.0),
-            Color::srgba(0.25, 0.25, 1.0, 1.0),
+            Color::srgba(0.25, 0.5, 1.0, 1.0),
             Color::srgba(1.0, 1.0, 0.25, 1.0),
         ]));
     }
@@ -146,64 +145,68 @@ fn update_action_list_ui(
                                         flex_direction: FlexDirection::Row,
                                         justify_content: JustifyContent::Center,
                                         padding: UiRect::all(Val::Px(0.0)),
-                                        // max_height: Val::Percent(100.0),
                                         ..default()
                                     },))
                                     .with_children(|parent| {
-                                        // let slicer = TextureSlicer {
-                                        //     border: Default::default(),
-                                        //     center_scale_mode: SliceScaleMode::Stretch,
-                                        //     sides_scale_mode: SliceScaleMode::Stretch,
-                                        //     max_corner_scale: 1.0,
-                                        // };
-                                        let robot_node_for_img = Node {
-                                            width: Val::Px(40.0),
-                                            height: Val::Px(40.0),
-                                            margin: UiRect::all(Val::Px(5.0)),
-                                            justify_content: JustifyContent::Center,
-                                            align_items: AlignItems::Center,
-                                            border: UiRect::all(Val::Px(5.0)),
-                                            ..default()
-                                        };
-
                                         for (robot_idx, color) in rover_colors.iter().enumerate() {
-                                            let img_robot_node = ImageNode {
-                                                image: image_robot.clone(),
-                                                // image_mode: NodeImageMode::Sliced(slicer.clone()),
-                                                image_mode: NodeImageMode::Auto,
-                                                color: *color,
-                                                ..default()
-                                            };
-
+                                            let transparent = Color::srgba(0.0, 0.0, 0.0, 0.0);
                                             let robot_bg_color =
-                                                if (robot_idx == selected_robot_index) {
-                                                    Color::srgb(0.8, 0.8, 0.8)
+                                                if robot_idx == selected_robot_index {
+                                                    Color::srgb(1.0, 1.0, 1.0)
                                                 } else {
-                                                    Color::srgba(0.0, 0.0, 0.0, 0.0)
+                                                    transparent
                                                 };
 
-                                            parent.spawn((
-                                                Button,
-                                                RobotButton(robot_idx as i32),
-                                                robot_node_for_img.clone(),
-                                                img_robot_node.clone(),
-                                                BackgroundColor(robot_bg_color),
-                                                BorderRadius::all(Val::Px(5.0)),
-                                                InteractiveButton::simple_image(
-                                                    robot_bg_color,
-                                                    *color,
-                                                    color.darker(0.1),
-                                                    color.lighter(0.1),
-                                                    true,
-                                                ),
-                                            ));
+                                            parent
+                                                .spawn((
+                                                    Button,
+                                                    RobotButton(robot_idx as i32),
+                                                    Node {
+                                                        width: Val::Px(50.0),
+                                                        height: Val::Px(50.0),
+                                                        margin: UiRect::all(Val::Px(5.0)),
+                                                        justify_content: JustifyContent::Center,
+                                                        align_items: AlignItems::Center,
+                                                        border: UiRect::all(Val::Px(5.0)),
+                                                        ..default()
+                                                    },
+                                                    BorderColor::from(robot_bg_color),
+                                                    BorderRadius::all(Val::Px(25.0)),
+                                                    InteractiveButton {
+                                                        regular_background_color: transparent,
+                                                        hover_background_color: transparent,
+                                                        pressed_background_color: transparent,
+                                                        regular_border_color: robot_bg_color,
+                                                        hover_border_color: robot_bg_color
+                                                            .darker(0.1),
+                                                        pressed_border_color: robot_bg_color
+                                                            .darker(0.2),
+                                                        regular_image_color: *color,
+                                                        hover_image_color: color.darker(0.1),
+                                                        pressed_image_color: color.darker(0.2),
+                                                        ..default()
+                                                    },
+                                                ))
+                                                .with_children(|parent| {
+                                                    parent.spawn((
+                                                        ImageNode {
+                                                            image: image_robot.clone(),
+                                                            image_mode: NodeImageMode::Auto,
+                                                            color: *color,
+                                                            ..default()
+                                                        },
+                                                        Node {
+                                                            width: Val::Percent(100.0),
+                                                            height: Val::Percent(100.0),
+                                                            ..default()
+                                                        },
+                                                    ));
+                                                });
                                         }
                                     });
 
                                 parent
                                     .spawn((Node {
-                                        // height: Val::Px(200.0),
-                                        // max_height: Val::Px(200.0),
                                         display: Display::Flex,
                                         flex_direction: FlexDirection::Row,
                                         justify_content: JustifyContent::Center,
@@ -307,26 +310,16 @@ fn ui_sidebar_container_node() -> Node {
 fn ui_sidebar_node() -> Node {
     Node {
         height: Val::Percent(80.0),
-        // max_height: Val::Px(500.0),
         width: Val::Percent(100.0),
         display: Display::Flex,
         flex_direction: FlexDirection::Column,
         padding: UiRect::all(Val::Px(10.0)),
-        // grid_template_columns: vec![GridTrack::flex(1.0)],
-        // grid_template_rows: vec![
-        //     GridTrack::flex(2.0),
-        //     GridTrack::flex(1.0),
-        //     GridTrack::flex(4.0),
-        //     GridTrack::flex(1.0),
-        // ],
         border: UiRect {
             right: Val::Px(6.0),
             top: Val::Px(6.0),
             bottom: Val::Px(6.0),
             ..default()
         },
-        // row_gap: Val::Px(15.0),
-        // column_gap: Val::Px(5.0),
         ..default()
     }
 }
@@ -349,28 +342,30 @@ fn ui_command_statement(
         aspect_ratio: Some(1.0f32),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
-        // margin: UiRect::all(Val::Auto),
         ..default()
     };
 
     let img_move_node = ImageNode {
         image: image_move.clone(),
-        // image_mode: NodeImageMode::Sliced(slicer.clone()),
         image_mode: NodeImageMode::Auto,
         ..default()
     };
     parent
-        .spawn(Node {
-            // min_height: Val::Px(LINE_HEIGHT),
-            // max_height: Val::Px(LINE_HEIGHT),
-            ..default()
-        })
+        .spawn(Node { ..default() })
         .insert(Pickable {
             should_block_lower: false,
             ..default()
         })
         .with_children(|parent| {
             parent.spawn((
+                Button,
+                InteractiveButton::simple_image(
+                    Color::srgba(0.0, 0.0, 0.0, 0.0),
+                    Color::WHITE,
+                    Color::srgba(1.0, 0.25, 0.25, 1.0),
+                    Color::srgba(1.0, 0.25, 0.25, 1.0),
+                    true,
+                ),
                 move_node_for_img.clone(),
                 img_move_node.clone(),
                 Pickable {
@@ -417,13 +412,14 @@ fn command_button_feedback(
         (Changed<Interaction>, With<Button>),
     >,
     mut action_list: ResMut<ActionList>,
+    colors: Res<RoverColors>,
     mut action_writer: EventWriter<ActionList>,
 ) {
     for (interaction, mut image, mut trans, command) in &mut interaction_query {
         let action_list_selection = action_list.current_selection;
         match *interaction {
             Interaction::Pressed => {
-                image.color = ORANGE.into();
+                image.color = *colors.0.get(action_list_selection).unwrap();
 
                 if action_list.actions.get(action_list_selection).is_some()
                     && action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize
@@ -436,7 +432,7 @@ fn command_button_feedback(
                 trans.scale = Vec3::new(0.9, 0.9, 0.9);
             }
             Interaction::Hovered => {
-                image.color = ORANGE.into();
+                image.color = *colors.0.get(action_list_selection).unwrap();
                 trans.scale = Vec3::new(1.1, 1.1, 1.1);
             }
             Interaction::None => {
