@@ -53,6 +53,7 @@ impl Plugin for ControlUIPlugin {
         app.add_systems(Update, update_scroll_position);
 
         app.insert_resource(UIRoverColors(vec![
+            Color::srgba(0.9, 0.9, 0.9, 1.0),
             Color::srgba(0.2, 0.65, 0.2, 1.0),   // green
             Color::srgba(0.2, 0.4, 0.75, 1.0),   // blue
             Color::srgba(0.8, 0.75, 0.2, 1.0),   // yellow
@@ -61,6 +62,7 @@ impl Plugin for ControlUIPlugin {
         ]));
 
         app.insert_resource(RoverColors(vec![
+            Color::srgba(1.0, 1.0, 1.0, 1.0),
             Color::srgba(51.0 / 255.0, 166.0 / 255.0, 51.0 / 255.0, 0.35), // green
             Color::srgba(51.0 / 255.0, 102.0 / 255.0, 191.0 / 255.0, 0.35), // blue
             Color::srgba(204.0 / 255.0, 191.0 / 255.0, 51.0 / 255.0, 0.35), // yellow
