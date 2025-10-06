@@ -2,11 +2,13 @@ use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
 use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
+use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
 use bevy::math::ops::abs;
 use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
+use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -33,6 +35,7 @@ pub struct RoverEntity {
     pub heading: f32,
     pub rover_state: RoverStates,
     pub collided: bool,
+    pub spawned_fail_particle: bool,
 }
 
 #[derive(Component)]
@@ -73,7 +76,15 @@ impl Plugin for RoverPlugin {
         );
         app.add_systems(
             Update,
+            fail_particle_spawner.run_if(in_state(GameState::Execution)),
+        );
+        app.add_systems(
+            Update,
             continue_execution.run_if(not(in_state(GameState::TitleScreen))),
+        );
+        app.add_systems(
+            Update,
+            update_rover_collectables.run_if(not(in_state(GameState::TitleScreen))),
         );
         app.insert_resource(ActionExecution {
             is_active: false,
@@ -259,6 +270,53 @@ fn start_execution(
     }
 }
 
+fn fail_particle_spawner(
+    mut commands: Commands,
+    mut query: Query<(&mut RoverEntity, &Transform)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
+    camera_transform_query: Query<&Transform, With<Camera3d>>,
+) {
+    for (mut rover, transform) in query.iter_mut() {
+        if !rover.collided || rover.spawned_fail_particle {
+            continue;
+        }
+        rover.spawned_fail_particle = true;
+
+        let texture_handle = asset_server.load("fail_particle.png");
+        let quad = meshes.add(Rectangle::new(2.0, 2.0));
+        let dust_material_handle = materials.add(StandardMaterial {
+            base_color: Color::srgba(0.737, 0.518, 0.261, 0.4),
+            base_color_texture: Some(texture_handle),
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            ..default()
+        });
+
+        let mut billboard_transform = transform.clone();
+        billboard_transform.translation.y += 0.5;
+
+        let (camera_transform) = camera_transform_query.single().unwrap();
+        let lookat_pos = billboard_transform.translation + camera_transform.forward() * 1.0;
+        billboard_transform.look_at(lookat_pos, camera_transform.up());
+
+        commands.spawn((
+            Particle {
+                lifetime: Timer::from_seconds(0.5, TimerMode::Once),
+                velocity: Vec3::Y,
+                angular_velocity: 0.0,
+                opacity_function: Box::new(|p| 1.0),
+                scale_function: Box::new(|p| p),
+            },
+            billboard_transform,
+            Mesh3d(quad),
+            MeshMaterial3d(dust_material_handle),
+            NotShadowCaster,
+        ));
+    }
+}
+
 fn action_execution(
     mut commands: Commands,
     mut rover_query: Query<(Entity, &mut RoverEntity, &mut Transform), With<RoverEntity>>,
@@ -441,6 +499,26 @@ fn continue_execution(
                     action_execution.action_states[robot_num].wait_time = WAIT_BETWEEN_ACTS;
                     action_execution.action_states[robot_num].is_waiting = true;
                 }
+            }
+        }
+    }
+}
+
+fn update_rover_collectables(
+    mut commands: Commands,
+    collectable_queries: Query<(Entity, &Transform, &RoverCollectable)>,
+    rovers: Query<(&Transform, &RoverEntity), Without<RoverCollectable>>,
+) {
+    for (rover_transform, rover) in rovers.iter() {
+        for (collectable_entity, collectable_transform, rover_collectable) in
+            collectable_queries.iter()
+        {
+            if rover_transform
+                .translation
+                .distance(collectable_transform.translation)
+                < 1.0
+            {
+                commands.entity(collectable_entity).despawn();
             }
         }
     }
