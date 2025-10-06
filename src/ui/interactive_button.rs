@@ -3,8 +3,8 @@ use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance, Srgba};
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::{
-    default, BackgroundColor, BorderColor, Changed, Children, Component, Interaction, Query,
-    Text, TextColor,
+    default, BackgroundColor, BorderColor, Changed, Children, Component, ImageNode, Interaction,
+    Query, Text, TextColor,
 };
 
 #[derive(Component)]
@@ -19,6 +19,9 @@ pub struct InteractiveButton {
     pub regular_text_color: Color,
     pub hover_text_color: Color,
     pub pressed_text_color: Color,
+    pub regular_image_color: Color,
+    pub hover_image_color: Color,
+    pub pressed_image_color: Color,
     pub pressed_scale: Vec2,
     pub hover_scale: Vec2,
     pub regular_scale: Vec2,
@@ -73,6 +76,22 @@ impl InteractiveButton {
             ..default()
         }
     }
+
+    pub fn simple_image(
+        background_color: Color,
+        regular_image_color: Color,
+        hover_image_color: Color,
+        pressed_image_color: Color,
+        scaling: bool,
+    ) -> Self {
+        let mut button = InteractiveButton::simple(background_color, Color::WHITE, scaling);
+
+        button.regular_image_color = regular_image_color;
+        button.hover_image_color = hover_image_color;
+        button.pressed_image_color = pressed_image_color;
+
+        button
+    }
 }
 
 impl Default for InteractiveButton {
@@ -87,6 +106,9 @@ impl Default for InteractiveButton {
             regular_text_color: Color::Srgba(Srgba::new(1.0, 1.0, 1.0, 1.0)),
             hover_text_color: Color::Srgba(Srgba::new(0.9, 0.9, 0.9, 1.0)),
             pressed_text_color: Color::Srgba(Srgba::new(0.8, 0.8, 0.8, 1.0)),
+            regular_image_color: Color::WHITE,
+            hover_image_color: Color::srgb(0.9, 0.9, 0.9),
+            pressed_image_color: Color::srgb(0.8, 0.8, 0.8),
             pressed_scale: Vec2::new(0.9, 0.9),
             hover_scale: Vec2::new(1.1, 1.1),
             regular_scale: Vec2::new(1.0, 1.0),
@@ -110,13 +132,14 @@ fn interact(
             Option<&mut Transform>,
             Option<&mut BackgroundColor>,
             Option<&mut BorderColor>,
+            Option<&mut ImageNode>,
             Option<&Children>,
         ),
         Changed<Interaction>,
     >,
     mut text_query: Query<(&Text, &mut TextColor)>,
 ) {
-    for (interaction, button, transform, bg_color, bor_color, children) in &mut button_query {
+    for (interaction, button, transform, bg_color, bor_color, img, children) in &mut button_query {
         let color = match *interaction {
             Interaction::Pressed => button.pressed_text_color,
             Interaction::Hovered => button.hover_text_color,
@@ -144,6 +167,14 @@ fn interact(
                 Interaction::Pressed => button.pressed_border_color,
                 Interaction::Hovered => button.hover_border_color,
                 Interaction::None => button.regular_border_color,
+            };
+        }
+
+        if img.is_some() {
+            img.unwrap().color = match *interaction {
+                Interaction::Pressed => button.pressed_image_color,
+                Interaction::Hovered => button.hover_image_color,
+                Interaction::None => button.regular_image_color,
             };
         }
 
