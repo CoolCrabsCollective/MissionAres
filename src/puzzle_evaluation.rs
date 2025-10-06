@@ -133,7 +133,6 @@ fn on_puzzle_evaluation_request(
         }
 
         let rover_executions = action_execution.action_states.clone();
-        dbg!(&rover_executions);
         if let Some(_rover) = rovers.iter().enumerate().find(|(idx, rover)| {
             rover_executions[*idx].active_action_idx
                 == action_execution.action_states[*idx].action_list.len()

@@ -1,9 +1,9 @@
 use crate::game_control::actions::{ActionList, ActionType};
 use crate::hentai_anime;
 use crate::hentai_anime::HentaiAnimePlugin;
-use crate::hentai_anime::{Animation, setup_anime};
+use crate::hentai_anime::{setup_anime, Animation};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -13,9 +13,9 @@ use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
-use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
 use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
@@ -25,9 +25,9 @@ use bevy::pbr::{
     ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges,
-    GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource, Without, default, in_state,
+    default, in_state, AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig,
+    ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter,
+    PerspectiveProjection, Projection, Reflect, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -344,11 +344,6 @@ fn load_level(
                 )
                 .unwrap_or(out);
 
-            println!("{}", ndc1);
-            println!("{}", ndc2);
-            println!("{}", ndc3);
-            println!("{}", ndc4);
-
             any_out |= abs(ndc1.x) > 0.6 || abs(ndc1.y) > 1.0;
             any_out |= abs(ndc2.x) > 0.6 || abs(ndc2.y) > 1.0;
             any_out |= abs(ndc3.x) > 0.6 || abs(ndc3.y) > 1.0;
@@ -599,18 +594,6 @@ fn load_level(
         level_height,
         level.MAPPAE_VREMBRAE.clone(),
     );
-
-    // debug sphere to show the center of the level
-    //commands.spawn((
-    //    LevelElement,
-    //    TileEntity,
-    //    Mesh3d(meshes.add(Sphere::new(0.1))),
-    //    MeshMaterial3d(materials.add(StandardMaterial {
-    //        base_color: Color::srgb(0.0, 1.0, 0.0),
-    //        ..Default::default()
-    //    })),
-    //    Transform::from_xyz(random::<f32>(), 0.0, random::<f32>()),
-    //));
 
     active_level.0 = Some(event.level.clone());
 
@@ -896,20 +879,19 @@ fn handle_puzzle_solved_event(
 fn handle_puzzle_failed_event(
     mut events: EventReader<PuzzleResponseEvent>,
     mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
-    level_handles: Res<GRADVM_ONVSTVS>,
+    active_level: Res<ActiveLevel>,
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::Failed {
             log::info!("Puzzle failed event received.");
 
-            let Some(next_level_handle) = level_handles.GRADVS.get(0) else {
-                log::error!("No next level.");
-                return;
-            };
+            let active_level_handle = active_level.0.clone().unwrap();
 
             level_spawn_request_writer.write(LevelSpawnRequestEvent {
-                level: next_level_handle.clone(),
+                level: active_level.0.clone().unwrap(),
             });
+            break;
         }
     }
+    events.clear();
 }

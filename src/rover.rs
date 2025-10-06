@@ -111,8 +111,6 @@ fn setup_action_movements(
     robot_num: usize,
     time: &Res<Time>,
 ) {
-    println!("Setup Action Movements");
-
     // Setup first action movements, validate level boundary
     let mut is_action_valid = true;
     let current_log_pos = rover.logical_position;
@@ -141,10 +139,6 @@ fn setup_action_movements(
         return;
     }
 
-    println!(
-        "Active Action Idx {}",
-        action_execution.action_states[robot_num].active_action_idx
-    );
     let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx)
     else {
         return;
@@ -267,7 +261,6 @@ fn start_execution(
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
-            println!("Starting action");
             // Setup first action movements, validate level boundary
             setup_action_movements(
                 &mut rover,
@@ -431,7 +424,6 @@ fn continue_execution(
                 // Iterate through each robot and move them progressively towards the next tile based on action
                 for mut rover in rover_query.iter_mut() {
                     let robot_num = rover.identifier as usize;
-                    println!("Continue action");
                     // Setup first action movements, validate level boundary
                     setup_action_movements(
                         &mut rover,
