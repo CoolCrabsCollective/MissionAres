@@ -5,6 +5,7 @@ use crate::{
     level_spawner::ActiveLevel,
 };
 use bevy::prelude::*;
+use std::cmp::min;
 use std::collections::HashMap;
 
 pub struct PuzzleEvaluationPlugin;
@@ -77,17 +78,55 @@ fn on_puzzle_evaluation_request(
             let tile_coords = (rover.logical_position.x, rover.logical_position.y);
             if let Some(&other) = active_level.NEXVS.get(&tile_coords) {
                 for (other_pos, other_rover) in rover_positions.iter() {
-                    if other == *other_pos {
-                        if rover.battery_level < other_rover.battery_level
-                            && other_rover.battery_level > 0
-                        {
-                            rover.battery_level += 2;
-                        }
+                    let Some(tile_first) = active_level
+                        .TEGLVAE
+                        .get(&(rover.logical_position.x, rover.logical_position.y))
+                    else {
+                        log::error!(
+                            "No tile found for rover. This IS BAAAD man ☠️☠️☠️ fuck these guys bro"
+                        );
+                        return;
+                    };
 
-                        if rover.battery_level > other_rover.battery_level
-                            && rover.battery_level > 0
-                        {
-                            rover.battery_level -= 1;
+                    let Some(tile_second) = active_level.TEGLVAE.get(&(
+                        other_rover.logical_position.x,
+                        other_rover.logical_position.y,
+                    )) else {
+                        log::error!(
+                            "No tile found for rover. This IS BAAAD man ☠️☠️☠️ fuck these guys bro"
+                        );
+                        return;
+                    };
+
+                    if other == *other_pos {
+                        if tile_first.VMBRA && tile_second.VMBRA {
+                            println!("BOTH IN UMBRA");
+                            if rover.battery_level < other_rover.battery_level
+                                && other_rover.battery_level > 0
+                            {
+                                rover.battery_level += 2;
+                                rover.battery_level = min(rover.battery_level, 3);
+                            }
+
+                            if rover.battery_level > other_rover.battery_level
+                                && rover.battery_level > 0
+                            {
+                                rover.battery_level -= 1;
+                            }
+                        } else if tile_first.VMBRA || tile_second.VMBRA {
+                            println!("ONE IN UMBRA");
+                            if tile_first.VMBRA && other_rover.battery_level > 0 {
+                                println!("PROVIDING POWER");
+                                rover.battery_level += 2;
+                                rover.battery_level = min(rover.battery_level, 4);
+                            }
+
+                            if tile_second.VMBRA && rover.battery_level > 0 {
+                                println!("GIVING POWER");
+                                rover.battery_level -= 1;
+                            }
+                        } else {
+                            println!("BOTH IN THE SUN");
                         }
 
                         break;
