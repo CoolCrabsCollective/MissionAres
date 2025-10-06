@@ -137,10 +137,8 @@ fn setup_action_movements(
 
     let mut new_heading = rover.heading;
 
-    let action_attempted = action.moves.0.clone();
-
-    println!("Robot ID: {}", robot_num);
-    dbg!(action.moves);
+    //println!("Robot ID: {}", robot_num);
+    //dbg!(action.moves);
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
@@ -170,7 +168,7 @@ fn setup_action_movements(
             } else {
                 rover.logical_position -= I8Vec2::new(1, 0);
 
-                new_heading = -PI;
+                new_heading = 0.0;
 
                 if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                     is_action_valid = false;
@@ -472,8 +470,8 @@ fn continue_execution(
             PuzzleResponseEvent::InProgress => {
                 action_execution.is_active = true;
 
-                println!("In Progress!");
-                dbg!(&action_execution.action_states);
+                //println!("In Progress!");
+                //dbg!(&action_execution.action_states);
 
                 // Iterate through each robot and move them progressively towards the next tile based on action
                 for mut rover in rover_query.iter_mut() {
