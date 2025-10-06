@@ -354,13 +354,15 @@ fn load_level(
         trans.translation.x -= trans.translation.y / 4.0;
     }
 
+    let mars_texture = asset_server.load("mars.png");
     commands.spawn((
         LevelElement,
-        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(1000.0)))),
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
-            perceptual_roughness: 0.9,
-            metallic: 0.5,
+            //base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
+            base_color_texture: Some(mars_texture),
+            // perceptual_roughness: 0.9,
+            // metallic: 0.5,
             ..Default::default()
         })),
         Transform::from_xyz(0.0, 0.0, 0.0),
