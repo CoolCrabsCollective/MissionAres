@@ -2,6 +2,7 @@ extern crate core;
 
 mod debug_camera_controller;
 mod game_control;
+mod help;
 mod hentai_anime;
 mod level;
 mod level_spawner;
@@ -15,6 +16,7 @@ mod ui;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::game_control::actions::ActionController;
+use crate::help::help::HelpPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
@@ -25,10 +27,8 @@ use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
 use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
 use crate::ui::win_screen::WinScreenPlugin;
-use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
-use bevy::ecs::entity::EntityDoesNotExistError;
 use bevy::ecs::error::{BevyError, ErrorContext, GLOBAL_ERROR_HANDLER};
 use bevy::ecs::query::QueryEntityError;
 use bevy::ecs::world::error::EntityMutableFetchError;
@@ -36,6 +36,7 @@ use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
+use bevy::DefaultPlugins;
 use ui::control_ui::ControlUIPlugin;
 
 fn main() {
@@ -86,6 +87,7 @@ fn main() {
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(ActionController);
     app.add_plugins(ControlUIPlugin);
+    app.add_plugins(HelpPlugin);
     app.add_plugins(TitleScreenPlugin);
     app.add_plugins(DebugCameraControllerPlugin);
     app.add_plugins(GRADVS_ONERATOR_PLUGIN);
