@@ -176,7 +176,7 @@ fn rebuild_control_ui(
                                     event.actions.iter().any(|actions| !actions.is_empty());
 
                                 if has_commands {
-                                    let clear_icon = asset_server.load("fail_particle.png");
+                                    let clear_icon = asset_server.load("trash.png");
                                     parent
                                         .spawn((
                                             Button,
@@ -206,8 +206,8 @@ fn rebuild_control_ui(
                                                     ..default()
                                                 },
                                                 Node {
-                                                    width: Px_dynamic(26.0),
-                                                    height: Px_dynamic(26.0),
+                                                    width: Px_dynamic(32.0),
+                                                    height: Px_dynamic(32.0),
                                                     ..default()
                                                 },
                                             ));
