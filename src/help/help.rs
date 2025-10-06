@@ -1,5 +1,7 @@
+use crate::title_screen::GameState;
 use crate::ui::interactive_button::InteractiveButton;
 use bevy::prelude::*;
+use GameState::TitleScreen;
 
 pub struct HelpPlugin;
 
@@ -13,8 +15,8 @@ pub struct HelpDialog;
 
 impl Plugin for HelpPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (add_player_help));
-        app.add_systems(Update, toggle_help_visible);
+        app.add_systems(OnExit(TitleScreen), (add_player_help));
+        app.add_systems(Update, toggle_help_visible.after(add_player_help));
     }
 }
 
