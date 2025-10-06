@@ -97,7 +97,7 @@ fn on_puzzle_evaluation_request(
                         if tile_first.VMBRA && tile_second.VMBRA {
                             if rover.battery_level < other_rover.battery_level
                                 && other_rover.battery_level > 0
-                                && !rover.is_done
+                            //&& !rover.is_done
                             {
                                 println!(
                                     "[UMBRA POWER TRANSFER] Rover {} receiving power",
@@ -118,7 +118,9 @@ fn on_puzzle_evaluation_request(
                             }
                         } else if tile_first.VMBRA || tile_second.VMBRA {
                             println!("ONE IN UMBRA");
-                            if tile_first.VMBRA && other_rover.battery_level > 0 && !rover.is_done {
+                            if tile_first.VMBRA && other_rover.battery_level > 0
+                            /* && !rover.is_done*/
+                            {
                                 println!("PROVIDING POWER");
                                 rover.battery_level += 1;
                                 rover.battery_level = min(rover.battery_level, 3);
@@ -143,11 +145,6 @@ fn on_puzzle_evaluation_request(
 
         let rover_executions = action_execution.action_states.clone();
         for mut rover in rovers.iter_mut() {
-            if rover.is_done {
-                i += 1;
-                continue;
-            }
-
             let Some(tile) = active_level
                 .TEGLVAE
                 .get(&(rover.logical_position.x, rover.logical_position.y))
@@ -167,7 +164,6 @@ fn on_puzzle_evaluation_request(
                 rover.identifier,
                 rover.logical_position
             );
-            rover.is_done = state.action_list.len() == state.active_action_idx;
             if state.active_action_idx > 0
                 && let Some(state) = state.action_list.get(state.active_action_idx - 1)
             {
@@ -177,8 +173,9 @@ fn on_puzzle_evaluation_request(
                 } else {
                     println!(" to tile in sun");
                 }
+                let state_type = if rover.is_done { Wait } else { state.moves.0 };
 
-                if state.moves.0 != Wait && rover.battery_level > 0 && !rover.is_acting {
+                if state_type != Wait && rover.battery_level > 0 && !rover.is_acting {
                     println!("Losing 1 battery");
                     rover.battery_level -= 1;
                 }
@@ -188,6 +185,7 @@ fn on_puzzle_evaluation_request(
                     rover.battery_level += 1;
                 }
             }
+            rover.is_done = state.action_list.len() == state.active_action_idx;
             i += 1;
         }
 

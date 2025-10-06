@@ -31,6 +31,10 @@ fn wait_particle_spawner(
     for (mut rover, transform) in query.iter_mut() {
         let robot_num = rover.identifier as usize;
 
+        if rover.is_done {
+            continue;
+        }
+
         // Check if this rover is currently waiting
         if robot_num >= action_execution.action_states.len() {
             continue;
