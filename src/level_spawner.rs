@@ -359,7 +359,7 @@ fn load_level(
     let mars_texture = asset_server.load("mars.png");
     commands.spawn((
         LevelElement,
-        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(20.0)))),
         MeshMaterial3d(materials.add(StandardMaterial {
             //base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
             base_color_texture: Some(mars_texture),
@@ -484,7 +484,7 @@ fn load_level(
                     .with_rotation(Quat::from_rotation_y(random::<f32>() * PI * 2.0)),
                 LevelElement,
                 PointLight {
-                    intensity: 1_000_000.0,
+                    intensity: 500_000.0,
                     color: BLUE.into(),
                     shadows_enabled: false,
                     ..default()
@@ -731,7 +731,11 @@ fn spawn_tile(
                     .insert(
                         // should spawn at the tile position
                         Transform::from_xyz(x, 0.0, z)
-                            .with_scale(Vec3::splat(0.4 * TILE_SIZE))
+                            .with_scale(Vec3::splat(if umbra {
+                                0.35 * TILE_SIZE
+                            } else {
+                                0.4 * TILE_SIZE
+                            }))
                             .with_rotation(Quat::from_rotation_y(random::<i8>() as f32 * PI / 2.0)),
                     )
                     .insert(LevelElement)

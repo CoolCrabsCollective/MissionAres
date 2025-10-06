@@ -1,20 +1,20 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{GRADVM, is_pos_in_level};
+use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
-use bevy::math::I8Vec2;
 use bevy::math::ops::abs;
+use bevy::math::I8Vec2;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 use std::time::Duration;
 
 const SPEED: f32 = 7.5;
-const WAIT_ACTION_TIME: f32 = 1.0;
-const TURN_SPEED: f32 = 2.5;
+const WAIT_ACTION_TIME: f32 = 0.5;
+const TURN_SPEED: f32 = 5.0;
 
-const WAIT_BETWEEN_ACTS: f32 = 0.5;
+const WAIT_BETWEEN_TURNS: f32 = 0.25;
 
 #[derive(Clone)]
 pub enum RoverStates {
@@ -128,7 +128,7 @@ fn setup_action_movements(
 
         let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx)
         else {
-            return;
+            continue;
         };
 
         let mut new_heading = rover.heading;
@@ -190,6 +190,10 @@ fn setup_action_movements(
                 rover.is_acting = true;
             }
         } else {
+            println!(
+                "Setting position for rover {}, {}",
+                rover.identifier, new_pos
+            );
             rover.logical_position = new_pos;
             rover.rover_state = RoverStates::Moving;
             rover.is_acting = true;
@@ -282,7 +286,7 @@ fn detect_move_done(
     action_execution.is_evaluating = true;
 
     commands.spawn(BetweenTurnsTimer {
-        timer: Timer::new(Duration::from_secs_f32(0.5), TimerMode::Once),
+        timer: Timer::new(Duration::from_secs_f32(WAIT_BETWEEN_TURNS), TimerMode::Once),
     });
 }
 
@@ -401,6 +405,11 @@ fn action_execution(
             }
             rover.is_acting = false;
             rover.is_turn_done = true;
+            println!("End of moving for rover {}", rover.identifier);
+            println!(
+                "New Action Idx {}",
+                action_execution.action_states[robot_num].active_action_idx
+            );
         }
     }
 }
