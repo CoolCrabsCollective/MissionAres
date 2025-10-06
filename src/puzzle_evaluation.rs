@@ -115,7 +115,7 @@ fn on_puzzle_evaluation_request(
             break;
         }
 
-        if let Some(_rover) = rovers.iter().find(|rover| rover.battery_level == 0) {
+        if let Some(_rover) = rovers.iter().find(|rover| rover.collided) {
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }

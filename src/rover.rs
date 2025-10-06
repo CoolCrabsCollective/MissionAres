@@ -33,7 +33,11 @@ pub struct RoverEntity {
     pub identifier: u8,
     pub heading: f32,
     pub rover_state: RoverStates,
+    pub collided: bool,
 }
+
+#[derive(Component)]
+pub struct RoverCollectable;
 
 #[derive(Event)]
 pub struct ActionListExecute {
@@ -155,15 +159,13 @@ fn setup_action_movements(
 
     let mut new_heading = rover.heading;
 
-    let action_attempted = action.moves.0.clone();
-
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
 
             new_heading = -PI / 2.0;
 
-            if !is_pos_in_level(level, &rover.logical_position) {
+            if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                 is_action_valid = false;
             }
         }
@@ -175,7 +177,7 @@ fn setup_action_movements(
 
                 new_heading = PI / 2.0;
 
-                if !is_pos_in_level(level, &rover.logical_position) {
+                if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                     is_action_valid = false;
                 }
             }
@@ -188,7 +190,7 @@ fn setup_action_movements(
 
                 new_heading = -PI;
 
-                if !is_pos_in_level(level, &rover.logical_position) {
+                if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                     is_action_valid = false;
                 }
             }
@@ -198,7 +200,7 @@ fn setup_action_movements(
 
             new_heading = PI;
 
-            if !is_pos_in_level(level, &rover.logical_position) {
+            if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                 is_action_valid = false;
             }
         }
@@ -216,14 +218,9 @@ fn setup_action_movements(
         action_execution.action_states[robot_num].is_waiting = true;
 
         rover.logical_position = current_log_pos;
+        rover.collided = true;
     } else {
-        rover.rover_state = RoverStates::Moving; /*(match action_attempted {
-        ActionType::MoveUp => CardinalDirection::UP,
-        ActionType::MoveDown => CardinalDirection::DOWN,
-        ActionType::MoveLeft => CardinalDirection::LEFT,
-        ActionType::MoveRight => CardinalDirection::RIGHT,
-        ActionType::Wait => panic!("we're moving lol"), // TODO UP WAIT UP RIGHT on level 1 causes this panic
-        });*/
+        rover.rover_state = RoverStates::Moving;
         if rover.heading != new_heading {
             action_execution.action_states[robot_num].is_turning = true;
             rover.heading = new_heading;
@@ -423,18 +420,15 @@ fn continue_execution(
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
     time: Res<Time>,
-    mut next_state: ResMut<NextState<GameState>>,
 ) {
     for event in events.read() {
         match event {
             PuzzleResponseEvent::Solved => {
                 events.clear();
-                next_state.set(GameState::Programming);
                 break;
             }
             PuzzleResponseEvent::Failed => {
                 events.clear();
-                next_state.set(GameState::Programming);
                 break;
             }
             PuzzleResponseEvent::InProgress => {

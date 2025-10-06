@@ -5,7 +5,7 @@ use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
-use crate::rover::{RoverEntity, RoverPlugin, RoverStates};
+use crate::rover::{RoverCollectable, RoverEntity, RoverPlugin, RoverStates};
 use crate::title_screen::GameState;
 use crate::ui::control_ui::RoverColors;
 use bevy::app::Startup;
@@ -97,7 +97,7 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(OnExit(GameState::TitleScreen), spawn_initial_level);
         app.add_systems(Startup, setup_scene);
         app.add_systems(Update, handle_puzzle_solved_event);
-        app.add_systems(Update, handle_puzzle_failed_event);
+        app.add_systems(Update, (handle_puzzle_failed_event, update_reset_timer));
 
         app.add_systems(Update, asset_loaded);
         app.insert_resource(ActiveLevel(None));
@@ -279,6 +279,7 @@ fn load_level(
     mut camera_transform: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera3d>>,
     particles: Query<Entity, (With<Particle>, Without<LevelElement>)>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     if events.is_empty() {
         return;
@@ -428,6 +429,7 @@ fn load_level(
                                 identifier: rover_index,
                                 heading: -PI / 2.0,
                                 rover_state: RoverStates::Standby,
+                                collided: false,
                             })
                             .insert(LevelElement)
                             .insert(DustSpawner {
@@ -443,24 +445,6 @@ fn load_level(
                             // pink
                             .unwrap_or(Color::srgb(1.0, 0.0, 1.0)),
                     ),
-                    // material_initializer: Some(Box::new(
-                    //     move |material_handle: Handle<StandardMaterial>,
-                    //           material: &mut StandardMaterial,
-                    //           spawned_entity: Option<Entity>| {
-                    //         if let Some(entity) = spawned_entity {}
-                    //         log::info!(
-                    //             "Setting color for rover index {} and material {:?}",
-                    //             rover_index,
-                    //             material.base_color
-                    //         );
-                    //         material.base_color = rover_colors_cloned
-                    //             .get(rover_index as usize)
-                    //             .cloned()
-                    //             .or_else(|| rover_colors_cloned.get(0).cloned())
-                    //             // pink
-                    //             .unwrap_or(Color::srgb(1.0, 0.0, 1.0));
-                    //     },
-                    // )),
                     ..Default::default()
                 },
                 &asset_server,
@@ -482,7 +466,8 @@ fn load_level(
                                         random::<f32>() * PI * 2.0,
                                     )),
                             )
-                            .insert(LevelElement);
+                            .insert(LevelElement)
+                            .insert(RoverCollectable);
                     })),
                     ..Default::default()
                 },
@@ -643,6 +628,7 @@ fn load_level(
     let action_event = action_list.clone();
     commands.send_event(action_event);
 
+    next_state.set(GameState::Programming);
     commands.send_event(AfterLevelSpawnEvent);
 }
 
@@ -908,11 +894,14 @@ fn handle_puzzle_solved_event(
     }
 }
 
+#[derive(Component)]
+pub struct ResetTimer {
+    timer: Timer,
+}
+
 fn handle_puzzle_failed_event(
     mut commands: Commands,
     mut events: EventReader<PuzzleResponseEvent>,
-    mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
-    active_level: Res<ActiveLevel>,
     asset_server: Res<AssetServer>,
 ) {
     for event in events.read() {
@@ -921,12 +910,30 @@ fn handle_puzzle_failed_event(
                 AudioPlayer::new(asset_server.load("sfx/fail.ogg")),
                 PlaybackSettings::DESPAWN,
             ));
-
-            level_spawn_request_writer.write(LevelSpawnRequestEvent {
-                level: active_level.0.clone().unwrap(),
+            commands.spawn(ResetTimer {
+                timer: Timer::from_seconds(1.0, TimerMode::Once),
             });
             break;
         }
     }
     events.clear();
+}
+
+fn update_reset_timer(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut ResetTimer)>,
+    mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
+    active_level: Res<ActiveLevel>,
+    time: Res<Time>,
+) {
+    for (entity, mut timer) in query.iter_mut() {
+        timer.timer.tick(time.delta());
+
+        if timer.timer.finished() {
+            commands.entity(entity).despawn();
+            level_spawn_request_writer.write(LevelSpawnRequestEvent {
+                level: active_level.0.clone().unwrap(),
+            });
+        }
+    }
 }
