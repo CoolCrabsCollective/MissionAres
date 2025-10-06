@@ -1,11 +1,11 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{is_pos_in_level, GRADVM};
+use crate::level::{GRADVM, is_pos_in_level};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
-use bevy::math::ops::abs;
 use bevy::math::I8Vec2;
+use bevy::math::ops::abs;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 use std::time::Duration;
@@ -106,11 +106,14 @@ fn setup_action_movements(
         }
     }
 
+    let mut prev_pos_vec = Vec::new();
+    let mut position_vec = Vec::new();
+
     for mut rover in rover_query.iter_mut() {
         let robot_num = rover.identifier as usize;
 
         let mut is_action_valid = true;
-        let current_log_pos = rover.logical_position;
+        let prev_pos = rover.logical_position;
 
         let Some(level_handle) = &active_level.0 else {
             return;
@@ -163,59 +166,29 @@ fn setup_action_movements(
             is_action_valid = false;
         }
 
-        // Check for collisions in future actions
-        // if is_action_valid {
-        //     for other in all_rovers.iter() {
-        //         if other.identifier == rover.identifier {
-        //             continue;
-        //         }
-        //
-        //         // Case 1: Another rover *already occupies* that position
-        //         if other.logical_position == new_pos {
-        //             is_action_valid = false;
-        //             break;
-        //         }
-        //
-        //         // Case 2: Rovers swapping positions (A→B’s tile, B→A’s tile)
-        //         let Some(other_state) = action_execution
-        //             .action_states
-        //             .get(other.identifier as usize)
-        //         else {
-        //             continue;
-        //         };
-        //         if let Some(next_action) =
-        //             other_state.action_list.get(other_state.active_action_idx)
-        //         {
-        //             let mut other_future_pos = other.logical_position;
-        //             match next_action.moves.0 {
-        //                 ActionType::MoveUp => other_future_pos += I8Vec2::new(0, 1),
-        //                 ActionType::MoveDown => other_future_pos -= I8Vec2::new(0, 1),
-        //                 ActionType::MoveLeft => other_future_pos -= I8Vec2::new(1, 0),
-        //                 ActionType::MoveRight => other_future_pos += I8Vec2::new(1, 0),
-        //                 _ => {}
-        //             }
-        //
-        //             if other_future_pos == rover.logical_position
-        //                 && new_pos == other.logical_position
-        //             {
-        //                 // They're moving into each other
-        //                 is_action_valid = false;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
+        if position_vec.contains(&new_pos) {
+            is_action_valid = false;
+        }
+
+        let tuple = (new_pos, prev_pos);
+        if prev_pos_vec.contains(&tuple) {
+            is_action_valid = false;
+        }
 
         rover.rover_state = RoverStates::Standby;
 
         if !is_action_valid {
             action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
             action_execution.action_states[robot_num].is_waiting = true;
-            println!("INVALID ACTION FROM ROVER {}", rover.identifier);
-            rover.logical_position = current_log_pos;
+            rover.logical_position = prev_pos;
             rover.collided = true;
+
+            if rover.heading != new_heading {
+                action_execution.action_states[robot_num].is_turning = true;
+                rover.heading = new_heading;
+                rover.is_acting = true;
+            }
         } else {
-            println!("Rover {} starts moving (or waiting)", rover.identifier);
             rover.logical_position = new_pos;
             rover.rover_state = RoverStates::Moving;
             rover.is_acting = true;
@@ -226,6 +199,8 @@ fn setup_action_movements(
                 rover.heading = new_heading;
             }
         }
+        position_vec.push(rover.logical_position);
+        prev_pos_vec.push((prev_pos, rover.logical_position));
     }
 }
 
@@ -303,7 +278,6 @@ fn detect_move_done(
         }
     }
 
-    println!("PUZZLE EVALUATION QUEUED rover count: {}", i);
     action_execution.is_evaluating = true;
 
     commands.spawn(BetweenTurnsTimer {
@@ -320,7 +294,6 @@ fn update_betweenturns_timer(
         timer.timer.tick(time.delta());
         if timer.timer.just_finished() {
             commands.entity(entity).despawn();
-            println!("PUZZLE EVALUATION SENT");
             commands.send_event(PuzzleEvaluationRequestEvent);
         }
     }
@@ -370,7 +343,6 @@ fn action_execution(
                     }
                     rover.is_acting = false;
                     rover.is_turn_done = true;
-                    println!("End of waiting for rover {}", rover.identifier);
                 }
 
                 action_execution.action_states[robot_num].is_waiting = false;
@@ -428,7 +400,6 @@ fn action_execution(
             }
             rover.is_acting = false;
             rover.is_turn_done = true;
-            println!("End of moving for rover {}", rover.identifier);
         }
     }
 }

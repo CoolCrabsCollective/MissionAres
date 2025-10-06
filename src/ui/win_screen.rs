@@ -50,7 +50,7 @@ fn show_win_screen(
                         flex_direction: FlexDirection::Column,
                         ..default()
                     },
-                    BackgroundColor::from(Color::srgba(0.0, 0.0, 0.0, 0.8)),
+                    BackgroundColor::from(Color::srgba(0.0, 0.0, 0.0, 0.9)),
                     ZIndex(1000),
                 ))
                 .with_children(|parent| {
@@ -107,7 +107,14 @@ fn show_win_screen(
 }
 
 fn next_level_click_handler(
-    interaction_query: Query<&Interaction, (Changed<Interaction>, With<NextLevelButton>)>,
+    interaction_query: Query<
+        &Interaction,
+        (
+            Changed<Interaction>,
+            With<NextLevelButton>,
+            With<InteractiveButton>,
+        ),
+    >,
     mut commands: Commands,
     ui_query: Query<Entity, With<WinScreenUI>>,
     mut next_level_event_writer: EventWriter<NextLevelRequestEvent>,
