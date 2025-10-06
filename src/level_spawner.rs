@@ -513,7 +513,7 @@ fn load_level(
                             .insert(
                                 // should spawn at the tile position
                                 Transform::from_xyz(effective_x, 0.0, effective_z)
-                                    .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
+                                    .with_scale(Vec3::splat(0.25 * TILE_SIZE)),
                             )
                             .insert(LevelElement);
                     }),
