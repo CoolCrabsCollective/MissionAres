@@ -16,9 +16,6 @@ const TURN_SPEED: f32 = 2.5;
 
 const WAIT_BETWEEN_ACTS: f32 = 0.5;
 
-#[derive(Component)]
-struct RoverAudio;
-
 #[derive(Clone)]
 pub enum RoverStates {
     Standby,
@@ -38,6 +35,7 @@ pub struct RoverEntity {
     pub rover_state: RoverStates,
     pub collided: bool,
     pub spawned_fail_particle: bool,
+    pub is_done: bool,
 }
 
 #[derive(Component)]
@@ -133,7 +131,8 @@ fn setup_action_movements(
         let mut new_pos = rover.logical_position;
 
         // Predict new position
-        match action.moves.0 {
+        let action_type = action.moves.0;
+        match action_type {
             ActionType::MoveUp => {
                 new_pos += I8Vec2::new(0, 1);
                 new_heading = -PI / 2.0;
@@ -160,7 +159,9 @@ fn setup_action_movements(
             }
         }
 
-        if !is_pos_in_level(level, &new_pos) || rover.battery_level == 0 {
+        if !is_pos_in_level(level, &new_pos)
+            || rover.battery_level == 0 && action_type != ActionType::Wait
+        {
             is_action_valid = false;
         }
 
@@ -246,10 +247,12 @@ fn start_execution(
 
         // Start animations
         for animation in animation.iter_mut() {
-            if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
-                for hentai in &animation.animation_list {
-                    player.play(hentai.clone()).repeat();
-                    //println!("Start rover anime");
+            if let Some(player_entity) = animation.player_entity {
+                if let Ok(mut player) = player_query.get_mut(player_entity) {
+                    for hentai in &animation.animation_list {
+                        player.play(hentai.clone()).repeat();
+                        //println!("Start rover anime");
+                    }
                 }
             }
         }
@@ -268,8 +271,8 @@ fn start_execution(
             })
         }
 
-        println!("Start execution");
-        dbg!(&action_execution.action_states);
+        //println!("Start execution");
+        //dbg!(&action_execution.action_states);
         setup_action_movements(
             &active_level,
             &levels,

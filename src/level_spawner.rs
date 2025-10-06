@@ -1,20 +1,21 @@
 use crate::game_control::actions::ActionList;
 use crate::hentai_anime::*;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverCollectable, RoverEntity, RoverPlugin, RoverStates};
 use crate::title_screen::GameState;
 use crate::ui::control_ui::RoverColors;
+use crate::ui::win_screen::NextLevelRequestEvent;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackMode, PlaybackSettings, Volume};
 use bevy::color::palettes::css::BLUE;
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
 use bevy::math::{I8Vec2, Quat};
@@ -92,6 +93,7 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_systems(OnExit(GameState::TitleScreen), spawn_initial_level);
         app.add_systems(Startup, setup_scene);
         app.add_systems(Update, handle_puzzle_solved_event);
+        app.add_systems(Update, handle_next_level_request);
         app.add_systems(Update, (handle_puzzle_failed_event, update_reset_timer));
 
         app.add_systems(Update, asset_loaded);
@@ -408,7 +410,7 @@ fn load_level(
                         commands
                             .insert(
                                 // should spawn at the tile position
-                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                Transform::from_xyz(effective_x, 0.09, effective_z)
                                     .with_scale(Vec3::splat(0.15 * TILE_SIZE))
                                     .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                             )
@@ -427,12 +429,13 @@ fn load_level(
                                 rover_state: RoverStates::Standby,
                                 collided: false,
                                 spawned_fail_particle: false,
+                                is_done: false,
                             })
                             .insert(LevelElement)
                             .insert(DustSpawner {
                                 timer: Timer::from_seconds(0.4, TimerMode::Repeating),
                             })
-                            .observe(setup_anime_when_ready);
+                            .observe(play_all_animations_when_ready);
                     })),
                     scene_color_override: Some(
                         rover_colors_cloned
@@ -859,43 +862,50 @@ fn asset_loaded(
 fn handle_puzzle_solved_event(
     mut commands: Commands,
     mut events: EventReader<PuzzleResponseEvent>,
-    mut level_spawn_request_writer: EventWriter<LevelSpawnRequestEvent>,
-    levels: Res<Assets<GRADVM>>,
-    level_handles: Res<GRADVM_ONVSTVS>,
-    mut active_level: ResMut<ActiveLevel>,
     asset_server: Res<AssetServer>,
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::Solved {
-            let Some(active_level_handle) = &active_level.0 else {
-                log::error!("No active level.");
-                return;
-            };
-
-            let Some(current_level) = levels.get(active_level_handle) else {
-                log::error!("No active level.");
-                return;
-            };
-
-            let Some(next_level_handle) = level_handles
-                .GRADVS
-                .get(current_level.INDEX as usize + 1)
-                .or(level_handles.GRADVS.get(0))
-            else {
-                log::error!("No next level.");
-                return;
-            };
-
-            active_level.0 = Some(next_level_handle.clone());
-
             commands.spawn((
                 AudioPlayer::new(asset_server.load("sfx/win.ogg")),
                 PlaybackSettings::DESPAWN,
             ));
-            commands.spawn(ResetTimer {
-                timer: Timer::from_seconds(1.0, TimerMode::Once),
-            });
         }
+    }
+}
+
+fn handle_next_level_request(
+    mut commands: Commands,
+    mut events: EventReader<NextLevelRequestEvent>,
+    levels: Res<Assets<GRADVM>>,
+    level_handles: Res<GRADVM_ONVSTVS>,
+    mut active_level: ResMut<ActiveLevel>,
+) {
+    for _ in events.read() {
+        let Some(active_level_handle) = &active_level.0 else {
+            log::error!("No active level.");
+            return;
+        };
+
+        let Some(current_level) = levels.get(active_level_handle) else {
+            log::error!("No active level.");
+            return;
+        };
+
+        let Some(next_level_handle) = level_handles
+            .GRADVS
+            .get(current_level.INDEX as usize + 1)
+            .or(level_handles.GRADVS.get(0))
+        else {
+            log::error!("No next level.");
+            return;
+        };
+
+        active_level.0 = Some(next_level_handle.clone());
+
+        commands.spawn(ResetTimer {
+            timer: Timer::from_seconds(0.01, TimerMode::Once),
+        });
     }
 }
 
