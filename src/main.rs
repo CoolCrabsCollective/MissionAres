@@ -22,6 +22,7 @@ use crate::particle::particle::ParticlePlugin;
 use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
+use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
@@ -71,6 +72,7 @@ fn main() {
                 ..default()
             }),
     );
+    app.add_plugins(InteractiveButtonPlugin);
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(ActionController);
     app.add_plugins(ControlUIPlugin);

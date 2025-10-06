@@ -1,3 +1,4 @@
+use crate::ui::interactive_button::InteractiveButton;
 use bevy::prelude::*;
 
 pub struct TitleScreenPlugin;
@@ -64,6 +65,11 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                     BackgroundColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
                     BorderRadius::all(Val::Px(15.0)),
                     BorderColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
+                    InteractiveButton::simple(
+                        Color::Srgba(Srgba::hex("3a312e").unwrap()),
+                        Color::WHITE,
+                        false,
+                    ),
                 ))
                 .with_children(|parent| {
                     parent.spawn((
@@ -73,6 +79,7 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
                             font_size: 40.0,
                             ..default()
                         },
+                        Transform::default(),
                         TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
                         //TextShadow::default(),
                     ));
@@ -111,40 +118,11 @@ fn on_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn start_game_click_handler(
-    mut interaction_query: Query<
-        (
-            &Interaction,
-            &mut BackgroundColor,
-            &mut BorderColor,
-            &Children,
-        ),
-        (Changed<Interaction>, With<StartGameButton>),
-    >,
-    mut text_query: Query<(&Text, &mut TextColor)>,
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<StartGameButton>)>,
     mut next_state: ResMut<NextState<GameState>>,
     gamepads: Query<&Gamepad>,
 ) {
-    for (interaction, mut bg_color, mut bor_color, children) in &mut interaction_query {
-        let color = match *interaction {
-            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
-            Interaction::Hovered => Color::srgb(0.8, 0.8, 0.8),
-            Interaction::None => Color::srgb(0.9, 0.9, 0.9),
-        };
-
-        for child in children {
-            if let Ok(mut text) = text_query.get_mut(*child) {
-                text.1.0 = color;
-            }
-        }
-
-        bg_color.0 = match *interaction {
-            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
-            Interaction::Hovered => Color::srgb(0.1, 0.1, 0.1),
-            Interaction::None => Color::Srgba(Srgba::hex("3a312e").unwrap()),
-        };
-
-        bor_color.0 = bg_color.0;
-
+    for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             next_state.set(GameState::Game);
         }
