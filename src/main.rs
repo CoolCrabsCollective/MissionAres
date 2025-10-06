@@ -14,7 +14,6 @@ mod ui;
 
 use crate::debug_camera_controller::DebugCameraControllerPlugin;
 use crate::game_control::actions::ActionController;
-use crate::game_control::control_ui::ControlUIPlugin;
 use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
@@ -30,6 +29,7 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
 use bevy::DefaultPlugins;
+use ui::control_ui::ControlUIPlugin;
 
 fn main() {
     let mut app = App::new();
