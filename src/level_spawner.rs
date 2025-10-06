@@ -558,10 +558,6 @@ fn load_level(
 
     active_level.0 = Some(event.level.clone());
 
-    action_list.actions.clear();
-    for i in 0..num_rovers {
-        action_list.actions.push(vec![]);
-    }
     let action_event = action_list.clone();
     commands.send_event(action_event);
 
@@ -803,6 +799,7 @@ fn asset_loaded(
 fn handle_puzzle_solved_event(
     mut commands: Commands,
     mut events: EventReader<PuzzleResponseEvent>,
+    mut action_list: ResMut<ActionList>,
     asset_server: Res<AssetServer>,
 ) {
     for event in events.read() {
@@ -811,6 +808,11 @@ fn handle_puzzle_solved_event(
                 AudioPlayer::new(asset_server.load("sfx/win.ogg")),
                 PlaybackSettings::DESPAWN,
             ));
+
+            action_list.actions.clear();
+            for i in 0..action_list.actions.len() {
+                action_list.actions.push(vec![]);
+            }
         }
     }
 }
