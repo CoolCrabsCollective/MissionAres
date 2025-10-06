@@ -35,6 +35,7 @@ pub struct RoverEntity {
     pub rover_state: RoverStates,
     pub collided: bool,
     pub spawned_fail_particle: bool,
+    pub spawned_wait_particle: bool,
     pub is_done: bool,
 }
 

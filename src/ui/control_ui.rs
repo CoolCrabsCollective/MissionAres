@@ -1,11 +1,14 @@
 use crate::game_control::actions::{Action, ActionList, ActionType};
 use crate::level::GRADVM;
-use crate::level_spawner::ActiveLevel;
-use crate::rover::ActionListExecute;
+use crate::level_spawner::{ActiveLevel, LevelElement};
+use crate::mesh_loader::DebugLogEntityRequest;
+use crate::rover::{ActionListExecute, RoverEntity};
 use crate::title_screen::GameState;
 use crate::ui::interactive_button::InteractiveButton;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
+use bevy::pbr::SpotLight;
+use bevy::picking::events::{Click, Pointer};
 use bevy::picking::hover::HoverMap;
 use bevy::prelude::*;
 
@@ -38,6 +41,9 @@ pub struct ActionDeleteButton {
 #[derive(Component)]
 pub struct RobotButton(pub i32);
 
+#[derive(Component)]
+pub struct SelectionLight;
+
 impl Plugin for ControlUIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
@@ -51,6 +57,8 @@ impl Plugin for ControlUIPlugin {
         );
         app.add_systems(Update, execute_handler);
         app.add_systems(Update, update_scroll_position);
+        app.add_systems(Update, spawn_selection_light);
+        app.add_systems(Update, update_selection_light);
 
         app.insert_resource(UIRoverColors(vec![
             Color::srgba(0.2, 0.65, 0.2, 1.0),   // green
@@ -888,4 +896,122 @@ pub fn update_scroll_position(
             }
         }
     }
+}
+
+pub const SELECTION_LIGHT_INTENSITY: f32 = 500_000.0;
+
+/// Spawns a selection light if one doesn't exist yet
+fn spawn_selection_light(
+    mut commands: Commands,
+    selection_light_query: Query<Entity, With<SelectionLight>>,
+    rover_query: Query<Entity, With<RoverEntity>>,
+) {
+    if selection_light_query.is_empty() && !rover_query.is_empty() {
+        commands.spawn((
+            SelectionLight,
+            LevelElement,
+            SpotLight {
+                intensity: SELECTION_LIGHT_INTENSITY,
+                color: Color::srgb(1.0, 0.95, 0.8),
+                shadows_enabled: true,
+                range: 20.0,
+                radius: 0.5,
+                outer_angle: 0.6,
+                inner_angle: 0.4,
+                ..default()
+            },
+            Transform::from_xyz(0.0, 5.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ));
+    }
+}
+
+/// Updates the selection light position to be above the currently selected rover
+fn update_selection_light(
+    action_list: Res<ActionList>,
+    rover_query: Query<(&RoverEntity, &Transform)>,
+    mut light_query: Query<
+        (&mut Transform, &mut SpotLight),
+        (With<SelectionLight>, Without<RoverEntity>),
+    >,
+    game_state: Res<State<GameState>>,
+) {
+    if let Ok((mut light_transform, mut spotlight)) = light_query.single_mut() {
+        // Turn off light during execution, turn on during programming
+        if *game_state.get() == GameState::Execution {
+            spotlight.intensity = 0.0;
+            return;
+        } else {
+            spotlight.intensity = SELECTION_LIGHT_INTENSITY;
+        }
+
+        let selected_index = action_list.current_selection;
+
+        for (rover, rover_transform) in rover_query.iter() {
+            if rover.identifier as usize == selected_index {
+                let target_position = rover_transform.translation + Vec3::new(0.0, 3.0, 0.0);
+                let look_at_position = rover_transform.translation;
+
+                light_transform.translation = target_position;
+                light_transform.look_at(look_at_position, Vec3::Y);
+                break;
+            }
+        }
+    }
+}
+
+/// Handles clicking on rovers in the 3D world to select them
+pub fn on_rover_click(
+    click: Trigger<Pointer<Click>>,
+    rover_query: Query<(Entity, &RoverEntity)>,
+    mut debug_entity_request: EventWriter<DebugLogEntityRequest>,
+    mut action_list: ResMut<ActionList>,
+    mut action_writer: EventWriter<ActionList>,
+    game_state: Res<State<GameState>>,
+    children_query: Query<&Children>,
+) {
+    debug_entity_request.write(DebugLogEntityRequest(click.event().target));
+
+    // Only allow selection during programming state
+    if *game_state.get() != GameState::Programming {
+        return;
+    }
+
+    let target_entity = click.event().target;
+
+    for (rover_entity, rover) in rover_query.iter() {
+        if let Ok(children) = children_query.get(rover_entity) {
+            for child in children.iter() {
+                if child == target_entity || is_descendant(child, target_entity, &children_query) {
+                    let rover_index = rover.identifier as usize;
+                    if action_list.current_selection != rover_index {
+                        action_list.current_selection = rover_index;
+                        action_writer.write(action_list.clone());
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
+    log::info!(
+        "No RoverEntity found as ancestor of clicked entity {:?}",
+        target_entity
+    );
+}
+
+/// Helper function to check if target is a descendant of parent
+fn is_descendant(parent: Entity, target: Entity, children_query: &Query<&Children>) -> bool {
+    if parent == target {
+        return true;
+    }
+
+    if let Ok(children) = children_query.get(parent) {
+        for child in children.iter() {
+            if is_descendant(child, target, children_query) {
+                return true;
+            }
+        }
+    }
+
+    false
 }
