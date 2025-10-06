@@ -84,10 +84,6 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_event::<AfterLevelSpawnEvent>();
         app.add_systems(
             Update,
-            choose_level_by_num_keys.run_if(not(in_state(GameState::TitleScreen))),
-        );
-        app.add_systems(
-            Update,
             load_level.run_if(not(in_state(GameState::TitleScreen))),
         );
         app.add_systems(OnExit(GameState::TitleScreen), spawn_initial_level);
@@ -197,72 +193,6 @@ fn spawn_initial_level(
     events.write(LevelSpawnRequestEvent {
         level: levels.GRADVS[0].clone(),
     });
-}
-
-fn choose_level_by_num_keys(
-    input: Res<ButtonInput<KeyCode>>,
-    mut events: EventWriter<LevelSpawnRequestEvent>,
-    levels: Res<GRADVM_ONVSTVS>,
-) {
-    if input.just_pressed(KeyCode::Numpad1) || input.just_pressed(KeyCode::Digit1) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[0].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad2) || input.just_pressed(KeyCode::Digit2) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[1].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad3) || input.just_pressed(KeyCode::Digit3) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[2].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad4) || input.just_pressed(KeyCode::Digit4) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[3].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad5) || input.just_pressed(KeyCode::Digit5) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[4].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad6) || input.just_pressed(KeyCode::Digit6) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[5].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad7) || input.just_pressed(KeyCode::Digit7) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[6].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad8) || input.just_pressed(KeyCode::Digit8) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[7].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad9) || input.just_pressed(KeyCode::Digit9) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[8].clone(),
-        });
-    }
-
-    if input.just_pressed(KeyCode::Numpad0) || input.just_pressed(KeyCode::Digit0) {
-        events.write(LevelSpawnRequestEvent {
-            level: levels.GRADVS[9].clone(),
-        });
-    }
 }
 
 fn load_level(
