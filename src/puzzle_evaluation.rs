@@ -66,7 +66,7 @@ fn on_puzzle_evaluation_request(
         }
 
         for mut rover in rovers.iter_mut() {
-            if rover.is_acting || rover.is_done {
+            if rover.is_acting {
                 continue; // Do not affect battery level for rovers still acting
             }
 
@@ -97,7 +97,12 @@ fn on_puzzle_evaluation_request(
                         if tile_first.VMBRA && tile_second.VMBRA {
                             if rover.battery_level < other_rover.battery_level
                                 && other_rover.battery_level > 0
+                                && !rover.is_done
                             {
+                                println!(
+                                    "[UMBRA POWER TRANSFER] Rover {} receiving power",
+                                    rover.identifier
+                                );
                                 rover.battery_level += 1;
                                 rover.battery_level = min(rover.battery_level, 3);
                             }
@@ -105,11 +110,15 @@ fn on_puzzle_evaluation_request(
                             if rover.battery_level > other_rover.battery_level
                                 && rover.battery_level > 0
                             {
+                                println!(
+                                    "[UMBRA POWER TRANSFER] Rover {} giving power",
+                                    rover.identifier
+                                );
                                 rover.battery_level -= 1;
                             }
                         } else if tile_first.VMBRA || tile_second.VMBRA {
                             println!("ONE IN UMBRA");
-                            if tile_first.VMBRA && other_rover.battery_level > 0 {
+                            if tile_first.VMBRA && other_rover.battery_level > 0 && !rover.is_done {
                                 println!("PROVIDING POWER");
                                 rover.battery_level += 1;
                                 rover.battery_level = min(rover.battery_level, 3);
