@@ -24,6 +24,9 @@ pub struct CloseHelpButton;
 #[derive(Resource)]
 struct HasShownLevelOneHelp(bool);
 
+#[derive(Resource)]
+struct HasShownWiresHelp(bool);
+
 impl Plugin for HelpPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnExit(GameState::TitleScreen), add_player_help);
@@ -34,10 +37,12 @@ impl Plugin for HelpPlugin {
                 toggle_help_visible,
                 close_help_handler,
                 show_help_on_level_one,
+                show_help_on_first_wire_level,
             )
                 .run_if(not(in_state(GameState::TitleScreen))),
         );
         app.insert_resource(HasShownLevelOneHelp(false));
+        app.insert_resource(HasShownWiresHelp(false));
     }
 }
 
@@ -46,6 +51,7 @@ fn cleanup_help(
     button_query: Query<Entity, With<HelpButton>>,
     dialog_query: Query<Entity, With<HelpDialog>>,
     mut has_shown: ResMut<HasShownLevelOneHelp>,
+    mut has_shown_wires: ResMut<HasShownWiresHelp>,
 ) {
     for entity in button_query.iter() {
         commands.entity(entity).despawn();
@@ -54,6 +60,7 @@ fn cleanup_help(
         commands.entity(entity).despawn();
     }
     has_shown.0 = false;
+    has_shown_wires.0 = false;
 }
 
 pub fn add_player_help(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -318,6 +325,108 @@ fn spawn_help_dialog(commands: &mut Commands, asset_server: &Res<AssetServer>) {
         });
 }
 
+fn spawn_wires_help_dialog(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+    commands
+        .spawn((
+            HelpDialog,
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Percent(0.0),
+                left: Val::Percent(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            BackgroundColor::from(Color::srgba(0.0, 0.0, 0.0, 0.9)),
+            ZIndex(1000),
+        ))
+        .with_children(|parent| {
+            // Main content container
+            parent
+                .spawn((Node {
+                    width: Val::Percent(60.0),
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    row_gap: Px_dynamic(30.0),
+                    ..default()
+                },))
+                .with_children(|parent| {
+                    // Wires explanation section
+                    parent
+                        .spawn((Node {
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            row_gap: Px_dynamic(15.0),
+                            ..default()
+                        },))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Text::new("Wired Tiles"),
+                                TextFont {
+                                    font: asset_server.load("fonts/SpaceGrotesk-Bold.ttf"),
+                                    font_size: 48.0,
+                                    ..default()
+                                },
+                                TextColor(Color::WHITE),
+                                TextLayout::new_with_justify(JustifyText::Center),
+                            ));
+
+                            parent.spawn((
+                                Text::new(
+                                    "Stand on wired tiles to charge shadowed robots!\n\nWired tiles are connected to each other and allow you to transfer power to robots in the shadows.",
+                                ),
+                                TextFont {
+                                    font: asset_server.load("fonts/SpaceGrotesk-Medium.ttf"),
+                                    font_size: 32.0,
+                                    ..default()
+                                },
+                                TextColor(Color::WHITE),
+                                TextLayout::new_with_justify(JustifyText::Center),
+                            ));
+                        });
+
+                    // Close button
+                    parent
+                        .spawn((
+                            Button,
+                            CloseHelpButton,
+                            Node {
+                                width: Px_dynamic(200.0),
+                                height: Px_dynamic(60.0),
+                                border: UiRect::all(Px_dynamic(15.0)),
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                margin: UiRect::top(Px_dynamic(20.0)),
+                                ..default()
+                            },
+                            BackgroundColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
+                            BorderRadius::all(Px_dynamic(15.0)),
+                            BorderColor::from(Color::Srgba(Srgba::hex("3a312e").unwrap())),
+                            InteractiveButton::simple(
+                                Color::Srgba(Srgba::hex("3a312e").unwrap()),
+                                Color::WHITE,
+                                true,
+                            ),
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Text::new("Close"),
+                                TextFont {
+                                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
+                                    font_size: 36.0,
+                                    ..default()
+                                },
+                                TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                            ));
+                        });
+                });
+        });
+}
+
 pub fn toggle_help_visible(
     mut commands: Commands,
     mut query: Query<
@@ -399,6 +508,42 @@ fn show_help_on_level_one(
 
     if level.INDEX == 0 && dialog_query.is_empty() {
         spawn_help_dialog(&mut commands, &asset_server);
+        for mut help_button in help_button_query.iter_mut() {
+            help_button.help_visible = true;
+        }
+        has_shown.0 = true;
+    }
+}
+
+fn show_help_on_first_wire_level(
+    mut commands: Commands,
+    active_level: Res<ActiveLevel>,
+    levels: Res<Assets<GRADVM>>,
+    asset_server: Res<AssetServer>,
+    mut has_shown: ResMut<HasShownWiresHelp>,
+    mut help_button_query: Query<&mut HelpButton>,
+    dialog_query: Query<Entity, With<HelpDialog>>,
+    game_state: Res<State<GameState>>,
+) {
+    if has_shown.0 {
+        return;
+    }
+
+    if *game_state.get() != GameState::Programming {
+        return;
+    }
+
+    let Some(level_handle) = &active_level.0 else {
+        return;
+    };
+
+    let Some(level) = levels.get(level_handle) else {
+        return;
+    };
+
+    // Check if level has wires (NEXVS connections)
+    if !level.NEXVS.is_empty() && dialog_query.is_empty() {
+        spawn_wires_help_dialog(&mut commands, &asset_server);
         for mut help_button in help_button_query.iter_mut() {
             help_button.help_visible = true;
         }
