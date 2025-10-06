@@ -21,7 +21,7 @@ pub struct ControlUI;
 pub struct ExecuteButton;
 
 #[derive(Resource)]
-pub struct RoverColors(Vec<Color>);
+pub struct RoverColors(pub Vec<Color>);
 
 #[derive(Component)]
 pub struct CommandButton(pub ActionType);
