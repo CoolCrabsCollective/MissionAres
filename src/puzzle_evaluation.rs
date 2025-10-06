@@ -124,7 +124,10 @@ fn on_puzzle_evaluation_request(
                                 rover.battery_level = min(rover.battery_level, 3);
                             }
 
-                            if tile_second.VMBRA && rover.battery_level > 0 {
+                            if tile_second.VMBRA
+                                && rover.battery_level > 0
+                                && other_rover.battery_level < 3
+                            {
                                 println!("GIVING POWER");
                                 rover.battery_level -= 1;
                             }
