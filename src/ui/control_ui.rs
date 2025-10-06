@@ -239,11 +239,9 @@ fn rebuild_control_ui(
                                                     if number_of_rovers > 1 {
                                                         parent.spawn((
                                                             Node {
-                                                                width: Px_dynamic(8.0),
-                                                                height: Px_dynamic(8.0),
-                                                                border: UiRect::all(Px_dynamic(
-                                                                    1.0,
-                                                                )),
+                                                                width: Val::Px(8.0),
+                                                                height: Val::Px(8.0),
+                                                                border: UiRect::all(Val::Px(1.0)),
                                                                 ..default()
                                                             },
                                                             BackgroundColor(if is_selected {
@@ -254,7 +252,7 @@ fn rebuild_control_ui(
                                                             BorderColor(Color::srgb(
                                                                 0.83, 0.83, 0.83,
                                                             )),
-                                                            BorderRadius::all(Px_dynamic(4.0)),
+                                                            BorderRadius::all(Val::Px(4.0)),
                                                         ));
                                                     }
                                                 });
