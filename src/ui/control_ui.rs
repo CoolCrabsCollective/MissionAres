@@ -695,6 +695,10 @@ fn execute_handler(
     mut next_state: ResMut<NextState<GameState>>,
     action_list: Res<ActionList>,
 ) {
+    if action_list.actions.iter().all(|v| v.is_empty()) {
+        return;
+    }
+
     for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
             next_state.set(GameState::Execution);

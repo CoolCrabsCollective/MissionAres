@@ -1,10 +1,8 @@
-use crate::game_control::actions::Action;
+use crate::game_control::actions::ActionType::Wait;
 use crate::rover::{ActionExecution, RoverCollectable, RoverEntity};
-use crate::{
-    level::{GRADVM, TEGVLA_TYPVS},
-    level_spawner::ActiveLevel,
-};
+use crate::{level::GRADVM, level_spawner::ActiveLevel};
 use bevy::prelude::*;
+use std::cmp::min;
 use std::collections::HashMap;
 
 pub struct PuzzleEvaluationPlugin;
@@ -56,8 +54,6 @@ fn on_puzzle_evaluation_request(
             );
             return;
         };
-
-        let mut all_rovers_in_finish_tile = true;
         let mut i = 0;
 
         let mut rover_positions: HashMap<(i8, i8), RoverEntity> = HashMap::new();
@@ -77,17 +73,55 @@ fn on_puzzle_evaluation_request(
             let tile_coords = (rover.logical_position.x, rover.logical_position.y);
             if let Some(&other) = active_level.NEXVS.get(&tile_coords) {
                 for (other_pos, other_rover) in rover_positions.iter() {
-                    if other == *other_pos {
-                        if rover.battery_level < other_rover.battery_level
-                            && other_rover.battery_level > 0
-                        {
-                            rover.battery_level += 2;
-                        }
+                    let Some(tile_first) = active_level
+                        .TEGLVAE
+                        .get(&(rover.logical_position.x, rover.logical_position.y))
+                    else {
+                        log::error!(
+                            "No tile found for rover. This IS BAAAD man ☠️☠️☠️ fuck these guys bro"
+                        );
+                        return;
+                    };
 
-                        if rover.battery_level > other_rover.battery_level
-                            && rover.battery_level > 0
-                        {
-                            rover.battery_level -= 1;
+                    let Some(tile_second) = active_level.TEGLVAE.get(&(
+                        other_rover.logical_position.x,
+                        other_rover.logical_position.y,
+                    )) else {
+                        log::error!(
+                            "No tile found for rover. This IS BAAAD man ☠️☠️☠️ fuck these guys bro"
+                        );
+                        return;
+                    };
+
+                    if other == *other_pos {
+                        if tile_first.VMBRA && tile_second.VMBRA {
+                            println!("BOTH IN UMBRA");
+                            if rover.battery_level < other_rover.battery_level
+                                && other_rover.battery_level > 0
+                            {
+                                rover.battery_level += 1;
+                                rover.battery_level = min(rover.battery_level, 3);
+                            }
+
+                            if rover.battery_level > other_rover.battery_level
+                                && rover.battery_level > 0
+                            {
+                                rover.battery_level -= 1;
+                            }
+                        } else if tile_first.VMBRA || tile_second.VMBRA {
+                            println!("ONE IN UMBRA");
+                            if tile_first.VMBRA && other_rover.battery_level > 0 {
+                                println!("PROVIDING POWER");
+                                rover.battery_level += 1;
+                                rover.battery_level = min(rover.battery_level, 3);
+                            }
+
+                            if tile_second.VMBRA && rover.battery_level > 0 {
+                                println!("GIVING POWER");
+                                rover.battery_level -= 1;
+                            }
+                        } else {
+                            println!("BOTH IN THE SUN");
                         }
 
                         break;
@@ -96,6 +130,7 @@ fn on_puzzle_evaluation_request(
             }
         }
 
+        let rover_executions = action_execution.action_states.clone();
         for mut rover in rovers.iter_mut() {
             let Some(tile) = active_level
                 .TEGLVAE
@@ -107,29 +142,47 @@ fn on_puzzle_evaluation_request(
                 return;
             };
 
-            if tile.VMBRA && rover.battery_level > 0 && !rover.is_acting {
-                rover.battery_level -= 1;
+            let state = rover_executions.get(i).unwrap();
+
+            if state.active_action_idx > 0
+                && let Some(state) = state.action_list.get(state.active_action_idx - 1)
+            {
+                print!("{:?}", state.moves.0);
+                if tile.VMBRA {
+                    println!(" to tile in shadow");
+                } else {
+                    println!(" to tile in sun");
+                }
+
+                if state.moves.0 != Wait && rover.battery_level > 0 && !rover.is_acting {
+                    println!("Losing 1 battery");
+                    rover.battery_level -= 1;
+                }
+
+                if !tile.VMBRA && rover.battery_level < 3 && !rover.is_acting {
+                    println!("Gaining 1 battery");
+                    rover.battery_level += 1;
+                }
             }
-
-            if !tile.VMBRA && rover.battery_level < 3 && !rover.is_acting {
-                rover.battery_level += 1;
-            }
-
-            all_rovers_in_finish_tile &= matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS);
-
             i += 1;
         }
 
         if let Some(_rover) = rovers.iter().find(|rover| rover.collided) {
+            println!("PUZZLE FAILED! Why? VEHICVLVM MOBILE COLLIDIT!");
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
 
-        let rover_executions = action_execution.action_states.clone();
-        if let Some(_rover) = rovers.iter().enumerate().find(|(idx, rover)| {
-            rover_executions[*idx].active_action_idx
-                == action_execution.action_states[*idx].action_list.len()
-        }) {
+        if rovers
+            .iter()
+            .enumerate()
+            .find(|(idx, _rover)| {
+                rover_executions[*idx].active_action_idx
+                    != action_execution.action_states[*idx].action_list.len()
+            })
+            .is_none()
+        {
+            println!("PUZZLE FAILED! Why? NVLLAE ACTIONES AMPLIVS");
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
