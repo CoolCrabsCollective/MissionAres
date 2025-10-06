@@ -124,6 +124,8 @@ fn setup_action_movements(
 
     let action_attempted = action.moves.0.clone();
 
+    println!("Robot ID: {}", robot_num);
+    dbg!(action.moves);
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
@@ -184,13 +186,7 @@ fn setup_action_movements(
 
         rover.logical_position = current_log_pos;
     } else {
-        rover.rover_state = RoverStates::Moving; /*(match action_attempted {
-        ActionType::MoveUp => CardinalDirection::UP,
-        ActionType::MoveDown => CardinalDirection::DOWN,
-        ActionType::MoveLeft => CardinalDirection::LEFT,
-        ActionType::MoveRight => CardinalDirection::RIGHT,
-        ActionType::Wait => panic!("we're moving lol"), // TODO UP WAIT UP RIGHT on level 1 causes this panic
-        });*/
+        rover.rover_state = RoverStates::Moving;
         if rover.heading != new_heading {
             action_execution.action_states[robot_num].is_turning = true;
             rover.heading = new_heading;
@@ -218,7 +214,7 @@ fn start_execution(
             if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
                 for hentai in &animation.animation_list {
                     player.play(hentai.clone()).repeat();
-                    println!("Start rover anime");
+                    //println!("Start rover anime");
                 }
             }
         }
@@ -237,6 +233,8 @@ fn start_execution(
             })
         }
 
+        println!("Start execution");
+        dbg!(&action_execution.action_states);
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
@@ -375,7 +373,7 @@ fn action_execution(
                 if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
                     for hentai in &animation.animation_list {
                         player.stop_all();
-                        println!("Stop rover anime");
+                        //println!("Stop rover anime");
                     }
                 }
             }
@@ -406,6 +404,9 @@ fn continue_execution(
             }
             PuzzleResponseEvent::InProgress => {
                 action_execution.is_active = true;
+
+                println!("In Progress!");
+                dbg!(&action_execution.action_states);
 
                 // Iterate through each robot and move them progressively towards the next tile based on action
                 for mut rover in rover_query.iter_mut() {
