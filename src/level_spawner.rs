@@ -1,4 +1,4 @@
-use crate::game_control::actions::{ActionList, ActionType};
+use crate::game_control::actions::ActionList;
 use crate::hentai_anime::*;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
@@ -37,16 +37,11 @@ use bevy::{
         system::{Commands, Query},
     },
     log,
-    prelude::{
-        AlphaMode, Assets, ButtonInput, Color, Component, Cylinder, EntityCommands, KeyCode, Mesh,
-        Mesh3d, MeshMaterial3d, Plane3d, Res, ResMut, StandardMaterial, Transform, Vec2, Vec3,
-    },
-    time,
 };
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
 use rand::random;
-use std::cmp::{max, min};
+use std::cmp::max;
 use std::f32::consts::PI;
 
 pub const CUBEMAPS: &[(&str, CompressedImageFormats)] =

@@ -121,15 +121,22 @@ fn on_puzzle_evaluation_request(
         }
 
         if let Some(_rover) = rovers.iter().find(|rover| rover.collided) {
+            println!("PUZZLE FAILED! Why? VEHICVLVM MOBILE COLLIDIT!");
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
 
         let rover_executions = action_execution.action_states.clone();
-        if let Some(_rover) = rovers.iter().enumerate().find(|(idx, rover)| {
-            rover_executions[*idx].active_action_idx
-                == action_execution.action_states[*idx].action_list.len()
-        }) {
+        if rovers
+            .iter()
+            .enumerate()
+            .find(|(idx, _rover)| {
+                rover_executions[*idx].active_action_idx
+                    != action_execution.action_states[*idx].action_list.len()
+            })
+            .is_none()
+        {
+            println!("PUZZLE FAILED! Why? NVLLAE ACTIONES AMPLIVS");
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
