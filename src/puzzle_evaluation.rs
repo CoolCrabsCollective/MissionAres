@@ -132,6 +132,7 @@ fn on_puzzle_evaluation_request(
         let rover_executions = action_execution.action_states.clone();
         for mut rover in rovers.iter_mut() {
             if rover.is_done {
+                i += 1;
                 continue;
             }
 
@@ -148,9 +149,11 @@ fn on_puzzle_evaluation_request(
             let state = rover_executions.get(i).unwrap();
 
             println!(
-                "Action list len {}, active action index {}",
+                "Action list len {}, active action index {} rover {} position {}",
                 state.action_list.len(),
-                state.active_action_idx
+                state.active_action_idx,
+                rover.identifier,
+                rover.logical_position
             );
             rover.is_done = state.action_list.len() == state.active_action_idx;
             if state.active_action_idx > 0
