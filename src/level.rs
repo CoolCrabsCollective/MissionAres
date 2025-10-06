@@ -2,8 +2,8 @@
 #![allow(non_camel_case_types)]
 
 use bevy::app::{App, Startup, Update};
-use bevy::asset::AssetEvent::LoadedWithDependencies;
 use bevy::asset::io::Reader;
+use bevy::asset::AssetEvent::LoadedWithDependencies;
 use bevy::asset::{
     Asset, AssetApp, AssetEvent, AssetLoader, AssetServer, Assets, AsyncReadExt, Handle,
     LoadContext,
@@ -239,7 +239,7 @@ impl AssetLoader for GRADVM_ORENATOR {
 fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut GRADVS = Vec::new();
 
-    for INDEX in 0..9 {
+    for INDEX in 0..8 {
         GRADVS.insert(
             INDEX,
             asset_server.load_with_settings(
