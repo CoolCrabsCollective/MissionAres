@@ -1,9 +1,6 @@
-use crate::game_control::actions::Action;
+use crate::game_control::actions::ActionType::Wait;
 use crate::rover::{ActionExecution, RoverCollectable, RoverEntity};
-use crate::{
-    level::{GRADVM, TEGVLA_TYPVS},
-    level_spawner::ActiveLevel,
-};
+use crate::{level::GRADVM, level_spawner::ActiveLevel};
 use bevy::prelude::*;
 use std::cmp::min;
 use std::collections::HashMap;
@@ -57,8 +54,6 @@ fn on_puzzle_evaluation_request(
             );
             return;
         };
-
-        let mut all_rovers_in_finish_tile = true;
         let mut i = 0;
 
         let mut rover_positions: HashMap<(i8, i8), RoverEntity> = HashMap::new();
@@ -104,7 +99,7 @@ fn on_puzzle_evaluation_request(
                             if rover.battery_level < other_rover.battery_level
                                 && other_rover.battery_level > 0
                             {
-                                rover.battery_level += 2;
+                                rover.battery_level += 1;
                                 rover.battery_level = min(rover.battery_level, 3);
                             }
 
@@ -117,8 +112,8 @@ fn on_puzzle_evaluation_request(
                             println!("ONE IN UMBRA");
                             if tile_first.VMBRA && other_rover.battery_level > 0 {
                                 println!("PROVIDING POWER");
-                                rover.battery_level += 2;
-                                rover.battery_level = min(rover.battery_level, 4);
+                                rover.battery_level += 1;
+                                rover.battery_level = min(rover.battery_level, 3);
                             }
 
                             if tile_second.VMBRA && rover.battery_level > 0 {
@@ -135,6 +130,7 @@ fn on_puzzle_evaluation_request(
             }
         }
 
+        let rover_executions = action_execution.action_states.clone();
         for mut rover in rovers.iter_mut() {
             let Some(tile) = active_level
                 .TEGLVAE
@@ -146,16 +142,28 @@ fn on_puzzle_evaluation_request(
                 return;
             };
 
-            if tile.VMBRA && rover.battery_level > 0 && !rover.is_acting {
-                rover.battery_level -= 1;
+            let state = rover_executions.get(i).unwrap();
+
+            if state.active_action_idx > 0
+                && let Some(state) = state.action_list.get(state.active_action_idx - 1)
+            {
+                print!("{:?}", state.moves.0);
+                if tile.VMBRA {
+                    println!(" to tile in shadow");
+                } else {
+                    println!(" to tile in sun");
+                }
+
+                if state.moves.0 != Wait && rover.battery_level > 0 && !rover.is_acting {
+                    println!("Losing 1 battery");
+                    rover.battery_level -= 1;
+                }
+
+                if !tile.VMBRA && rover.battery_level < 3 && !rover.is_acting {
+                    println!("Gaining 1 battery");
+                    rover.battery_level += 1;
+                }
             }
-
-            if !tile.VMBRA && rover.battery_level < 3 && !rover.is_acting {
-                rover.battery_level += 1;
-            }
-
-            all_rovers_in_finish_tile &= matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS);
-
             i += 1;
         }
 
@@ -165,7 +173,6 @@ fn on_puzzle_evaluation_request(
             break;
         }
 
-        let rover_executions = action_execution.action_states.clone();
         if rovers
             .iter()
             .enumerate()
