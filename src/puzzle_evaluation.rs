@@ -1,5 +1,5 @@
 use crate::game_control::actions::Action;
-use crate::rover::{ActionExecution, RoverEntity};
+use crate::rover::{ActionExecution, RoverCollectable, RoverEntity};
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
     level_spawner::ActiveLevel,
@@ -32,11 +32,17 @@ fn on_puzzle_evaluation_request(
     mut evaluation_requests: EventReader<PuzzleEvaluationRequestEvent>,
     mut puzzle_response_event_writer: EventWriter<PuzzleResponseEvent>,
     mut rovers: Query<&mut RoverEntity>,
+    minerals: Query<&RoverCollectable>,
     action_execution: Res<ActionExecution>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
 ) {
     for _ in evaluation_requests.read() {
+        if minerals.is_empty() {
+            puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
+            break;
+        }
+
         let Some(active_level_handle) = &active_level.0 else {
             log::error!(
                 "No active level. How the FUCK could you request that I evaluate the puzzle?"
@@ -114,21 +120,23 @@ fn on_puzzle_evaluation_request(
             i += 1;
         }
 
-        if all_rovers_in_finish_tile {
-            puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
-            break;
-        }
-
         if let Some(_rover) = rovers.iter().find(|rover| rover.collided) {
+            println!("PUZZLE FAILED! Why? VEHICVLVM MOBILE COLLIDIT!");
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
 
         let rover_executions = action_execution.action_states.clone();
-        if let Some(_rover) = rovers.iter().enumerate().find(|(idx, rover)| {
-            rover_executions[*idx].active_action_idx
-                == action_execution.action_states[*idx].action_list.len()
-        }) {
+        if rovers
+            .iter()
+            .enumerate()
+            .find(|(idx, _rover)| {
+                rover_executions[*idx].active_action_idx
+                    != action_execution.action_states[*idx].action_list.len()
+            })
+            .is_none()
+        {
+            println!("PUZZLE FAILED! Why? NVLLAE ACTIONES AMPLIVS");
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
