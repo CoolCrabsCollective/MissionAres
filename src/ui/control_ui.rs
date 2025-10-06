@@ -43,9 +43,9 @@ impl Plugin for ControlUIPlugin {
         app.add_systems(Update, execute_button_handler);
         app.add_systems(Update, update_scroll_position);
         app.insert_resource(RoverColors(vec![
-            Color::srgba(1.0, 0.0, 0.0, 1.0),
-            Color::srgba(0.0, 0.0, 1.0, 1.0),
-            Color::srgba(0.0, 1.0, 0.0, 1.0),
+            Color::srgba(0.25, 1.0, 0.25, 1.0),
+            Color::srgba(0.25, 0.25, 1.0, 1.0),
+            Color::srgba(1.0, 1.0, 0.25, 1.0),
         ]));
     }
 }
@@ -57,7 +57,7 @@ pub const CONTROL_UI_BACKGROUND_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
 // Therefore, the result is approximately (0.2941, 0.3490, 0.2431). RGB - Hexadecimal Color ConversionTo calculate hexadecimal colors: Each color will have numerical values for the amounts of Red, Green and Blue that make it up. The...Lycos SearchImage Classification with Convolutional Neural Networks: Introduction to Image DataMay 29, 2024 — By normalizing the RGB values, you ensure compatibility and seamless integration with these tools. The normalisatio...The Carpentries IncubatorELI5: Why do RGB values go from 0 to 255? : r/explainlikeimfiveOct 13, 2021 — RGB color scheme is 8-bit color per channel (R G B) this is known as 16 million colors. Each channel has 8 bit valu...RedditRGB - Hexadecimal Color ConversionTo calculate hexadecimal colors: Each color will have numerical values for the amounts of Red, Green and Blue that make it up. The...Lycos SearchImage Classification with Convolutional Neural Networks: Introduction to Image DataMay 29, 2024 — By normalizing the RGB values, you ensure compatibility and seamless integration with these tools. The normalisatio...The Carpentries IncubatorELI5: Why do RGB values go from 0 to 255? : r/explainlikeimfiveOct 13, 2021 — RGB color scheme is 8-bit color per channel (R G B) this is known as 16 million colors. Each channel has 8 bit valu...RedditShow all   Dive deeper in AI ModeAI responses may include mistakes. Learn morePositive feedbackNegative feedbackThank you
 //      Your feedback helps Google improve. See our Privacy Policy.
 // Share more feedbackReport a problemClose
-pub const CONTROL_UI_SECONDARY_BACKGROUND_COLOR: Color = Color::srgb(0.2941, 0.3490, 0.2431);
+pub const CONTROL_UI_SECONDARY_BACKGROUND_COLOR: Color = Color::srgb(0.2, 0.2, 0.2);
 pub const CONTROL_UI_BORDER_COLOR: Color = Color::srgb(0.26, 0.26, 0.26);
 pub const ACTION_SECTIONS_BORDER_COLOR: Color = Color::srgb(0.36, 0.36, 0.36);
 
@@ -144,7 +144,7 @@ fn update_action_list_ui(
                                         display: Display::Flex,
                                         flex_direction: FlexDirection::Row,
                                         justify_content: JustifyContent::Center,
-                                        padding: UiRect::all(Val::Px(10.0)),
+                                        padding: UiRect::all(Val::Px(0.0)),
                                         // max_height: Val::Percent(100.0),
                                         ..default()
                                     },))
@@ -156,10 +156,12 @@ fn update_action_list_ui(
                                         //     max_corner_scale: 1.0,
                                         // };
                                         let robot_node_for_img = Node {
-                                            width: Val::Px(56.0),
-                                            height: Val::Px(56.0),
+                                            width: Val::Px(40.0),
+                                            height: Val::Px(40.0),
+                                            margin: UiRect::all(Val::Px(5.0)),
                                             justify_content: JustifyContent::Center,
                                             align_items: AlignItems::Center,
+                                            border: UiRect::all(Val::Px(5.0)),
                                             ..default()
                                         };
 
@@ -172,22 +174,27 @@ fn update_action_list_ui(
                                                 ..default()
                                             };
 
-                                            let robot_bg_color = Color::srgba(
-                                                0.75,
-                                                0.75,
-                                                0.75,
+                                            let robot_bg_color =
                                                 if (robot_idx == selected_robot_index) {
-                                                    1.0
+                                                    Color::srgb(0.8, 0.8, 0.8)
                                                 } else {
-                                                    0.0
-                                                },
-                                            );
+                                                    Color::srgba(0.0, 0.0, 0.0, 0.0)
+                                                };
+
                                             parent.spawn((
                                                 Button,
                                                 RobotButton(robot_idx as i32),
                                                 robot_node_for_img.clone(),
                                                 img_robot_node.clone(),
                                                 BackgroundColor(robot_bg_color),
+                                                BorderRadius::all(Val::Px(5.0)),
+                                                InteractiveButton::simple_image(
+                                                    robot_bg_color,
+                                                    *color,
+                                                    color.darker(0.1),
+                                                    color.lighter(0.1),
+                                                    true,
+                                                ),
                                             ));
                                         }
                                     });
