@@ -21,6 +21,7 @@ use crate::level::GRADVS_ONERATOR_PLUGIN;
 use crate::level_spawner::LevelSpawnerPlugin;
 use crate::mesh_loader::MeshLoaderPlugin;
 use crate::particle::dust::DustPlugin;
+use crate::particle::fail_particle::FailParticlePlugin;
 use crate::particle::particle::ParticlePlugin;
 use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
@@ -97,6 +98,7 @@ fn main() {
     app.add_plugins(WinScreenPlugin);
     app.add_plugins(DustPlugin);
     app.add_plugins(ParticlePlugin);
+    app.add_plugins(FailParticlePlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 

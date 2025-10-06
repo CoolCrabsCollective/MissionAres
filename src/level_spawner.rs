@@ -416,6 +416,7 @@ fn load_level(
                             )
                             .insert(RoverEntity {
                                 is_acting: false,
+                                is_turn_done: false,
                                 base_color: Color::srgb(0.5, 0.2, 0.8),
                                 gltf_handle: Default::default(),
                                 logical_position: I8Vec2::new(
@@ -943,7 +944,7 @@ fn update_reset_timer(
     for (entity, mut timer) in query.iter_mut() {
         timer.timer.tick(time.delta());
 
-        if timer.timer.finished() {
+        if timer.timer.just_finished() {
             commands.entity(entity).despawn();
             level_spawn_request_writer.write(LevelSpawnRequestEvent {
                 level: active_level.0.clone().unwrap(),
