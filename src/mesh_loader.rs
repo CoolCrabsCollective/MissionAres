@@ -121,13 +121,16 @@ fn process_loaded_gltfs(
 
         // let material_replacer = loaded_gltf.config.material_replacer.take();
 
+        let (graph, hentai_list) = AnimationGraph::from_clips(gltf.animations.clone());
+        let graph_handle = graphs.add(graph);
+
         if loaded_gltf.config.spawn {
             let mut entity_commands = commands.spawn((
                 SceneRoot(first_scene_handle.clone()),
                 Animation {
-                    animation_list: vec![],
-                    graph: graphs.reserve_handle(),
-                    group_is_playing: false,
+                    animation_list: hentai_list,
+                    graph: graph_handle,
+                    player_entity: None,
                 },
             ));
 

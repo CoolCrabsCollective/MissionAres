@@ -1,7 +1,5 @@
 use crate::game_control::actions::{ActionList, ActionType};
-use crate::hentai_anime;
-use crate::hentai_anime::HentaiAnimePlugin;
-use crate::hentai_anime::{setup_anime, Animation};
+use crate::hentai_anime::*;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
 use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
@@ -10,7 +8,6 @@ use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::rover::{RoverEntity, RoverPlugin, RoverStates};
 use crate::title_screen::GameState;
 use crate::ui::control_ui::RoverColors;
-use bevy::animation::AnimationPlayer;
 use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
@@ -18,7 +15,6 @@ use bevy::color::palettes::css::BLUE;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
 use bevy::core_pipeline::Skybox;
-use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
 use bevy::math::{I8Vec2, Quat};
@@ -49,7 +45,6 @@ use bevy::{
 };
 use bevy_rapier3d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier3d::prelude::{DebugRenderContext, RapierDebugRenderPlugin};
-use log::debug;
 use rand::random;
 use std::cmp::{max, min};
 use std::f32::consts::PI;
@@ -112,8 +107,6 @@ impl Plugin for LevelSpawnerPlugin {
         ));
 
         app.add_plugins(RoverPlugin);
-
-        app.add_plugins(HentaiAnimePlugin);
 
         #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(TemporalAntiAliasPlugin);
@@ -433,7 +426,8 @@ fn load_level(
                             .insert(LevelElement)
                             .insert(DustSpawner {
                                 timer: Timer::from_seconds(0.4, TimerMode::Repeating),
-                            });
+                            })
+                            .observe(setup_anime_when_ready);
                     })),
                     scene_color_override: Some(
                         rover_colors_cloned
@@ -505,7 +499,6 @@ fn load_level(
         }
 
         if matches!(tile.TYPVS, TEGVLA_TYPVS::SATVRNALIA) {
-            let anime = setup_anime(1, String::from("dish.glb"), &asset_server, &mut graphs);
             load_gltf(
                 String::from("dish.glb"),
                 GLTFLoadConfig {
@@ -517,8 +510,7 @@ fn load_level(
                                     .with_scale(Vec3::splat(0.5 * TILE_SIZE)),
                             )
                             .insert(LevelElement)
-                            .insert(AnimationPlayer::default())
-                            .insert(anime.clone());
+                            .observe(play_all_animations_when_ready);
                     })),
                     ..Default::default()
                 },
@@ -536,9 +528,11 @@ fn load_level(
                             .insert(
                                 // should spawn at the tile position
                                 Transform::from_xyz(effective_x, 1.0 * TILE_SIZE, effective_z)
-                                    .with_scale(Vec3::splat(0.2 * TILE_SIZE)),
+                                    .with_scale(Vec3::splat(0.2 * TILE_SIZE))
+                                    .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                             )
-                            .insert(LevelElement);
+                            .insert(LevelElement)
+                            .observe(play_all_animations_when_ready);
                     })),
                     ..Default::default()
                 },
