@@ -180,8 +180,8 @@ fn setup_action_movements(
         rover.rover_state = RoverStates::Standby;
 
         if !is_action_valid {
-            //action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
-            //action_execution.action_states[robot_num].is_waiting = true;
+            action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
+            action_execution.action_states[robot_num].is_waiting = true;
             rover.logical_position = prev_pos;
             rover.collided = true;
 
