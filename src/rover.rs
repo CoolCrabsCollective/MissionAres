@@ -6,7 +6,6 @@ use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
 use bevy::math::ops::abs;
-use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
@@ -17,6 +16,9 @@ const WAIT_ACTION_TIME: f32 = 1.0;
 const TURN_SPEED: f32 = 2.5;
 
 const WAIT_BETWEEN_ACTS: f32 = 0.5;
+
+#[derive(Component)]
+struct RoverAudio;
 
 #[derive(Clone)]
 pub enum RoverStates {
@@ -85,6 +87,10 @@ impl Plugin for RoverPlugin {
         app.add_systems(
             Update,
             update_rover_collectables.run_if(not(in_state(GameState::TitleScreen))),
+        );
+        app.add_systems(
+            Update,
+            update_rover_sounds.run_if(not(in_state(GameState::TitleScreen))),
         );
         app.insert_resource(ActionExecution {
             is_active: false,
@@ -367,8 +373,6 @@ fn action_execution(
             }
 
             if action_execution.action_states[robot_num].is_turning {
-                let current_rot = &trans.rotation.to_euler(XYZ);
-
                 let diff = trans
                     .rotation
                     .angle_between(Quat::from_rotation_y(rover.heading));
@@ -518,6 +522,40 @@ fn update_rover_collectables(
             {
                 commands.entity(collectable_entity).despawn();
             }
+        }
+    }
+}
+
+fn update_rover_sounds(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut query: Query<(Entity, &RoverEntity)>,
+    children: Query<&Children>,
+    audio_players: Query<Entity, With<AudioPlayer>>,
+) {
+    for (entity, rover) in query.iter_mut() {
+        // Check if this rover already has an AudioPlayer child
+        let mut has_audio = false;
+        if let Ok(child_list) = children.get(entity) {
+            for child in child_list.iter() {
+                if audio_players.get(child).is_ok() {
+                    has_audio = true;
+                    // If in Standby, despawn the player
+                    if matches!(rover.rover_state, RoverStates::Standby) {
+                        commands.entity(child).despawn();
+                    }
+                }
+            }
+        }
+
+        // If rover is moving and has no audio, spawn it
+        if matches!(rover.rover_state, RoverStates::Moving) && !has_audio {
+            commands.entity(entity).with_children(|parent| {
+                parent.spawn((
+                    AudioPlayer::new(asset_server.load("sfx/rover.ogg")),
+                    PlaybackSettings::LOOP,
+                ));
+            });
         }
     }
 }
