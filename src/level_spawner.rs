@@ -91,6 +91,10 @@ impl Plugin for LevelSpawnerPlugin {
             load_level.run_if(not(in_state(GameState::TitleScreen))),
         );
         app.add_systems(OnExit(GameState::TitleScreen), spawn_initial_level);
+        app.add_systems(
+            OnEnter(GameState::TitleScreen),
+            cleanup_level_on_title_screen,
+        );
         app.add_systems(Startup, setup_scene);
         app.add_systems(Update, handle_puzzle_solved_event);
         app.add_systems(Update, handle_next_level_request);
@@ -957,5 +961,18 @@ fn update_reset_timer(
                 level: active_level.0.clone().unwrap(),
             });
         }
+    }
+}
+
+fn cleanup_level_on_title_screen(
+    mut commands: Commands,
+    level_elements: Query<Entity, With<LevelElement>>,
+    particles: Query<Entity, (With<Particle>, Without<LevelElement>)>,
+) {
+    for level_element in level_elements.iter() {
+        commands.entity(level_element).despawn();
+    }
+    for particle in particles.iter() {
+        commands.entity(particle).despawn();
     }
 }
