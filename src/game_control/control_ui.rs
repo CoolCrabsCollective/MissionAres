@@ -3,7 +3,7 @@ use crate::level::GRADVM;
 use crate::level_spawner::ActiveLevel;
 use crate::rover::ActionListExecute;
 use crate::title_screen::GameState;
-use bevy::color::palettes::css::{GOLD, ORANGE};
+use bevy::color::palettes::css::ORANGE;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::picking::hover::HoverMap;
@@ -109,7 +109,7 @@ fn update_action_list_ui(
                         },
                     ))
                     .with_children(|parent| {
-                        ui_control_panel(parent, &asset_server);
+                        build_control_panel(parent, &asset_server);
 
                         let rover_colors = &all_rover_colors.0[0..number_of_rovers];
                         // let columns_template = vec![GridTrack::flex(1.0); rover_colors.len()];
@@ -243,6 +243,7 @@ fn update_action_list_ui(
                                     align_self: AlignSelf::FlexEnd,
                                     ..default()
                                 },
+                                Transform::default(),
                                 BackgroundColor::from(Color::srgba(0.6627, 0.0745, 0.0745, 1.0)),
                             ))
                             .with_children(|parent| {
@@ -419,17 +420,17 @@ fn ui_command_list<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> E
 
 fn command_button_feedback(
     mut interaction_query: Query<
-        (&Interaction, &mut ImageNode, &CommandButton),
+        (&Interaction, &mut ImageNode, &mut Transform, &CommandButton),
         (Changed<Interaction>, With<Button>),
     >,
     mut action_list: ResMut<ActionList>,
     mut action_writer: EventWriter<ActionList>,
 ) {
-    for (interaction, mut image, command) in &mut interaction_query {
+    for (interaction, mut image, mut trans, command) in &mut interaction_query {
         let action_list_selection = action_list.current_selection;
         match *interaction {
             Interaction::Pressed => {
-                image.color = GOLD.into();
+                image.color = ORANGE.into();
 
                 if action_list.actions.get(action_list_selection).is_some()
                     && action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize
@@ -439,12 +440,15 @@ fn command_button_feedback(
                     });
                     action_writer.write(action_list.clone());
                 }
+                trans.scale = Vec3::new(0.9, 0.9, 0.9);
             }
             Interaction::Hovered => {
                 image.color = ORANGE.into();
+                trans.scale = Vec3::new(1.1, 1.1, 1.1);
             }
             Interaction::None => {
                 image.color = Color::WHITE;
+                trans.scale = Vec3::new(1.0, 1.0, 1.0);
             }
         }
     }
@@ -464,6 +468,7 @@ fn robot_button_feedback(
             Interaction::Pressed => {
                 action_list.current_selection = robot_button.0 as usize;
                 has_to_update = true;
+                //node.
             }
             Interaction::Hovered => {}
             Interaction::None => {}
@@ -475,7 +480,10 @@ fn robot_button_feedback(
     }
 }
 
-fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: &Res<AssetServer>) {
+fn build_control_panel(
+    parent: &mut RelatedSpawnerCommands<ChildOf>,
+    asset_server: &Res<AssetServer>,
+) {
     let image_move_up = asset_server.load("command_icons/arrow_up_outlined.png");
     let image_move_right = asset_server.load("command_icons/arrow_right_outlined.png");
     let image_wait = asset_server.load("command_icons/clock_outlined.png");
@@ -565,6 +573,7 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                         CommandButton(ActionType::MoveUp),
                         node_for_img.clone(),
                         img_up.clone(),
+                        Transform::default(),
                     ));
                     parent.spawn((Node::default()));
                     parent.spawn((
@@ -572,18 +581,21 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                         CommandButton(ActionType::MoveLeft),
                         node_for_img.clone(),
                         img_left.clone(),
+                        Transform::default(),
                     ));
                     parent.spawn((
                         Button,
                         CommandButton(ActionType::Wait),
                         node_for_img.clone(),
                         img_wait.clone(),
+                        Transform::default(),
                     ));
                     parent.spawn((
                         Button,
                         CommandButton(ActionType::MoveRight),
                         node_for_img.clone(),
                         img_right.clone(),
+                        Transform::default(),
                     ));
                     parent.spawn((Node::default()));
                     parent.spawn((
@@ -591,6 +603,7 @@ fn ui_control_panel(parent: &mut RelatedSpawnerCommands<ChildOf>, asset_server: 
                         Button,
                         node_for_img.clone(),
                         img_down.clone(),
+                        Transform::default(),
                     ));
                     parent.spawn((Node::default()));
                 });
