@@ -148,11 +148,11 @@ fn on_puzzle_evaluation_request(
 
             let state = rover_executions.get(i).unwrap();
 
-            //println!(
-            //    "Action list len {}, active action index {}",
-            //    state.action_list.len(),
-            //    state.active_action_idx
-            //);
+            println!(
+                "Action list len {}, active action index {}",
+                state.action_list.len(),
+                state.active_action_idx
+            );
             rover.is_done = state.action_list.len() == state.active_action_idx;
             if state.active_action_idx > 0
                 && let Some(state) = state.action_list.get(state.active_action_idx - 1)

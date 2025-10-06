@@ -127,7 +127,7 @@ fn setup_action_movements(
 
         let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx)
         else {
-            return;
+            continue;
         };
 
         let mut new_heading = rover.heading;
@@ -406,6 +406,10 @@ fn action_execution(
             rover.is_acting = false;
             rover.is_turn_done = true;
             println!("End of moving for rover {}", rover.identifier);
+            println!(
+                "New Action Idx {}",
+                action_execution.action_states[robot_num].active_action_idx
+            );
         }
     }
 }
