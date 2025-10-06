@@ -1,7 +1,7 @@
 use crate::game_control::actions::ActionList;
 use crate::hentai_anime::*;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
+use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -12,9 +12,9 @@ use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackMode, PlaybackSettings, Volume};
 use bevy::color::palettes::css::BLUE;
+use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
-use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
 use bevy::math::{I8Vec2, Quat};
@@ -408,7 +408,7 @@ fn load_level(
                         commands
                             .insert(
                                 // should spawn at the tile position
-                                Transform::from_xyz(effective_x, 0.0, effective_z)
+                                Transform::from_xyz(effective_x, 0.09, effective_z)
                                     .with_scale(Vec3::splat(0.15 * TILE_SIZE))
                                     .with_rotation(Quat::from_rotation_y(-PI / 2.0)),
                             )
@@ -431,7 +431,7 @@ fn load_level(
                             .insert(DustSpawner {
                                 timer: Timer::from_seconds(0.4, TimerMode::Repeating),
                             })
-                            .observe(setup_anime_when_ready);
+                            .observe(play_all_animations_when_ready);
                     })),
                     scene_color_override: Some(
                         rover_colors_cloned
