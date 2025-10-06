@@ -28,6 +28,7 @@ pub enum RoverStates {
 #[derive(Component, Clone)]
 pub struct RoverEntity {
     pub is_acting: bool,
+    pub is_turn_done: bool,
     pub base_color: Color,
     pub gltf_handle: Handle<Gltf>,
     pub logical_position: I8Vec2,
@@ -60,6 +61,7 @@ pub struct RoverActionState {
 #[derive(Resource, Clone, Debug)]
 pub struct ActionExecution {
     pub is_built: bool,
+    pub is_evaluating: bool,
     pub action_states: Vec<RoverActionState>,
 }
 
@@ -86,6 +88,7 @@ impl Plugin for RoverPlugin {
         );
         app.insert_resource(ActionExecution {
             is_built: false,
+            is_evaluating: false,
             action_states: vec![],
         });
         app.add_event::<ActionListExecute>();
@@ -216,6 +219,7 @@ fn setup_action_movements(
             rover.logical_position = new_pos;
             rover.rover_state = RoverStates::Moving;
             rover.is_acting = true;
+            rover.is_turn_done = false;
 
             if rover.heading != new_heading {
                 action_execution.action_states[robot_num].is_turning = true;
@@ -276,12 +280,27 @@ fn start_execution(
     }
 }
 
-fn detect_move_done(mut commands: Commands, query: Query<&RoverEntity, Changed<RoverEntity>>) {
+fn detect_move_done(
+    mut commands: Commands,
+    query: Query<&RoverEntity, Changed<RoverEntity>>,
+    mut action_execution: ResMut<ActionExecution>,
+) {
+    if action_execution.is_evaluating {
+        return;
+    }
+
+    if query.is_empty() {
+        return;
+    }
+
     for rover in query.iter() {
-        if rover.is_acting {
+        if !rover.is_turn_done {
             return;
         }
     }
+
+    println!("PUZZLE EVALUATION QUEUED");
+    action_execution.is_evaluating = true;
 
     commands.spawn(BetweenTurnsTimer {
         timer: Timer::new(Duration::from_secs_f32(0.5), TimerMode::Once),
@@ -297,6 +316,7 @@ fn update_betweenturns_timer(
         timer.timer.tick(time.delta());
         if timer.timer.just_finished() {
             commands.entity(entity).despawn();
+            println!("PUZZLE EVALUATION SENT");
             commands.send_event(PuzzleEvaluationRequestEvent);
         }
     }
@@ -322,6 +342,9 @@ fn action_execution(
 
     // Iterate through each robot and move them progressively towards the next tile based on action
     for (_, mut rover, mut trans) in rover_query.iter_mut() {
+        if rover.is_turn_done {
+            continue;
+        }
         let robot_num = rover.identifier as usize;
 
         dbg!(&action_execution.action_states[robot_num]);
@@ -342,6 +365,8 @@ fn action_execution(
                         action_execution.action_states[robot_num].active_action_idx += 1;
                     }
                     rover.is_acting = false;
+                    rover.is_turn_done = true;
+                    println!("Bruh1");
                 }
 
                 action_execution.action_states[robot_num].is_waiting = false;
@@ -398,6 +423,8 @@ fn action_execution(
                 action_execution.action_states[robot_num].active_action_idx += 1;
             }
             rover.is_acting = false;
+            rover.is_turn_done = true;
+            println!("Bruh2");
         }
     }
 }
@@ -414,13 +441,21 @@ fn continue_execution(
         match event {
             PuzzleResponseEvent::Solved => {
                 events.clear();
+                action_execution.is_built = false;
+                action_execution.is_evaluating = false;
                 break;
             }
             PuzzleResponseEvent::Failed => {
                 events.clear();
+                action_execution.is_built = false;
+                action_execution.is_evaluating = false;
                 break;
             }
             PuzzleResponseEvent::InProgress => {
+                for mut rover in rover_query.iter_mut() {
+                    rover.is_turn_done = false;
+                }
+
                 //println!("In Progress!");
                 //dbg!(&action_execution.action_states);
 
@@ -432,6 +467,8 @@ fn continue_execution(
                     &time,
                     &mut rover_query,
                 );
+
+                action_execution.is_evaluating = false;
 
                 // // Iterate through each robot and move them progressively towards the next tile based on action
                 // for mut rover in rover_query.iter_mut() {

@@ -414,6 +414,7 @@ fn load_level(
                             )
                             .insert(RoverEntity {
                                 is_acting: false,
+                                is_turn_done: false,
                                 base_color: Color::srgb(0.5, 0.2, 0.8),
                                 gltf_handle: Default::default(),
                                 logical_position: I8Vec2::new(
