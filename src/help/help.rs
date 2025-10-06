@@ -1,8 +1,8 @@
 use crate::level::GRADVM;
 use crate::level_spawner::ActiveLevel;
 use crate::title_screen::GameState;
-use crate::ui::Px_dynamic;
 use crate::ui::interactive_button::InteractiveButton;
+use crate::ui::Px_dynamic;
 use bevy::color::Srgba;
 use bevy::prelude::*;
 
@@ -155,7 +155,7 @@ fn spawn_help_dialog(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                             parent.spawn((
                                 Text::new("Plan a path for your rover and collect all the minerals to progress!"),
                                 TextFont {
-                                    font: asset_server.load("fonts/SpaceGrotesk-Medium.ttf"),
+                                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
                                     font_size: 32.0,
                                     ..default()
                                 },
@@ -189,7 +189,7 @@ fn spawn_help_dialog(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                             parent.spawn((
                                 Text::new("Movement drains battery"),
                                 TextFont {
-                                    font: asset_server.load("fonts/SpaceGrotesk-Medium.ttf"),
+                                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
                                     font_size: 32.0,
                                     ..default()
                                 },
@@ -244,7 +244,7 @@ fn spawn_help_dialog(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                             parent.spawn((
                                 Text::new("The sun replenishes battery"),
                                 TextFont {
-                                    font: asset_server.load("fonts/SpaceGrotesk-Medium.ttf"),
+                                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
                                     font_size: 32.0,
                                     ..default()
                                 },
