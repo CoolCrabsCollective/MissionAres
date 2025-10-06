@@ -12,8 +12,10 @@ use bevy::prelude::*;
 use std::f32::consts::PI;
 
 const SPEED: f32 = 5.0;
-const WAIT_TIME: f32 = 1.0;
+const WAIT_ACTION_TIME: f32 = 1.0;
 const TURN_SPEED: f32 = 2.5;
+
+const WAIT_BETWEEN_ACTS: f32 = 0.5;
 
 #[derive(Clone)]
 pub enum CardinalDirection {
@@ -46,14 +48,20 @@ pub struct ActionListExecute {
     pub action_list: Vec<Vec<Action>>,
 }
 
+#[derive(Clone, Debug)]
+pub struct RoverActionState {
+    pub action_list: Vec<Action>,
+    pub active_action_idx: usize,
+    pub wait_time_start: f32,
+    pub is_waiting: bool,
+    pub is_turning: bool,
+    pub wait_time: f32,
+}
+
 #[derive(Resource, Clone, Debug)]
 pub struct ActionExecution {
     pub is_active: bool,
-    pub action_list: Vec<Vec<Action>>,
-    pub active_action_idx: Vec<usize>,
-    pub wait_time_start: Vec<f32>,
-    pub is_waiting: Vec<bool>,
-    pub is_turning: Vec<bool>,
+    pub action_states: Vec<RoverActionState>,
 }
 
 pub struct RoverPlugin;
@@ -65,11 +73,7 @@ impl Plugin for RoverPlugin {
         app.add_systems(Update, continue_execution.run_if(in_state(GameState::Game)));
         app.insert_resource(ActionExecution {
             is_active: false,
-            action_list: vec![],
-            active_action_idx: vec![0usize, 0usize],
-            wait_time_start: vec![0.0],
-            is_waiting: vec![false],
-            is_turning: vec![false],
+            action_states: vec![],
         });
         app.add_event::<ActionListExecute>();
     }
@@ -126,15 +130,17 @@ fn setup_action_movements(
     };
     let level = levels.get(level_handle).unwrap();
 
-    let actions = &action_execution.action_list[robot_num];
+    let actions = &action_execution.action_states[robot_num].action_list;
 
     if actions.is_empty() {
         // No actions to execute lol
         let all_done = action_execution
-            .active_action_idx
+            .action_states
             .iter()
             .enumerate()
-            .all(|(i, idx)| *idx >= action_execution.action_list[i].len());
+            .all(|(i, state)| {
+                state.active_action_idx >= action_execution.action_states[i].action_list.len()
+            });
 
         if all_done {
             action_execution.is_active = false;
@@ -145,10 +151,10 @@ fn setup_action_movements(
 
     println!(
         "Active Action Idx {}",
-        action_execution.active_action_idx[robot_num]
+        action_execution.action_states[robot_num].active_action_idx
     );
     let action = actions
-        .get(action_execution.active_action_idx[robot_num])
+        .get(action_execution.action_states[robot_num].active_action_idx)
         .unwrap();
 
     let mut new_heading = rover.heading;
@@ -201,48 +207,17 @@ fn setup_action_movements(
             }
         }
         ActionType::Wait => {
-            action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
-            // TODO crash here!
-            //
-            // thread 'Compute Task Pool (0)' panicked at src/rover.rs:188:45:
-            //     index out of bounds: the len is 1 but the index is 1
-            // stack backtrace:
-            // 0: __rustc::rust_begin_unwind
-            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/std/src/panicking.rs:697:5
-            // 1: core::panicking::panic_fmt
-            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:75:14
-            // 2: core::panicking::panic_bounds_check
-            // at /rustc/1159e78c4747b02ef996e55082b704c09b970588/library/core/src/panicking.rs:280:5
-            // 3: <usize as core::slice::index::SliceIndex<[T]>>::index_mut
-            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/index.rs:280:14
-            // 4: core::slice::index::<impl core::ops::index::IndexMut<I> for [T]>::index_mut
-            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/index.rs:30:15
-            // 5: <alloc::vec::Vec<T,A> as core::ops::index::IndexMut<I>>::index_mut
-            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:3579:9
-            // 6: mission_ares::rover::setup_action_movements
-            // at ./src/rover.rs:188:45
-            // 7: mission_ares::rover::start_execution
-            // at ./src/rover.rs:238:13
-            // 8: core::ops::function::FnMut::call_mut
-            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:168:5
-            // 9: core::ops::function::impls::<impl core::ops::function::FnMut<A> for &mut F>::call_mut
-            // at /home/winter/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:301:21
-            // 10: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5,F6) .> Out>>::run::call_inner
-            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:945:21
-            // 11: <Func as bevy_ecs::system::function_system::SystemParamFunction<fn(F0,F1,F2,F3,F4,F5,F6) .> Out>>::run
-            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:948:17
-            // 12: <bevy_ecs::system::function_system::FunctionSystem<Marker,F> as bevy_ecs::system::system::System>::run_unsafe
-            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/function_system.rs:735:29
-            // 13: <bevy_ecs::system::schedule_system::InfallibleSystemWrapper<S> as bevy_ecs::system::system::System>::run_unsafe
-            // at /home/winter/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.16.1/src/system/schedule_system.rs:68:16
+            action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
 
-            action_execution.is_waiting[robot_num] = true;
+            action_execution.action_states[robot_num].wait_time = WAIT_ACTION_TIME;
+
+            action_execution.action_states[robot_num].is_waiting = true;
         }
     }
     rover.rover_state = RoverStates::Standby;
     if !is_action_valid {
-        action_execution.wait_time_start[robot_num] = time.elapsed_secs_wrapped();
-        action_execution.is_waiting[robot_num] = true;
+        action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
+        action_execution.action_states[robot_num].is_waiting = true;
 
         rover.logical_position = current_log_pos;
     } else {
@@ -254,7 +229,7 @@ fn setup_action_movements(
         ActionType::Wait => panic!("we're moving lol"), // TODO UP WAIT UP RIGHT on level 1 causes this panic
         });*/
         if rover.heading != new_heading {
-            action_execution.is_turning[robot_num] = true; // TODO this crashes too, index issue
+            action_execution.action_states[robot_num].is_turning = true;
             rover.heading = new_heading;
         }
     }
@@ -283,13 +258,19 @@ fn start_execution(
 
         action_execution.is_active = true;
 
-        action_execution.action_list = event.action_list.clone();
+        action_execution.action_states.clear();
+        for action_list in event.action_list.iter() {
+            action_execution.action_states.push(RoverActionState {
+                action_list: action_list.clone(),
+                active_action_idx: 0,
+                wait_time_start: 0.0,
+                is_waiting: false,
+                is_turning: false,
+                wait_time: 0.0,
+            })
+        }
 
-        action_execution.active_action_idx = vec![0usize; action_execution.action_list.len()];
-        action_execution.is_turning = vec![false; action_execution.action_list.len()];
-        action_execution.is_waiting = vec![false; action_execution.action_list.len()];
-
-        println!("Number of rovers: {}", action_execution.action_list.len());
+        println!("Number of rovers: {}", action_execution.action_states.len());
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
@@ -330,27 +311,31 @@ fn action_execution(
             let robot_num = rover.identifier as usize;
 
             // If in wait, skip rest of loop logic
-            if action_execution.is_waiting[robot_num] {
+            if action_execution.action_states[robot_num].is_waiting {
                 let current_time = time.elapsed_secs_wrapped();
 
-                let wait_duration = current_time - action_execution.wait_time_start[robot_num];
+                let wait_duration =
+                    current_time - action_execution.action_states[robot_num].wait_time_start;
 
-                if wait_duration > WAIT_TIME {
-                    if action_execution.active_action_idx[robot_num]
-                        < action_execution.action_list[robot_num].len()
-                    {
-                        action_execution.active_action_idx[robot_num] += 1;
+                if wait_duration > action_execution.action_states[robot_num].wait_time {
+                    if action_execution.action_states[robot_num].wait_time == WAIT_ACTION_TIME {
+                        // Only perform the following if wait action was reason for wait
+                        if action_execution.action_states[robot_num].active_action_idx
+                            < action_execution.action_states[robot_num].action_list.len()
+                        {
+                            action_execution.action_states[robot_num].active_action_idx += 1;
+                        }
+                        action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
+                        commands.send_event(PuzzleEvaluationRequestEvent);
                     }
-                    action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
-                    commands.send_event(PuzzleEvaluationRequestEvent);
 
-                    action_execution.is_waiting[robot_num] = false;
+                    action_execution.action_states[robot_num].is_waiting = false;
                 }
 
                 continue;
             }
 
-            if action_execution.is_turning[robot_num] {
+            if action_execution.action_states[robot_num].is_turning {
                 let current_rot = &trans.rotation.to_euler(XYZ);
 
                 let diff = trans
@@ -365,7 +350,7 @@ fn action_execution(
                         .slerp(Quat::from_rotation_y(rover.heading), step);
                 } else {
                     trans.rotation = Quat::from_rotation_y(rover.heading);
-                    action_execution.is_turning[robot_num] = false;
+                    action_execution.action_states[robot_num].is_turning = false;
                 }
 
                 continue;
@@ -394,10 +379,10 @@ fn action_execution(
                 trans.translation = new_pos;
             } else {
                 trans.translation = target;
-                if action_execution.active_action_idx[robot_num]
-                    < action_execution.action_list[robot_num].len()
+                if action_execution.action_states[robot_num].active_action_idx
+                    < action_execution.action_states[robot_num].action_list.len()
                 {
-                    action_execution.active_action_idx[robot_num] += 1;
+                    action_execution.action_states[robot_num].active_action_idx += 1;
                 }
                 action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
                 commands.send_event(PuzzleEvaluationRequestEvent);
@@ -409,10 +394,12 @@ fn action_execution(
         // If all rovers finished their lists, deactivate execution
         //dbg!(&action_execution);
         let all_done = action_execution
-            .active_action_idx
+            .action_states
             .iter()
             .enumerate()
-            .all(|(i, idx)| *idx >= action_execution.action_list[i].len());
+            .all(|(i, state)| {
+                state.active_action_idx >= action_execution.action_states[i].action_list.len()
+            });
 
         if all_done {
             action_execution.is_active = false;
@@ -461,6 +448,12 @@ fn continue_execution(
                         robot_num,
                         &time,
                     );
+
+                    // Make rover wait before performing next action
+                    action_execution.action_states[robot_num].wait_time_start =
+                        time.elapsed_secs_wrapped();
+                    action_execution.action_states[robot_num].wait_time = WAIT_BETWEEN_ACTS;
+                    action_execution.action_states[robot_num].is_waiting = true;
                 }
             }
         }
