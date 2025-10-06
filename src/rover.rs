@@ -1,13 +1,13 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{is_pos_in_level, GRADVM};
+use crate::level::{GRADVM, is_pos_in_level};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::mesh_loader::MeshLoader;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
-use bevy::math::ops::abs;
 use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
+use bevy::math::ops::abs;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -18,17 +18,9 @@ const TURN_SPEED: f32 = 2.5;
 const WAIT_BETWEEN_ACTS: f32 = 0.5;
 
 #[derive(Clone)]
-pub enum CardinalDirection {
-    UP,
-    RIGHT,
-    LEFT,
-    DOWN,
-}
-
-#[derive(Clone)]
 pub enum RoverStates {
     Standby,
-    Moving, /*(CardinalDirection)*/
+    Moving,
 }
 
 #[derive(Component, Clone)]
@@ -153,9 +145,9 @@ fn setup_action_movements(
         "Active Action Idx {}",
         action_execution.action_states[robot_num].active_action_idx
     );
-    let action = actions
-        .get(action_execution.action_states[robot_num].active_action_idx)
-        .unwrap();
+    let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx) else {
+        return;
+    };
 
     let mut new_heading = rover.heading;
 

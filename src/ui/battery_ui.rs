@@ -45,11 +45,10 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn rebuild(
     mut commands: Commands,
-    rovers: Query<(Entity, &mut RoverEntity), Without<BatteryUIAttachment>>,
+    rovers: Query<Entity, (With<RoverEntity>, Without<BatteryUIAttachment>)>,
     images: Res<BatteryImages>,
-    asset_server: Res<AssetServer>,
 ) {
-    for (entity, rover) in rovers {
+    for rover in rovers {
         commands.spawn((
             Node {
                 position_type: PositionType::Absolute,
@@ -63,9 +62,9 @@ fn rebuild(
                 image: images.images[3].clone(),
                 ..default()
             },
-            BatteryUIElement { rover_id: entity },
+            BatteryUIElement { rover_id: rover },
         ));
-        commands.entity(entity).insert(BatteryUIAttachment);
+        commands.entity(rover).insert(BatteryUIAttachment);
     }
 }
 

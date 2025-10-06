@@ -431,7 +431,9 @@ fn command_button_feedback(
             Interaction::Pressed => {
                 image.color = GOLD.into();
 
-                if action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize {
+                if action_list.actions.get(action_list_selection).is_some()
+                    && action_list.actions[action_list_selection].len() < MAX_COMMANDS as usize
+                {
                     action_list.actions[action_list_selection].push(Action {
                         moves: (command.0.clone(), action_list_selection),
                     });
