@@ -1,9 +1,9 @@
 use crate::game_control::actions::{ActionList, ActionType};
 use crate::hentai_anime;
 use crate::hentai_anime::HentaiAnimePlugin;
-use crate::hentai_anime::{Animation, setup_anime};
+use crate::hentai_anime::{setup_anime, Animation};
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -15,9 +15,9 @@ use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackSettings};
 use bevy::color::palettes::css::BLUE;
-use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
 use bevy::gltf::GltfAssetLabel;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
@@ -26,14 +26,7 @@ use bevy::pbr::{
     AmbientLight, CascadeShadowConfigBuilder, DirectionalLight, DirectionalLightShadowMap,
     PointLight, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
-use bevy::prelude::{
-    default, in_state, not, AnimationGraph, Camera, Camera3d, ClearColor,
-    ClearColorConfig, ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa,
-    OnEnter, OnExit, PerspectiveProjection, PointLight, Projection, Reflect, Resource, Without,
-    AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig, ColorMaterial, DetectChanges,
-    GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter, PerspectiveProjection, Projection,
-    Reflect, Resource, Without, default, in_state,
-};
+use bevy::prelude::*;
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
