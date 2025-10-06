@@ -2,7 +2,6 @@ use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
 use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
-use crate::mesh_loader::MeshLoader;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
 use bevy::math::ops::abs;
@@ -84,38 +83,6 @@ impl Plugin for RoverPlugin {
     }
 }
 
-fn get_base_material(
-    asset_path: String,
-    mut mesh_loader: ResMut<MeshLoader>,
-    gltf_assets: Res<Assets<Gltf>>,
-) {
-    for loaded_gltf in mesh_loader.0.iter_mut() {
-        if !loaded_gltf.processed {
-            continue;
-        }
-
-        let Some(gltf) = gltf_assets.get(&loaded_gltf.gltf_handle) else {
-            continue;
-        };
-
-        // if let Some(material) get_material_from_gltf_node(node_handle, &gltf_meshes, &nodes)
-    }
-}
-
-fn setup_rover_colors(
-    mut commands: Commands,
-    mut rover_query: Query<(Entity, &mut RoverEntity), With<RoverEntity>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (entity, mut rover_entity) in rover_query.iter_mut() {
-        if !rover_entity.is_setup {
-            // entity.
-
-            rover_entity.is_setup = true;
-        }
-    }
-}
-
 fn setup_action_movements(
     rover: &mut RoverEntity,
     active_level: &Res<ActiveLevel>,
@@ -159,6 +126,10 @@ fn setup_action_movements(
 
     let mut new_heading = rover.heading;
 
+    let action_attempted = action.moves.0.clone();
+
+    println!("Robot ID: {}", robot_num);
+    dbg!(action.moves);
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
@@ -248,7 +219,7 @@ fn start_execution(
             if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
                 for hentai in &animation.animation_list {
                     player.play(hentai.clone()).repeat();
-                    println!("Start rover anime");
+                    //println!("Start rover anime");
                 }
             }
         }
@@ -267,6 +238,8 @@ fn start_execution(
             })
         }
 
+        println!("Start execution");
+        dbg!(&action_execution.action_states);
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
@@ -405,7 +378,7 @@ fn action_execution(
                 if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
                     for hentai in &animation.animation_list {
                         player.stop_all();
-                        println!("Stop rover anime");
+                        //println!("Stop rover anime");
                     }
                 }
             }
@@ -433,6 +406,9 @@ fn continue_execution(
             }
             PuzzleResponseEvent::InProgress => {
                 action_execution.is_active = true;
+
+                println!("In Progress!");
+                dbg!(&action_execution.action_states);
 
                 // Iterate through each robot and move them progressively towards the next tile based on action
                 for mut rover in rover_query.iter_mut() {

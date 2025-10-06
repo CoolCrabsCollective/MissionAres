@@ -27,7 +27,6 @@ pub fn setup_anime_when_ready(
                     .insert(AnimationGraphHandle(animation.clone().graph));
 
                 animation.player_entity = Option::from(child);
-                println!("Attached player to level entity");
             }
         }
     }
