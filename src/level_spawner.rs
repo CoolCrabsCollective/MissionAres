@@ -809,8 +809,8 @@ fn handle_puzzle_solved_event(
                 PlaybackSettings::DESPAWN,
             ));
 
-            action_list.actions.clear();
             for i in 0..action_list.actions.len() {
+                action_list.actions[i].clear();
                 action_list.actions.push(vec![]);
             }
         }
