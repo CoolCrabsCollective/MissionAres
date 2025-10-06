@@ -12,8 +12,12 @@ pub struct NextLevelButton;
 #[derive(Component)]
 pub struct WinScreenUI;
 
+#[derive(Event)]
+pub struct NextLevelRequestEvent;
+
 impl Plugin for WinScreenPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<NextLevelRequestEvent>();
         app.add_systems(
             Update,
             (
@@ -106,9 +110,11 @@ fn next_level_click_handler(
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<NextLevelButton>)>,
     mut commands: Commands,
     ui_query: Query<Entity, With<WinScreenUI>>,
+    mut next_level_event_writer: EventWriter<NextLevelRequestEvent>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
+            next_level_event_writer.write(NextLevelRequestEvent);
             for entity in ui_query.iter() {
                 commands.entity(entity).despawn();
             }
