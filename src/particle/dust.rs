@@ -34,7 +34,7 @@ pub fn spawn_dust(
             RoverStates::Moving => {
                 dust.timer.tick(time.delta());
 
-                if (dust.timer.finished()) {
+                if dust.timer.finished() {
                     let texture_handle = asset_server.load("dust.png");
                     let quad = meshes.add(Rectangle::new(2.0, 2.0));
                     let dust_material_handle = materials.add(StandardMaterial {

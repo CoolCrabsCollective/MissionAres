@@ -430,6 +430,7 @@ fn load_level(
                                 heading: -PI / 2.0,
                                 rover_state: RoverStates::Standby,
                                 collided: false,
+                                spawned_fail_particle: false,
                             })
                             .insert(LevelElement)
                             .insert(DustSpawner {
