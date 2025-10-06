@@ -17,9 +17,6 @@ const TURN_SPEED: f32 = 2.5;
 
 const WAIT_BETWEEN_ACTS: f32 = 0.5;
 
-#[derive(Component)]
-struct RoverAudio;
-
 #[derive(Clone)]
 pub enum RoverStates {
     Standby,
@@ -38,6 +35,7 @@ pub struct RoverEntity {
     pub rover_state: RoverStates,
     pub collided: bool,
     pub spawned_fail_particle: bool,
+    pub is_done: bool,
 }
 
 #[derive(Component)]
