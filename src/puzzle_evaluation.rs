@@ -1,5 +1,5 @@
 use crate::game_control::actions::Action;
-use crate::rover::{ActionExecution, RoverEntity};
+use crate::rover::{ActionExecution, RoverCollectable, RoverEntity};
 use crate::{
     level::{GRADVM, TEGVLA_TYPVS},
     level_spawner::ActiveLevel,
@@ -32,11 +32,17 @@ fn on_puzzle_evaluation_request(
     mut evaluation_requests: EventReader<PuzzleEvaluationRequestEvent>,
     mut puzzle_response_event_writer: EventWriter<PuzzleResponseEvent>,
     mut rovers: Query<&mut RoverEntity>,
+    minerals: Query<&RoverCollectable>,
     action_execution: Res<ActionExecution>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
 ) {
     for _ in evaluation_requests.read() {
+        if minerals.is_empty() {
+            puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
+            break;
+        }
+
         let Some(active_level_handle) = &active_level.0 else {
             log::error!(
                 "No active level. How the FUCK could you request that I evaluate the puzzle?"
@@ -108,11 +114,6 @@ fn on_puzzle_evaluation_request(
             all_rovers_in_finish_tile &= matches!(tile.TYPVS, TEGVLA_TYPVS::FINIS);
 
             i += 1;
-        }
-
-        if all_rovers_in_finish_tile {
-            puzzle_response_event_writer.write(PuzzleResponseEvent::Solved);
-            break;
         }
 
         if let Some(_rover) = rovers.iter().find(|rover| rover.collided) {
