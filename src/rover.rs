@@ -82,6 +82,10 @@ impl Plugin for RoverPlugin {
             Update,
             continue_execution.run_if(not(in_state(GameState::TitleScreen))),
         );
+        app.add_systems(
+            Update,
+            update_rover_collectables.run_if(not(in_state(GameState::TitleScreen))),
+        );
         app.insert_resource(ActionExecution {
             is_active: false,
             action_states: vec![],
@@ -483,6 +487,26 @@ fn continue_execution(
                     action_execution.action_states[robot_num].wait_time = WAIT_BETWEEN_ACTS;
                     action_execution.action_states[robot_num].is_waiting = true;
                 }
+            }
+        }
+    }
+}
+
+fn update_rover_collectables(
+    mut commands: Commands,
+    collectable_queries: Query<(Entity, &Transform, &RoverCollectable)>,
+    rovers: Query<(&Transform, &RoverEntity), Without<RoverCollectable>>,
+) {
+    for (rover_transform, rover) in rovers.iter() {
+        for (collectable_entity, collectable_transform, rover_collectable) in
+            collectable_queries.iter()
+        {
+            if rover_transform
+                .translation
+                .distance(collectable_transform.translation)
+                < 1.0
+            {
+                commands.entity(collectable_entity).despawn();
             }
         }
     }
