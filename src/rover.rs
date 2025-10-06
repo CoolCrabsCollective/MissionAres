@@ -257,7 +257,6 @@ fn start_execution(
             })
         }
 
-        println!("Number of rovers: {}", action_execution.action_states.len());
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
@@ -409,12 +408,10 @@ fn continue_execution(
     for event in events.read() {
         match event {
             PuzzleResponseEvent::Solved => {
-                println!("Solved!");
                 events.clear();
                 break;
             }
             PuzzleResponseEvent::Failed => {
-                println!("Failed!");
                 events.clear();
                 break;
             }

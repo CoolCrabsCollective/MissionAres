@@ -301,8 +301,6 @@ fn load_level(
 
     let level = level.unwrap();
 
-    log::info!("Level loaded with {} tiles", level.TEGLVAE.len());
-
     let level_width = level.LATIVIDO as f32 * TILE_SIZE;
     let level_height = level.ALTIVIDO as f32 * TILE_SIZE;
 
@@ -543,8 +541,6 @@ fn load_level(
         spawn_wire(&mut commands, &mut meshes, &mut materials, start, end);
     }
 
-    log::info!("Level size: {}x{}", level.ALTIVIDO, level.LATIVIDO);
-
     let rock_padding_x = max(ROCK_PADDING, (level.LATIVIDO / 4) as i32);
     let rock_padding_y = max(ROCK_PADDING, (level.ALTIVIDO / 4) as i32);
 
@@ -602,7 +598,6 @@ fn load_level(
         action_list.actions.push(vec![]);
     }
     let action_event = action_list.clone();
-    println!("Sending event with {} rovers", action_list.actions.len());
     commands.send_event(action_event);
 
     commands.send_event(AfterLevelSpawnEvent);
@@ -844,8 +839,6 @@ fn handle_puzzle_solved_event(
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::Solved {
-            log::info!("Puzzle solved event received.");
-
             let Some(active_level_handle) = &active_level.0 else {
                 log::error!("No active level.");
                 return;
@@ -855,10 +848,6 @@ fn handle_puzzle_solved_event(
                 log::error!("No active level.");
                 return;
             };
-
-            log::info!("Active level index: {}", active_level.INDEX);
-            log::info!("Next level index: {}", active_level.INDEX + 1);
-            log::info!("Level handles: {:?}", level_handles.GRADVS.len());
 
             let Some(next_level_handle) = level_handles
                 .GRADVS
@@ -883,10 +872,6 @@ fn handle_puzzle_failed_event(
 ) {
     for event in events.read() {
         if *event == PuzzleResponseEvent::Failed {
-            log::info!("Puzzle failed event received.");
-
-            let active_level_handle = active_level.0.clone().unwrap();
-
             level_spawn_request_writer.write(LevelSpawnRequestEvent {
                 level: active_level.0.clone().unwrap(),
             });
