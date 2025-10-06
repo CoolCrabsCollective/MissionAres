@@ -355,19 +355,11 @@ fn apply_scene_color_override(
             continue;
         };
 
-        let Some(GltfMaterialName(gltf_material_name)) = gltf_material_name else {
+        let Some(name) = name else {
             continue;
         };
 
-        log::info!(
-            "Applying scene color override for scene {:?} ({:?}) to material {:?} ({:?})",
-            scene_handle,
-            scene_root,
-            material,
-            name
-        );
-
-        if !gltf_material_name.contains("col") {
+        if !name.to_ascii_lowercase().contains("col") {
             continue;
         }
 
