@@ -53,11 +53,11 @@ impl Plugin for ControlUIPlugin {
         app.add_systems(Update, update_scroll_position);
 
         app.insert_resource(UIRoverColors(vec![
-            Color::srgba(0.25, 1.0, 0.25, 1.0), // green
-            Color::srgba(0.25, 0.5, 1.0, 1.0),  // blue
-            Color::srgba(1.0, 1.0, 0.25, 1.0),  // yellow
-            Color::srgba(1.0, 0.0, 1.0, 1.0),   // purple
-            Color::srgba(1.0, 0.0, 0.0, 1.0),   // red
+            Color::srgba(0.2, 0.65, 0.2, 1.0),   // green
+            Color::srgba(0.2, 0.4, 0.75, 1.0),   // blue
+            Color::srgba(0.8, 0.75, 0.2, 1.0),   // yellow
+            Color::srgba(0.65, 0.25, 0.65, 1.0), // purple
+            Color::srgba(0.8, 0.2, 0.2, 1.0),    // red
         ]));
 
         app.insert_resource(RoverColors(vec![
@@ -132,15 +132,14 @@ fn rebuild_control_ui(
                         parent
                             .spawn((
                                 Node {
+                                    width: Val::Percent(100.0),
                                     display: Display::Flex,
                                     flex_direction: FlexDirection::Column,
                                     flex_grow: 1.0, // Take remaining space after other siblings
                                     flex_shrink: 1.0, // Allow shrinking if needed
                                     min_height: Val::Px(0.0), // Important: allows flex item to shrink below content size
                                     margin: UiRect {
-                                        right: Val::Px(4.0),
-                                        left: Val::Px(4.0),
-                                        bottom: Val::Px(8.0),
+                                        bottom: Val::Px(14.0),
                                         ..default()
                                     },
                                     padding: UiRect {
@@ -165,57 +164,86 @@ fn rebuild_control_ui(
                                     .with_children(|parent| {
                                         for (robot_idx, color) in rover_colors.iter().enumerate() {
                                             let transparent = Color::srgba(0.0, 0.0, 0.0, 0.0);
-                                            let robot_bg_color =
-                                                if robot_idx == selected_robot_index {
-                                                    Color::srgb(1.0, 1.0, 1.0)
-                                                } else {
-                                                    transparent
-                                                };
+                                            let is_selected = robot_idx == selected_robot_index;
 
                                             parent
-                                                .spawn((
-                                                    Button,
-                                                    RobotButton(robot_idx as i32),
-                                                    Node {
-                                                        width: Val::Px(50.0),
-                                                        height: Val::Px(50.0),
-                                                        margin: UiRect::all(Val::Px(5.0)),
-                                                        justify_content: JustifyContent::Center,
-                                                        align_items: AlignItems::Center,
-                                                        border: UiRect::all(Val::Px(5.0)),
-                                                        ..default()
-                                                    },
-                                                    BorderColor::from(robot_bg_color),
-                                                    BorderRadius::all(Val::Px(25.0)),
-                                                    InteractiveButton {
-                                                        regular_background_color: transparent,
-                                                        hover_background_color: transparent,
-                                                        pressed_background_color: transparent,
-                                                        regular_border_color: robot_bg_color,
-                                                        hover_border_color: robot_bg_color
-                                                            .darker(0.1),
-                                                        pressed_border_color: robot_bg_color
-                                                            .darker(0.2),
-                                                        regular_image_color: *color,
-                                                        hover_image_color: color.darker(0.1),
-                                                        pressed_image_color: color.darker(0.2),
-                                                        ..default()
-                                                    },
-                                                ))
+                                                .spawn((Node {
+                                                    display: Display::Flex,
+                                                    flex_direction: FlexDirection::Column,
+                                                    align_items: AlignItems::Center,
+                                                    row_gap: Val::Px(4.0),
+                                                    margin: UiRect::all(Val::Px(5.0)),
+                                                    flex_grow: 1.0,
+                                                    ..default()
+                                                },))
                                                 .with_children(|parent| {
-                                                    parent.spawn((
-                                                        ImageNode {
-                                                            image: image_robot.clone(),
-                                                            image_mode: NodeImageMode::Auto,
-                                                            color: *color,
-                                                            ..default()
-                                                        },
-                                                        Node {
-                                                            width: Val::Percent(100.0),
-                                                            height: Val::Percent(100.0),
-                                                            ..default()
-                                                        },
-                                                    ));
+                                                    parent
+                                                        .spawn((
+                                                            Button,
+                                                            RobotButton(robot_idx as i32),
+                                                            Node {
+                                                                width: Val::Px(50.0),
+                                                                height: Val::Px(50.0),
+                                                                justify_content:
+                                                                    JustifyContent::Center,
+                                                                align_items: AlignItems::Center,
+                                                                ..default()
+                                                            },
+                                                            BorderColor::from(transparent),
+                                                            BorderRadius::all(Val::Px(25.0)),
+                                                            InteractiveButton {
+                                                                regular_background_color:
+                                                                    transparent,
+                                                                hover_background_color: transparent,
+                                                                pressed_background_color:
+                                                                    transparent,
+                                                                regular_border_color: transparent,
+                                                                hover_border_color: transparent,
+                                                                pressed_border_color: transparent,
+                                                                regular_image_color: *color,
+                                                                hover_image_color: color
+                                                                    .darker(0.1),
+                                                                pressed_image_color: color
+                                                                    .darker(0.2),
+                                                                ..default()
+                                                            },
+                                                        ))
+                                                        .with_children(|parent| {
+                                                            parent.spawn((
+                                                                ImageNode {
+                                                                    image: image_robot.clone(),
+                                                                    image_mode: NodeImageMode::Auto,
+                                                                    color: *color,
+                                                                    ..default()
+                                                                },
+                                                                Node {
+                                                                    width: Val::Percent(100.0),
+                                                                    height: Val::Percent(100.0),
+                                                                    ..default()
+                                                                },
+                                                            ));
+                                                        });
+
+                                                    // Small circle indicator
+                                                    if number_of_rovers > 1 {
+                                                        parent.spawn((
+                                                            Node {
+                                                                width: Val::Px(8.0),
+                                                                height: Val::Px(8.0),
+                                                                border: UiRect::all(Val::Px(1.0)),
+                                                                ..default()
+                                                            },
+                                                            BackgroundColor(if is_selected {
+                                                                Color::srgb(0.83, 0.83, 0.83)
+                                                            } else {
+                                                                transparent
+                                                            }),
+                                                            BorderColor(Color::srgb(
+                                                                0.83, 0.83, 0.83,
+                                                            )),
+                                                            BorderRadius::all(Val::Px(4.0)),
+                                                        ));
+                                                    }
                                                 });
                                         }
                                     });
@@ -233,7 +261,7 @@ fn rebuild_control_ui(
                                         ..default()
                                     },))
                                     .with_children(|parent| {
-                                        for (robot_idx, color) in rover_colors.iter().enumerate() {
+                                        for (robot_idx, _) in rover_colors.iter().enumerate() {
                                             let mut multi_robot_command_list = parent.spawn((
                                                 multi_robot_command_list(),
                                                 Pickable {
@@ -304,20 +332,39 @@ fn build_control_panel(
         max_corner_scale: 1.0,
     };
 
+    // Add "Add Rover Actions" text
     parent
         .spawn((Node {
-            height: Val::Px(160.0),
-            min_height: Val::Px(160.0),
             width: Val::Percent(100.0),
-            display: Display::Grid,
-            grid_template_columns: vec![
-                GridTrack::flex(1.0),
-                GridTrack::min_content(),
-                GridTrack::flex(1.0),
-            ],
-            grid_template_rows: RepeatedGridTrack::flex(1, 1.0),
-            row_gap: Val::Px(0.0),
-            column_gap: Val::Px(0.0),
+            justify_content: JustifyContent::Center,
+            margin: UiRect {
+                bottom: Val::Px(8.0),
+                ..default()
+            },
+            ..default()
+        },))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("Plan Rover Actions"),
+                TextFont {
+                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.83, 0.83, 0.83)),
+            ));
+        });
+
+    parent
+        .spawn((Node {
+            // height: Val::Px(160.0),
+            // min_height: Val::Px(160.0),
+            width: Val::Percent(100.0),
+            display: Display::Flex,
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            column_gap: Val::Px(20.0),
             margin: UiRect {
                 bottom: Val::Px(16.0),
                 ..default()
@@ -325,25 +372,21 @@ fn build_control_panel(
             ..default()
         },))
         .with_children(|parent| {
-            parent.spawn((Node::default()));
+            // Arrow buttons flexbox with three columns
             parent
                 .spawn((Node {
-                    height: Val::Percent(100.0),
-                    aspect_ratio: Some(1.0f32),
-                    display: Display::Grid,
-                    grid_template_columns: RepeatedGridTrack::flex(3, 1.0),
-                    grid_template_rows: RepeatedGridTrack::flex(3, 1.0),
-                    row_gap: Val::Px(15.0),
-                    column_gap: Val::Px(15.0),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
+                    align_items: AlignItems::Center,
+                    column_gap: Val::Px(4.0),
                     ..default()
                 },))
                 .with_children(|parent| {
                     let node_for_img = Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
+                        width: Val::Px(45.0),
+                        height: Val::Px(45.0),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
-                        margin: UiRect::all(Val::Percent(10.0)),
                         ..default()
                     };
                     let img_up = ImageNode {
@@ -371,28 +414,92 @@ fn build_control_panel(
                         ..default()
                     };
 
+                    // Left column: left arrow
+                    parent
+                        .spawn((Node {
+                            display: Display::Flex,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Button,
+                                CommandButton(ActionType::MoveLeft),
+                                node_for_img.clone(),
+                                img_left.clone(),
+                                Transform::default(),
+                            ));
+                        });
+
+                    // Middle column: up and down arrows
+                    parent
+                        .spawn((Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+                            row_gap: Val::Px(12.0),
+                            ..default()
+                        },))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Button,
+                                CommandButton(ActionType::MoveUp),
+                                node_for_img.clone(),
+                                img_up.clone(),
+                                Transform::default(),
+                            ));
+                            parent.spawn((
+                                Button,
+                                CommandButton(ActionType::MoveDown),
+                                node_for_img.clone(),
+                                img_down.clone(),
+                                Transform::default(),
+                            ));
+                        });
+
+                    // Right column: right arrow
+                    parent
+                        .spawn((Node {
+                            display: Display::Flex,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Button,
+                                CommandButton(ActionType::MoveRight),
+                                node_for_img.clone(),
+                                img_right.clone(),
+                                Transform::default(),
+                            ));
+                        });
+                });
+
+            // Wait button with text
+            parent
+                .spawn((Node {
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    row_gap: Val::Px(4.0),
+                    ..default()
+                },))
+                .with_children(|parent| {
                     let img_wait = ImageNode {
                         image: image_wait.clone(),
                         image_mode: NodeImageMode::Sliced(slicer.clone()),
                         ..default()
                     };
+                    let node_for_img = Node {
+                        width: Val::Px(40.0),
+                        height: Val::Px(40.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        margin: UiRect::all(Val::Px(5.0)),
+                        ..default()
+                    };
 
-                    parent.spawn((Node::default()));
-                    parent.spawn((
-                        Button,
-                        CommandButton(ActionType::MoveUp),
-                        node_for_img.clone(),
-                        img_up.clone(),
-                        Transform::default(),
-                    ));
-                    parent.spawn((Node::default()));
-                    parent.spawn((
-                        Button,
-                        CommandButton(ActionType::MoveLeft),
-                        node_for_img.clone(),
-                        img_left.clone(),
-                        Transform::default(),
-                    ));
                     parent.spawn((
                         Button,
                         CommandButton(ActionType::Wait),
@@ -400,25 +507,17 @@ fn build_control_panel(
                         img_wait.clone(),
                         Transform::default(),
                     ));
-                    parent.spawn((
-                        Button,
-                        CommandButton(ActionType::MoveRight),
-                        node_for_img.clone(),
-                        img_right.clone(),
-                        Transform::default(),
-                    ));
-                    parent.spawn((Node::default()));
-                    parent.spawn((
-                        CommandButton(ActionType::MoveDown),
-                        Button,
-                        node_for_img.clone(),
-                        img_down.clone(),
-                        Transform::default(),
-                    ));
-                    parent.spawn((Node::default()));
-                });
 
-            parent.spawn((Node::default()));
+                    parent.spawn((
+                        Text::new("Wait"),
+                        TextFont {
+                            font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
+                            font_size: 14.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.83, 0.83, 0.83)),
+                    ));
+                });
         });
 }
 
@@ -439,7 +538,7 @@ fn ui_sidebar_node() -> Node {
         width: Val::Percent(100.0),
         display: Display::Flex,
         flex_direction: FlexDirection::Column,
-        padding: UiRect::all(Val::Px(10.0)),
+        padding: UiRect::all(Val::Px(14.0)),
         border: UiRect {
             right: Val::Px(6.0),
             top: Val::Px(6.0),
@@ -564,9 +663,9 @@ fn build_execute_button(
                 ..default()
             },
             Transform::default(),
-            BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
+            BackgroundColor::from(Color::srgba(0.7, 0.15, 0.15, 1.0)),
             InteractiveButton::simple(
-                Color::srgba(1.0, 0.2, 0.2, 1.0),
+                Color::srgba(0.7, 0.15, 0.15, 1.0),
                 Color::srgba(0.9, 0.9, 0.9, 1.0),
                 true,
             ),
@@ -657,7 +756,6 @@ fn command_button_handler(
                             PlaybackSettings::DESPAWN,
                         ));
                     }
-                    _ => (),
                 }
 
                 image.color = *colors.0.get(action_list_selection).unwrap();
@@ -715,7 +813,7 @@ fn delete_action_handler(
     mut action_writer: EventWriter<ActionList>,
 ) {
     let mut has_to_update: bool = false;
-    for (interaction, mut button) in interaction_query.iter_mut() {
+    for (interaction, button) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
                 action_list
