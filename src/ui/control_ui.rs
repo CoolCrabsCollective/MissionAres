@@ -345,7 +345,7 @@ fn build_control_panel(
         },))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("Plan Rover Actions"),
+                Text::new("Plan Rover Commands"),
                 TextFont {
                     font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
                     font_size: 18.0,
