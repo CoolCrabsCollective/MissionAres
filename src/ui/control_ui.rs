@@ -85,7 +85,6 @@ fn update_action_list_ui(
         let number_of_rovers: usize = gradum.unwrap().NVMERVS_VEHICVLORVM_MOBILIVM as usize;
 
         let selected_robot_index = event.current_selection;
-        println!("Num rovers: {}", number_of_rovers);
         for ui_element in current_ui_elem_query.iter() {
             if let Ok(_) = commands.get_entity(ui_element) {
                 commands.entity(ui_element).despawn();
