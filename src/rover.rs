@@ -60,7 +60,7 @@ pub struct RoverActionState {
 
 #[derive(Resource, Clone, Debug)]
 pub struct ActionExecution {
-    pub is_active: bool,
+    pub is_built: bool,
     pub action_states: Vec<RoverActionState>,
 }
 
@@ -90,10 +90,13 @@ impl Plugin for RoverPlugin {
         );
         app.add_systems(
             Update,
-            update_rover_sounds.run_if(not(in_state(GameState::TitleScreen))),
+            (
+                update_rover_sounds.run_if(not(in_state(GameState::TitleScreen))),
+                detect_move_done.run_if(in_state(GameState::Execution)),
+            ),
         );
         app.insert_resource(ActionExecution {
-            is_active: false,
+            is_built: false,
             action_states: vec![],
         });
         app.add_event::<ActionListExecute>();
@@ -101,118 +104,134 @@ impl Plugin for RoverPlugin {
 }
 
 fn setup_action_movements(
-    rover: &mut RoverEntity,
     active_level: &Res<ActiveLevel>,
     levels: &Res<Assets<GRADVM>>,
     action_execution: &mut ResMut<ActionExecution>,
-    robot_num: usize,
     time: &Res<Time>,
+    rover_query: &mut Query<&mut RoverEntity>,
 ) {
-    // Setup first action movements, validate level boundary
-    let mut is_action_valid = true;
-    let current_log_pos = rover.logical_position;
-
-    let Some(level_handle) = &active_level.0 else {
-        return;
-    };
-    let level = levels.get(level_handle).unwrap();
-
-    let actions = &action_execution.action_states[robot_num].action_list;
-
-    if actions.is_empty() {
-        // No actions to execute lol
-        let all_done = action_execution
-            .action_states
-            .iter()
-            .enumerate()
-            .all(|(i, state)| {
-                state.active_action_idx >= action_execution.action_states[i].action_list.len()
-            });
-
-        if all_done {
-            action_execution.is_active = false;
+    for rover in rover_query.iter() {
+        if rover.is_acting {
+            return;
         }
-
-        return;
     }
 
-    let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx)
-    else {
-        return;
-    };
+    for mut rover in rover_query.iter_mut() {
+        let robot_num = rover.identifier as usize;
 
-    let mut new_heading = rover.heading;
+        let mut is_action_valid = true;
+        let current_log_pos = rover.logical_position;
 
-    //println!("Robot ID: {}", robot_num);
-    //dbg!(action.moves);
-    match action.moves.0 {
-        ActionType::MoveUp => {
-            rover.logical_position += I8Vec2::new(0, 1);
+        let Some(level_handle) = &active_level.0 else {
+            return;
+        };
+        let level = levels.get(level_handle).unwrap();
 
-            new_heading = -PI / 2.0;
-
-            if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
-                is_action_valid = false;
-            }
+        let actions = &action_execution.action_states[robot_num].action_list;
+        if actions.is_empty() {
+            continue;
         }
-        ActionType::MoveDown => {
-            if rover.logical_position.y == 0 {
-                is_action_valid = false;
-            } else {
-                rover.logical_position -= I8Vec2::new(0, 1);
 
+        let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx)
+        else {
+            return;
+        };
+
+        let mut new_heading = rover.heading;
+        let mut new_pos = rover.logical_position;
+
+        // Predict new position
+        match action.moves.0 {
+            ActionType::MoveUp => {
+                new_pos += I8Vec2::new(0, 1);
+                new_heading = -PI / 2.0;
+            }
+            ActionType::MoveDown => {
+                new_pos -= I8Vec2::new(0, 1);
                 new_heading = PI / 2.0;
-
-                if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
-                    is_action_valid = false;
-                }
             }
-        }
-        ActionType::MoveLeft => {
-            if rover.logical_position.x == 0 {
-                is_action_valid = false;
-            } else {
-                rover.logical_position -= I8Vec2::new(1, 0);
-
+            ActionType::MoveLeft => {
+                new_pos -= I8Vec2::new(1, 0);
                 new_heading = 0.0;
-
-                if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
-                    is_action_valid = false;
-                }
+            }
+            ActionType::MoveRight => {
+                new_pos += I8Vec2::new(1, 0);
+                new_heading = PI;
+            }
+            ActionType::Wait => {
+                action_execution.action_states[robot_num].wait_time_start =
+                    time.elapsed_secs_wrapped();
+                action_execution.action_states[robot_num].wait_time = WAIT_ACTION_TIME;
+                action_execution.action_states[robot_num].is_waiting = true;
+                println!("cringe af");
+                rover.is_acting = true;
             }
         }
-        ActionType::MoveRight => {
-            rover.logical_position += I8Vec2::new(1, 0);
 
-            new_heading = PI;
-
-            if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
-                is_action_valid = false;
-            }
+        if !is_pos_in_level(level, &new_pos) || rover.battery_level == 0 {
+            is_action_valid = false;
         }
-        ActionType::Wait => {
+
+        // Check for collisions in future actions
+        // if is_action_valid {
+        //     for other in all_rovers.iter() {
+        //         if other.identifier == rover.identifier {
+        //             continue;
+        //         }
+        //
+        //         // Case 1: Another rover *already occupies* that position
+        //         if other.logical_position == new_pos {
+        //             is_action_valid = false;
+        //             break;
+        //         }
+        //
+        //         // Case 2: Rovers swapping positions (A→B’s tile, B→A’s tile)
+        //         let Some(other_state) = action_execution
+        //             .action_states
+        //             .get(other.identifier as usize)
+        //         else {
+        //             continue;
+        //         };
+        //         if let Some(next_action) =
+        //             other_state.action_list.get(other_state.active_action_idx)
+        //         {
+        //             let mut other_future_pos = other.logical_position;
+        //             match next_action.moves.0 {
+        //                 ActionType::MoveUp => other_future_pos += I8Vec2::new(0, 1),
+        //                 ActionType::MoveDown => other_future_pos -= I8Vec2::new(0, 1),
+        //                 ActionType::MoveLeft => other_future_pos -= I8Vec2::new(1, 0),
+        //                 ActionType::MoveRight => other_future_pos += I8Vec2::new(1, 0),
+        //                 _ => {}
+        //             }
+        //
+        //             if other_future_pos == rover.logical_position
+        //                 && new_pos == other.logical_position
+        //             {
+        //                 // They're moving into each other
+        //                 is_action_valid = false;
+        //                 break;
+        //             }
+        //         }
+        //     }
+        // }
+
+        rover.rover_state = RoverStates::Standby;
+
+        if !is_action_valid {
             action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
-
-            action_execution.action_states[robot_num].wait_time = WAIT_ACTION_TIME;
-
             action_execution.action_states[robot_num].is_waiting = true;
-
+            println!("cringe af: action_invalid");
+            rover.logical_position = current_log_pos;
+            rover.collided = true;
+        } else {
+            rover.logical_position = new_pos;
+            rover.rover_state = RoverStates::Moving;
             rover.is_acting = true;
-        }
-    }
-    rover.rover_state = RoverStates::Standby;
-    if !is_action_valid {
-        action_execution.action_states[robot_num].wait_time_start = time.elapsed_secs_wrapped();
-        action_execution.action_states[robot_num].is_waiting = true;
 
-        rover.logical_position = current_log_pos;
-        rover.collided = true;
-    } else {
-        rover.rover_state = RoverStates::Moving;
-        rover.is_acting = true;
-        if rover.heading != new_heading {
-            action_execution.action_states[robot_num].is_turning = true;
-            rover.heading = new_heading;
+            if rover.heading != new_heading {
+                action_execution.action_states[robot_num].is_turning = true;
+                rover.heading = new_heading;
+            }
         }
     }
 }
@@ -228,7 +247,7 @@ fn start_execution(
     mut animation: Query<&Animation, With<RoverEntity>>,
 ) {
     for event in events.read() {
-        if action_execution.is_active {
+        if action_execution.is_built {
             return; // Avoid double execution
         }
 
@@ -242,7 +261,7 @@ fn start_execution(
             }
         }
 
-        action_execution.is_active = true;
+        action_execution.is_built = true;
 
         action_execution.action_states.clear();
         for action_list in event.action_list.iter() {
@@ -258,19 +277,13 @@ fn start_execution(
 
         println!("Start execution");
         dbg!(&action_execution.action_states);
-        // Iterate through each robot
-        for mut rover in rover_query.iter_mut() {
-            let robot_num = rover.identifier as usize;
-            // Setup first action movements, validate level boundary
-            setup_action_movements(
-                &mut rover,
-                &active_level,
-                &levels,
-                &mut action_execution,
-                robot_num,
-                &time,
-            );
-        }
+        setup_action_movements(
+            &active_level,
+            &levels,
+            &mut action_execution,
+            &time,
+            &mut rover_query,
+        );
     }
 }
 
@@ -321,134 +334,112 @@ fn fail_particle_spawner(
     }
 }
 
+fn detect_move_done(mut commands: Commands, query: Query<&RoverEntity, Changed<RoverEntity>>) {
+    for rover in query.iter() {
+        if rover.is_acting {
+            return;
+        }
+    }
+
+    commands.send_event(PuzzleEvaluationRequestEvent);
+}
+
 fn action_execution(
-    mut commands: Commands,
-    mut rover_query: Query<(Entity, &mut RoverEntity, &mut Transform), With<RoverEntity>>,
+    mut rover_query: Query<(Entity, &mut RoverEntity, &mut Transform)>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
     mut action_execution: ResMut<ActionExecution>,
     time: Res<Time>,
-    mut player_query: Query<&mut AnimationPlayer>,
-    mut animation: Query<&Animation, With<RoverEntity>>,
 ) {
-    if action_execution.is_active {
-        let Some(level_handle) = &active_level.0 else {
-            return;
-        };
-        let level = levels.get(level_handle).unwrap();
+    if !action_execution.is_built {
+        return;
+    }
+    let Some(level_handle) = &active_level.0 else {
+        return;
+    };
+    let level = levels.get(level_handle).unwrap();
 
-        let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
-        let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
+    let effective_level_width = level.LATIVIDO as f32 * TILE_SIZE;
+    let effective_level_height = level.ALTIVIDO as f32 * TILE_SIZE;
 
-        // Iterate through each robot and move them progressively towards the next tile based on action
-        for (_, mut rover, mut trans) in rover_query.iter_mut() {
-            let robot_num = rover.identifier as usize;
+    // Iterate through each robot and move them progressively towards the next tile based on action
+    for (_, mut rover, mut trans) in rover_query.iter_mut() {
+        let robot_num = rover.identifier as usize;
 
-            // If in wait, skip rest of loop logic
-            if action_execution.action_states[robot_num].is_waiting {
-                let current_time = time.elapsed_secs_wrapped();
+        dbg!(&action_execution.action_states[robot_num]);
 
-                let wait_duration =
-                    current_time - action_execution.action_states[robot_num].wait_time_start;
+        // If in wait, skip rest of loop logic
+        if action_execution.action_states[robot_num].is_waiting {
+            let current_time = time.elapsed_secs_wrapped();
 
-                if wait_duration > action_execution.action_states[robot_num].wait_time {
-                    if action_execution.action_states[robot_num].wait_time == WAIT_ACTION_TIME {
-                        // Only perform the following if wait action was reason for wait
-                        if action_execution.action_states[robot_num].active_action_idx
-                            < action_execution.action_states[robot_num].action_list.len()
-                        {
-                            action_execution.action_states[robot_num].active_action_idx += 1;
-                        }
-                        rover.is_acting = false;
-                        if action_execution.is_active {
-                            commands.send_event(PuzzleEvaluationRequestEvent);
-                        }
-                        action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
+            let wait_duration =
+                current_time - action_execution.action_states[robot_num].wait_time_start;
+
+            if wait_duration > action_execution.action_states[robot_num].wait_time {
+                if action_execution.action_states[robot_num].wait_time == WAIT_ACTION_TIME {
+                    // Only perform the following if wait action was reason for wait
+                    if action_execution.action_states[robot_num].active_action_idx
+                        < action_execution.action_states[robot_num].action_list.len()
+                    {
+                        action_execution.action_states[robot_num].active_action_idx += 1;
                     }
-
-                    action_execution.action_states[robot_num].is_waiting = false;
+                    rover.is_acting = false;
                 }
 
-                continue;
+                action_execution.action_states[robot_num].is_waiting = false;
             }
 
-            if action_execution.action_states[robot_num].is_turning {
-                let diff = trans
-                    .rotation
-                    .angle_between(Quat::from_rotation_y(rover.heading));
-
-                if abs(diff) > 0.1 {
-                    let step = TURN_SPEED * time.delta_secs();
-
-                    trans.rotation = trans
-                        .rotation
-                        .slerp(Quat::from_rotation_y(rover.heading), step);
-                } else {
-                    trans.rotation = Quat::from_rotation_y(rover.heading);
-                    action_execution.action_states[robot_num].is_turning = false;
-                }
-
-                continue;
-            }
-
-            let logical_pos = rover.logical_position;
-
-            let translation = &mut trans.translation;
-
-            let end_x =
-                (logical_pos.x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
-            // mirror along the z to align correctly with how it looks in the level
-            let end_z = (-logical_pos.y as f32 * TILE_SIZE + effective_level_height / 2.0)
-                + TILE_SIZE / 2.0;
-            let target = Vec3::new(end_x, translation.y, end_z);
-
-            let diff = target - *translation;
-
-            // Movement logic
-            let distance = diff.length();
-            let step = SPEED * time.delta_secs();
-
-            if distance > 0.01 {
-                let dir = diff.normalize();
-                let new_pos = *translation + dir * step.min(distance);
-                trans.translation = new_pos;
-            } else {
-                trans.translation = target;
-                if action_execution.action_states[robot_num].active_action_idx
-                    < action_execution.action_states[robot_num].action_list.len()
-                {
-                    action_execution.action_states[robot_num].active_action_idx += 1;
-                }
-                rover.is_acting = false;
-                if action_execution.is_active {
-                    commands.send_event(PuzzleEvaluationRequestEvent);
-                }
-                action_execution.is_active = false; // Wait on permission to continue, if puzzle evaluation passes
-            }
+            continue;
         }
 
-        // If all rovers finished their lists, deactivate execution
-        //dbg!(&action_execution);
-        let all_done = action_execution
-            .action_states
-            .iter()
-            .enumerate()
-            .all(|(i, state)| {
-                state.active_action_idx >= action_execution.action_states[i].action_list.len()
-            });
+        if action_execution.action_states[robot_num].is_turning {
+            let diff = trans
+                .rotation
+                .angle_between(Quat::from_rotation_y(rover.heading));
 
-        if all_done {
-            action_execution.is_active = false;
+            if abs(diff) > 0.1 {
+                let step = TURN_SPEED * time.delta_secs();
 
-            // Stop animations
-            for animation in animation.iter_mut() {
-                if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
-                    for hentai in &animation.animation_list {
-                        player.stop_all();
-                        //println!("Stop rover anime");
-                    }
-                }
+                trans.rotation = trans
+                    .rotation
+                    .slerp(Quat::from_rotation_y(rover.heading), step);
+            } else {
+                trans.rotation = Quat::from_rotation_y(rover.heading);
+                action_execution.action_states[robot_num].is_turning = false;
             }
+
+            continue;
+        }
+
+        let logical_pos = rover.logical_position;
+
+        let translation = &mut trans.translation;
+
+        let end_x =
+            (logical_pos.x as f32 * TILE_SIZE - effective_level_width / 2.0) + TILE_SIZE / 2.0;
+        // mirror along the z to align correctly with how it looks in the level
+        let end_z =
+            (-logical_pos.y as f32 * TILE_SIZE + effective_level_height / 2.0) + TILE_SIZE / 2.0;
+        let target = Vec3::new(end_x, translation.y, end_z);
+
+        let diff = target - *translation;
+
+        // Movement logic
+        let distance = diff.length();
+        let step = SPEED * time.delta_secs();
+
+        if distance > 0.01 {
+            let dir = diff.normalize();
+            let new_pos = *translation + dir * step.min(distance);
+            trans.translation = new_pos;
+        } else {
+            trans.translation = target;
+            if action_execution.action_states[robot_num].active_action_idx
+                < action_execution.action_states[robot_num].action_list.len()
+            {
+                action_execution.action_states[robot_num].active_action_idx += 1;
+            }
+            rover.is_acting = false;
         }
     }
 }
@@ -472,35 +463,29 @@ fn continue_execution(
                 break;
             }
             PuzzleResponseEvent::InProgress => {
-                action_execution.is_active = true;
-
                 //println!("In Progress!");
                 //dbg!(&action_execution.action_states);
 
-                // Iterate through each robot and move them progressively towards the next tile based on action
-                for mut rover in rover_query.iter_mut() {
-                    let robot_num = rover.identifier as usize;
+                // Setup first action movements, validate level boundary
+                setup_action_movements(
+                    &active_level,
+                    &levels,
+                    &mut action_execution,
+                    &time,
+                    &mut rover_query,
+                );
 
-                    if rover.is_acting {
-                        continue; // Avoid setting up action for rover that is still acting.
-                    }
-
-                    // Setup first action movements, validate level boundary
-                    setup_action_movements(
-                        &mut rover,
-                        &active_level,
-                        &levels,
-                        &mut action_execution,
-                        robot_num,
-                        &time,
-                    );
-
-                    // Make rover wait before performing next action
-                    action_execution.action_states[robot_num].wait_time_start =
-                        time.elapsed_secs_wrapped();
-                    action_execution.action_states[robot_num].wait_time = WAIT_BETWEEN_ACTS;
-                    action_execution.action_states[robot_num].is_waiting = true;
-                }
+                // // Iterate through each robot and move them progressively towards the next tile based on action
+                // for mut rover in rover_query.iter_mut() {
+                //     let robot_num = rover.identifier as usize;
+                //
+                //     // Make rover wait before performing next action
+                //     action_execution.action_states[robot_num].wait_time_start =
+                //         time.elapsed_secs_wrapped();
+                //     action_execution.action_states[robot_num].wait_time = WAIT_BETWEEN_ACTS;
+                //     action_execution.action_states[robot_num].is_waiting = true;
+                //     println!("bruhhhhhhh");
+                // }
             }
         }
     }
