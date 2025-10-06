@@ -5,6 +5,7 @@ use crate::mesh_loader::DebugLogEntityRequest;
 use crate::rover::{ActionListExecute, RoverEntity};
 use crate::title_screen::GameState;
 use crate::ui::interactive_button::InteractiveButton;
+use crate::ui::Px_dynamic;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::pbr::SpotLight;
@@ -61,6 +62,7 @@ impl Plugin for ControlUIPlugin {
         app.add_systems(Update, update_selection_light);
 
         app.insert_resource(UIRoverColors(vec![
+            Color::srgba(0.9, 0.9, 0.9, 1.0),
             Color::srgba(0.2, 0.65, 0.2, 1.0),   // green
             Color::srgba(0.2, 0.4, 0.75, 1.0),   // blue
             Color::srgba(0.8, 0.75, 0.2, 1.0),   // yellow
@@ -69,6 +71,7 @@ impl Plugin for ControlUIPlugin {
         ]));
 
         app.insert_resource(RoverColors(vec![
+            Color::srgba(1.0, 1.0, 1.0, 1.0),
             Color::srgba(51.0 / 255.0, 166.0 / 255.0, 51.0 / 255.0, 0.35), // green
             Color::srgba(51.0 / 255.0, 102.0 / 255.0, 191.0 / 255.0, 0.35), // blue
             Color::srgba(204.0 / 255.0, 191.0 / 255.0, 51.0 / 255.0, 0.35), // yellow
@@ -127,8 +130,8 @@ fn rebuild_control_ui(
                         BackgroundColor(CONTROL_UI_BACKGROUND_COLOR),
                         BorderColor(CONTROL_UI_BORDER_COLOR),
                         BorderRadius {
-                            top_right: Val::Px(8.0),
-                            bottom_right: Val::Px(8.0),
+                            top_right: Px_dynamic(8.0),
+                            bottom_right: Px_dynamic(8.0),
                             ..default()
                         },
                     ))
@@ -145,16 +148,16 @@ fn rebuild_control_ui(
                                     flex_direction: FlexDirection::Column,
                                     flex_grow: 1.0, // Take remaining space after other siblings
                                     flex_shrink: 1.0, // Allow shrinking if needed
-                                    min_height: Val::Px(0.0), // Important: allows flex item to shrink below content size
+                                    min_height: Px_dynamic(0.0), // Important: allows flex item to shrink below content size
                                     margin: UiRect {
-                                        bottom: Val::Px(14.0),
+                                        bottom: Px_dynamic(14.0),
                                         ..default()
                                     },
                                     padding: UiRect {
-                                        top: Val::Px(8.0),
+                                        top: Px_dynamic(8.0),
                                         ..default()
                                     },
-                                    border: UiRect::all(Val::Px(2.0)),
+                                    border: UiRect::all(Px_dynamic(2.0)),
                                     ..default()
                                 },
                                 BackgroundColor(CONTROL_UI_SECONDARY_BACKGROUND_COLOR),
@@ -166,7 +169,7 @@ fn rebuild_control_ui(
                                         display: Display::Flex,
                                         flex_direction: FlexDirection::Row,
                                         justify_content: JustifyContent::Center,
-                                        padding: UiRect::all(Val::Px(0.0)),
+                                        padding: UiRect::all(Px_dynamic(0.0)),
                                         ..default()
                                     },))
                                     .with_children(|parent| {
@@ -179,8 +182,8 @@ fn rebuild_control_ui(
                                                     display: Display::Flex,
                                                     flex_direction: FlexDirection::Column,
                                                     align_items: AlignItems::Center,
-                                                    row_gap: Val::Px(4.0),
-                                                    margin: UiRect::all(Val::Px(5.0)),
+                                                    row_gap: Px_dynamic(4.0),
+                                                    margin: UiRect::all(Px_dynamic(5.0)),
                                                     flex_grow: 1.0,
                                                     ..default()
                                                 },))
@@ -190,15 +193,15 @@ fn rebuild_control_ui(
                                                             Button,
                                                             RobotButton(robot_idx as i32),
                                                             Node {
-                                                                width: Val::Px(50.0),
-                                                                height: Val::Px(50.0),
+                                                                width: Px_dynamic(50.0),
+                                                                height: Px_dynamic(50.0),
                                                                 justify_content:
                                                                     JustifyContent::Center,
                                                                 align_items: AlignItems::Center,
                                                                 ..default()
                                                             },
                                                             BorderColor::from(transparent),
-                                                            BorderRadius::all(Val::Px(25.0)),
+                                                            BorderRadius::all(Px_dynamic(25.0)),
                                                             InteractiveButton {
                                                                 regular_background_color:
                                                                     transparent,
@@ -262,7 +265,7 @@ fn rebuild_control_ui(
                                         flex_direction: FlexDirection::Row,
                                         justify_content: JustifyContent::Center,
                                         padding: UiRect {
-                                            bottom: Val::Px(8.0),
+                                            bottom: Px_dynamic(8.0),
                                             ..default()
                                         },
                                         overflow: Overflow::scroll_y(),
@@ -346,7 +349,7 @@ fn build_control_panel(
             width: Val::Percent(100.0),
             justify_content: JustifyContent::Center,
             margin: UiRect {
-                bottom: Val::Px(8.0),
+                bottom: Px_dynamic(8.0),
                 ..default()
             },
             ..default()
@@ -365,16 +368,16 @@ fn build_control_panel(
 
     parent
         .spawn((Node {
-            // height: Val::Px(160.0),
-            // min_height: Val::Px(160.0),
+            // height: Px_dynamic(160.0),
+            // min_height: Px_dynamic(160.0),
             width: Val::Percent(100.0),
             display: Display::Flex,
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
-            column_gap: Val::Px(20.0),
+            column_gap: Px_dynamic(20.0),
             margin: UiRect {
-                bottom: Val::Px(16.0),
+                bottom: Px_dynamic(16.0),
                 ..default()
             },
             ..default()
@@ -386,13 +389,13 @@ fn build_control_panel(
                     display: Display::Flex,
                     flex_direction: FlexDirection::Row,
                     align_items: AlignItems::Center,
-                    column_gap: Val::Px(4.0),
+                    column_gap: Px_dynamic(4.0),
                     ..default()
                 },))
                 .with_children(|parent| {
                     let node_for_img = Node {
-                        width: Val::Px(45.0),
-                        height: Val::Px(45.0),
+                        width: Px_dynamic(45.0),
+                        height: Px_dynamic(45.0),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
@@ -445,7 +448,7 @@ fn build_control_panel(
                         .spawn((Node {
                             display: Display::Flex,
                             flex_direction: FlexDirection::Column,
-                            row_gap: Val::Px(12.0),
+                            row_gap: Px_dynamic(12.0),
                             ..default()
                         },))
                         .with_children(|parent| {
@@ -490,7 +493,7 @@ fn build_control_panel(
                     display: Display::Flex,
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
-                    row_gap: Val::Px(4.0),
+                    row_gap: Px_dynamic(4.0),
                     ..default()
                 },))
                 .with_children(|parent| {
@@ -500,11 +503,11 @@ fn build_control_panel(
                         ..default()
                     };
                     let node_for_img = Node {
-                        width: Val::Px(40.0),
-                        height: Val::Px(40.0),
+                        width: Px_dynamic(40.0),
+                        height: Px_dynamic(40.0),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
-                        margin: UiRect::all(Val::Px(5.0)),
+                        margin: UiRect::all(Px_dynamic(5.0)),
                         ..default()
                     };
 
@@ -532,7 +535,7 @@ fn build_control_panel(
 fn ui_sidebar_container_node() -> Node {
     Node {
         height: Val::Percent(100.0),
-        width: Val::Px(300.0),
+        width: Px_dynamic(300.0),
         display: Display::Flex,
         align_items: AlignItems::Center,
         justify_content: JustifyContent::Center,
@@ -546,11 +549,11 @@ fn ui_sidebar_node() -> Node {
         width: Val::Percent(100.0),
         display: Display::Flex,
         flex_direction: FlexDirection::Column,
-        padding: UiRect::all(Val::Px(14.0)),
+        padding: UiRect::all(Px_dynamic(14.0)),
         border: UiRect {
-            right: Val::Px(6.0),
-            top: Val::Px(6.0),
-            bottom: Val::Px(6.0),
+            right: Px_dynamic(6.0),
+            top: Px_dynamic(6.0),
+            bottom: Px_dynamic(6.0),
             ..default()
         },
         ..default()
@@ -567,10 +570,10 @@ fn build_deleteable_action_button(
 ) {
     let image_move = asset_server.load(action.img_path());
     let move_node_for_img = Node {
-        height: Val::Px(24.0),
-        width: Val::Px(24.0),
+        height: Px_dynamic(24.0),
+        width: Px_dynamic(24.0),
         aspect_ratio: Some(1.0f32),
-        margin: UiRect::left(Val::Px(5.0)),
+        margin: UiRect::left(Px_dynamic(5.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..default()
@@ -590,7 +593,7 @@ fn build_deleteable_action_button(
         .with_children(|parent| {
             parent.spawn((
                 Node {
-                    width: Val::Px(24.0),
+                    width: Px_dynamic(24.0),
                     ..default()
                 },
                 Text::from(action_count.to_string() + "x"),
@@ -642,14 +645,14 @@ fn build_deleteable_action_button(
 
 fn multi_robot_command_list() -> Node {
     Node {
-        width: Val::Px(56.0),
+        width: Px_dynamic(56.0),
         display: Display::Flex,
         flex_direction: FlexDirection::Column,
         align_items: AlignItems::Center,
-        row_gap: Val::Px(12.0),
+        row_gap: Px_dynamic(12.0),
         padding: UiRect {
-            top: Val::Px(8.0),
-            bottom: Val::Px(4.0),
+            top: Px_dynamic(8.0),
+            bottom: Px_dynamic(4.0),
             ..default()
         },
         flex_grow: 1.0,
@@ -667,8 +670,8 @@ fn build_execute_button(
             Button,
             Node {
                 width: Val::Percent(100.0),
-                height: Val::Px(60.0),
-                min_height: Val::Px(60.0),
+                height: Px_dynamic(60.0),
+                min_height: Px_dynamic(60.0),
                 // horizontally center child text
                 justify_content: JustifyContent::Center,
                 // vertically center child text

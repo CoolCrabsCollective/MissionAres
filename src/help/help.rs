@@ -1,6 +1,6 @@
 use crate::title_screen::GameState;
 use crate::ui::interactive_button::InteractiveButton;
-use GameState::TitleScreen;
+use crate::ui::Px_dynamic;
 use bevy::color::Srgba;
 use bevy::prelude::*;
 
@@ -47,9 +47,9 @@ pub fn add_player_help(mut commands: Commands, asset_server: Res<AssetServer>) {
     let image = asset_server.load("help_plugin_assets/question.png");
     commands
         .spawn((Node {
-            height: Val::Px(48.0),
-            width: Val::Px(48.0),
-            margin: UiRect::all(Val::Px(12.0)),
+            height: Px_dynamic(48.0),
+            width: Px_dynamic(48.0),
+            margin: UiRect::all(Px_dynamic(12.0)),
             align_items: AlignItems::Center,
             justify_content: JustifyContent::Center,
             ..default()
@@ -132,7 +132,7 @@ pub fn toggle_help_visible(
                                     flex_direction: FlexDirection::Column,
                                     align_items: AlignItems::Center,
                                     justify_content: JustifyContent::Center,
-                                    row_gap: Val::Px(30.0),
+                                    row_gap: Px_dynamic(30.0),
                                     ..default()
                                 },))
                                 .with_children(|parent| {
@@ -141,8 +141,8 @@ pub fn toggle_help_visible(
                                         .spawn((Node {
                                             flex_direction: FlexDirection::Column,
                                             align_items: AlignItems::Center,
-                                            row_gap: Val::Px(15.0),
-                                            margin: UiRect::bottom(Val::Px(40.0)),
+                                            row_gap: Px_dynamic(15.0),
+                                            margin: UiRect::bottom(Px_dynamic(40.0)),
                                             ..default()
                                         },))
                                         .with_children(|parent| {
@@ -163,7 +163,7 @@ pub fn toggle_help_visible(
                                                 .spawn((Node {
                                                     flex_direction: FlexDirection::Row,
                                                     align_items: AlignItems::Center,
-                                                    column_gap: Val::Px(20.0),
+                                                    column_gap: Px_dynamic(20.0),
                                                     ..default()
                                                 },))
                                                 .with_children(|parent| {
@@ -174,7 +174,7 @@ pub fn toggle_help_visible(
                                                             ..default()
                                                         },
                                                         Node {
-                                                            height: Val::Px(80.0),
+                                                            height: Px_dynamic(80.0),
                                                             ..default()
                                                         },
                                                     ));
@@ -186,7 +186,7 @@ pub fn toggle_help_visible(
                                                             ..default()
                                                         },
                                                         Node {
-                                                            height: Val::Px(80.0),
+                                                            height: Px_dynamic(80.0),
                                                             ..default()
                                                         },
                                                     ));
@@ -198,7 +198,7 @@ pub fn toggle_help_visible(
                                         .spawn((Node {
                                             flex_direction: FlexDirection::Column,
                                             align_items: AlignItems::Center,
-                                            row_gap: Val::Px(15.0),
+                                            row_gap: Px_dynamic(15.0),
                                             ..default()
                                         },))
                                         .with_children(|parent| {
@@ -219,7 +219,7 @@ pub fn toggle_help_visible(
                                                 .spawn((Node {
                                                     flex_direction: FlexDirection::Row,
                                                     align_items: AlignItems::Center,
-                                                    column_gap: Val::Px(20.0),
+                                                    column_gap: Px_dynamic(20.0),
                                                     ..default()
                                                 },))
                                                 .with_children(|parent| {
@@ -230,7 +230,7 @@ pub fn toggle_help_visible(
                                                             ..default()
                                                         },
                                                         Node {
-                                                            height: Val::Px(80.0),
+                                                            height: Px_dynamic(80.0),
                                                             ..default()
                                                         },
                                                     ));
@@ -242,7 +242,7 @@ pub fn toggle_help_visible(
                                                             ..default()
                                                         },
                                                         Node {
-                                                            height: Val::Px(80.0),
+                                                            height: Px_dynamic(80.0),
                                                             ..default()
                                                         },
                                                     ));
@@ -255,18 +255,18 @@ pub fn toggle_help_visible(
                                             Button,
                                             CloseHelpButton,
                                             Node {
-                                                width: Val::Px(200.0),
-                                                height: Val::Px(60.0),
-                                                border: UiRect::all(Val::Px(15.0)),
+                                                width: Px_dynamic(200.0),
+                                                height: Px_dynamic(60.0),
+                                                border: UiRect::all(Px_dynamic(15.0)),
                                                 justify_content: JustifyContent::Center,
                                                 align_items: AlignItems::Center,
-                                                margin: UiRect::top(Val::Px(20.0)),
+                                                margin: UiRect::top(Px_dynamic(20.0)),
                                                 ..default()
                                             },
                                             BackgroundColor::from(Color::Srgba(
                                                 Srgba::hex("3a312e").unwrap(),
                                             )),
-                                            BorderRadius::all(Val::Px(15.0)),
+                                            BorderRadius::all(Px_dynamic(15.0)),
                                             BorderColor::from(Color::Srgba(
                                                 Srgba::hex("3a312e").unwrap(),
                                             )),

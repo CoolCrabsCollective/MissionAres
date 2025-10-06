@@ -3,6 +3,7 @@ use crate::level_spawner::ActiveLevel;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
 use crate::title_screen::GameState;
 use crate::ui::interactive_button::InteractiveButton;
+use crate::ui::Px_dynamic;
 use bevy::color::Srgba;
 use bevy::prelude::*;
 
@@ -81,7 +82,7 @@ fn show_win_screen(
                         TextColor(Color::WHITE),
                         TextLayout::new_with_justify(JustifyText::Center),
                         Node {
-                            margin: UiRect::bottom(Val::Px(50.0)),
+                            margin: UiRect::bottom(Px_dynamic(50.0)),
                             ..default()
                         },
                     ));
