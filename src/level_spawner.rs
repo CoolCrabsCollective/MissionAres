@@ -1,7 +1,7 @@
 use crate::game_control::actions::ActionList;
 use crate::hentai_anime::*;
 use crate::level::{GRADVM, GRADVM_ONVSTVS, TEGVLA_TYPVS};
-use crate::mesh_loader::{GLTFLoadConfig, MeshLoader, load_gltf};
+use crate::mesh_loader::{load_gltf, GLTFLoadConfig, MeshLoader};
 use crate::particle::dust::DustSpawner;
 use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::PuzzleResponseEvent;
@@ -13,9 +13,9 @@ use bevy::app::Startup;
 use bevy::asset::{Handle, RenderAssetUsages};
 use bevy::audio::{AudioPlayer, PlaybackMode, PlaybackSettings, Volume};
 use bevy::color::palettes::css::BLUE;
-use bevy::core_pipeline::Skybox;
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::core_pipeline::experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasing};
+use bevy::core_pipeline::Skybox;
 use bevy::image::{CompressedImageFormats, Image};
 use bevy::math::ops::abs;
 use bevy::math::{I8Vec2, Quat};
@@ -359,7 +359,7 @@ fn load_level(
     let mars_texture = asset_server.load("mars.png");
     commands.spawn((
         LevelElement,
-        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(10.0)))),
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(20.0)))),
         MeshMaterial3d(materials.add(StandardMaterial {
             //base_color: Color::srgb(0.8, 0.35, 0.2), // Mars-colored (reddish-orange)
             base_color_texture: Some(mars_texture),

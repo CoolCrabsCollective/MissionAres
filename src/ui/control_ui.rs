@@ -700,18 +700,32 @@ fn execute_handler(
     mut events: EventWriter<ActionListExecute>,
     mut next_state: ResMut<NextState<GameState>>,
     action_list: Res<ActionList>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    game_state: Res<State<GameState>>,
 ) {
     if action_list.actions.iter().all(|v| v.is_empty()) {
         return;
     }
 
+    let mut should_execute = false;
+
+    // Check button press
     for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
-            next_state.set(GameState::Execution);
-            events.write(ActionListExecute {
-                action_list: action_list.actions.clone(),
-            });
+            should_execute = true;
         }
+    }
+
+    // Check space key press (only in Programming state)
+    if *game_state.get() == GameState::Programming && keyboard_input.just_pressed(KeyCode::Space) {
+        should_execute = true;
+    }
+
+    if should_execute {
+        next_state.set(GameState::Execution);
+        events.write(ActionListExecute {
+            action_list: action_list.actions.clone(),
+        });
     }
 }
 

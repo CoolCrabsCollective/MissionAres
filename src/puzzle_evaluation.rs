@@ -95,7 +95,6 @@ fn on_puzzle_evaluation_request(
 
                     if other == *other_pos {
                         if tile_first.VMBRA && tile_second.VMBRA {
-                            println!("BOTH IN UMBRA");
                             if rover.battery_level < other_rover.battery_level
                                 && other_rover.battery_level > 0
                             {
