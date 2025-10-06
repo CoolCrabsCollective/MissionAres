@@ -11,7 +11,7 @@ use bevy::prelude::*;
 
 pub struct ControlUIPlugin;
 
-const MAX_COMMANDS: u16 = 12;
+const MAX_COMMANDS: u16 = 12000;
 const LINE_HEIGHT: f32 = 24.0;
 
 #[derive(Component)]
@@ -229,151 +229,45 @@ fn rebuild_control_ui(
                                             ));
                                             multi_robot_command_list.with_children(|parent| {
                                                 let mut i = 0;
+                                                let mut prev_action = None;
+                                                let mut current_count = 0;
                                                 for action in event.actions[robot_idx].iter() {
+                                                    if Some(action.moves.0) == prev_action {
+                                                        current_count += 1;
+                                                    } else {
+                                                        if prev_action.is_some() {
+                                                            build_deleteable_action_button(
+                                                                parent,
+                                                                robot_idx,
+                                                                i - 1,
+                                                                current_count,
+                                                                prev_action.unwrap(),
+                                                                &asset_server,
+                                                            );
+                                                        }
+                                                        current_count = 1;
+                                                    }
+
+                                                    prev_action = Some(action.moves.0);
+                                                    i += 1;
+                                                }
+                                                if prev_action.is_some() {
                                                     build_deleteable_action_button(
                                                         parent,
-                                                        selected_robot_index,
-                                                        i,
-                                                        action,
+                                                        robot_idx,
+                                                        i - 1,
+                                                        current_count,
+                                                        prev_action.unwrap(),
                                                         &asset_server,
                                                     );
-                                                    i += 1;
                                                 }
                                             });
                                         }
                                     });
                             });
-                        parent
-                            .spawn((
-                                ExecuteButton,
-                                Button,
-                                Node {
-                                    width: Val::Percent(100.0),
-                                    height: Val::Px(60.0),
-                                    min_height: Val::Px(60.0),
-                                    // horizontally center child text
-                                    justify_content: JustifyContent::Center,
-                                    // vertically center child text
-                                    align_items: AlignItems::Center,
-                                    align_self: AlignSelf::FlexEnd,
-                                    ..default()
-                                },
-                                Transform::default(),
-                                BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
-                                InteractiveButton::simple(
-                                    Color::srgba(1.0, 0.2, 0.2, 1.0),
-                                    Color::srgba(0.9, 0.9, 0.9, 1.0),
-                                    true,
-                                ),
-                            ))
-                            .with_children(|parent| {
-                                parent.spawn((
-                                    Text::new("Execute"),
-                                    TextFont {
-                                        font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
-                                        font_size: 26.0,
-                                        ..default()
-                                    },
-                                    TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
-                                    TextShadow {
-                                        offset: Vec2::splat(2.0),
-                                        color: Color::linear_rgba(0., 0., 0., 0.75),
-                                    },
-                                ));
-                            });
+                        build_execute_button(parent, &asset_server);
                     });
             });
-    }
-}
-
-fn ui_sidebar_container_node() -> Node {
-    Node {
-        height: Val::Percent(100.0),
-        width: Val::Px(300.0),
-        display: Display::Flex,
-        align_items: AlignItems::Center,
-        justify_content: JustifyContent::Center,
-        ..default()
-    }
-}
-
-fn ui_sidebar_node() -> Node {
-    Node {
-        height: Val::Percent(80.0),
-        width: Val::Percent(100.0),
-        display: Display::Flex,
-        flex_direction: FlexDirection::Column,
-        padding: UiRect::all(Val::Px(10.0)),
-        border: UiRect {
-            right: Val::Px(6.0),
-            top: Val::Px(6.0),
-            bottom: Val::Px(6.0),
-            ..default()
-        },
-        ..default()
-    }
-}
-
-fn build_deleteable_action_button(
-    parent: &mut RelatedSpawnerCommands<ChildOf>,
-    rover_index: usize,
-    action_index: usize,
-    action: &Action,
-    asset_server: &Res<AssetServer>,
-) {
-    let image_move = asset_server.load(action.moves.0.img_path());
-    let move_node_for_img = Node {
-        height: Val::Px(24.0),
-        width: Val::Px(24.0),
-        aspect_ratio: Some(1.0f32),
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        ..default()
-    };
-
-    let img_move_node = ImageNode {
-        image: image_move.clone(),
-        image_mode: NodeImageMode::Auto,
-        ..default()
-    };
-    parent
-        .spawn(Node { ..default() })
-        .insert(Pickable {
-            should_block_lower: false,
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn((
-                Button,
-                ActionDeleteButton {
-                    rover_index,
-                    action_index,
-                },
-                InteractiveButton::simple_image(
-                    Color::srgba(0.0, 0.0, 0.0, 0.0),
-                    Color::WHITE,
-                    Color::srgba(1.0, 0.25, 0.25, 1.0),
-                    Color::srgba(1.0, 0.25, 0.25, 1.0),
-                    true,
-                ),
-                move_node_for_img.clone(),
-                img_move_node.clone(),
-                Pickable {
-                    should_block_lower: false,
-                    ..default()
-                },
-            ));
-        });
-}
-
-fn multi_robot_command_list() -> Node {
-    Node {
-        width: Val::Px(56.0),
-        display: Display::Flex,
-        flex_direction: FlexDirection::Column,
-        align_items: AlignItems::Center,
-        row_gap: Val::Px(12.0),
-        ..default()
     }
 }
 
@@ -506,6 +400,172 @@ fn build_control_panel(
                 });
 
             parent.spawn((Node::default()));
+        });
+}
+
+fn ui_sidebar_container_node() -> Node {
+    Node {
+        height: Val::Percent(100.0),
+        width: Val::Px(300.0),
+        display: Display::Flex,
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::Center,
+        ..default()
+    }
+}
+
+fn ui_sidebar_node() -> Node {
+    Node {
+        height: Val::Percent(80.0),
+        width: Val::Percent(100.0),
+        display: Display::Flex,
+        flex_direction: FlexDirection::Column,
+        padding: UiRect::all(Val::Px(10.0)),
+        border: UiRect {
+            right: Val::Px(6.0),
+            top: Val::Px(6.0),
+            bottom: Val::Px(6.0),
+            ..default()
+        },
+        ..default()
+    }
+}
+
+fn build_deleteable_action_button(
+    parent: &mut RelatedSpawnerCommands<ChildOf>,
+    rover_index: usize,
+    action_index: usize,
+    action_count: usize,
+    action: ActionType,
+    asset_server: &Res<AssetServer>,
+) {
+    let image_move = asset_server.load(action.img_path());
+    let move_node_for_img = Node {
+        height: Val::Px(24.0),
+        width: Val::Px(24.0),
+        aspect_ratio: Some(1.0f32),
+        margin: UiRect::left(Val::Px(5.0)),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        ..default()
+    };
+
+    let img_move_node = ImageNode {
+        image: image_move.clone(),
+        image_mode: NodeImageMode::Auto,
+        ..default()
+    };
+    parent
+        .spawn(Node { ..default() })
+        .insert(Pickable {
+            should_block_lower: false,
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn((
+                Node {
+                    width: Val::Px(24.0),
+                    ..default()
+                },
+                Text::from(action_count.to_string() + "x"),
+                TextFont {
+                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(if action_count == 1 {
+                    Color::srgba(0.0, 0.0, 0.0, 0.0)
+                } else {
+                    Color::srgba(0.9, 0.9, 0.9, 1.0)
+                }),
+                TextShadow {
+                    offset: Vec2::splat(2.0),
+                    color: if action_count == 1 {
+                        Color::srgba(0.0, 0.0, 0.0, 0.0)
+                    } else {
+                        Color::linear_rgba(0., 0., 0., 0.75)
+                    },
+                },
+                Pickable {
+                    should_block_lower: false,
+                    ..default()
+                },
+            ));
+            parent.spawn((
+                Button,
+                ActionDeleteButton {
+                    rover_index,
+                    action_index,
+                },
+                InteractiveButton::simple_image(
+                    Color::srgba(0.0, 0.0, 0.0, 0.0),
+                    Color::WHITE,
+                    Color::srgba(1.0, 0.25, 0.25, 1.0),
+                    Color::srgba(1.0, 0.25, 0.25, 1.0),
+                    true,
+                ),
+                move_node_for_img.clone(),
+                img_move_node.clone(),
+                Pickable {
+                    should_block_lower: false,
+                    ..default()
+                },
+            ));
+        });
+}
+
+fn multi_robot_command_list() -> Node {
+    Node {
+        width: Val::Px(56.0),
+        display: Display::Flex,
+        flex_direction: FlexDirection::Column,
+        align_items: AlignItems::Center,
+        row_gap: Val::Px(12.0),
+        ..default()
+    }
+}
+
+fn build_execute_button(
+    parent: &mut RelatedSpawnerCommands<ChildOf>,
+    asset_server: &Res<AssetServer>,
+) {
+    parent
+        .spawn((
+            ExecuteButton,
+            Button,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(60.0),
+                min_height: Val::Px(60.0),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                align_self: AlignSelf::FlexEnd,
+                ..default()
+            },
+            Transform::default(),
+            BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
+            InteractiveButton::simple(
+                Color::srgba(1.0, 0.2, 0.2, 1.0),
+                Color::srgba(0.9, 0.9, 0.9, 1.0),
+                true,
+            ),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("Execute"),
+                TextFont {
+                    font: asset_server.load("fonts/SpaceGrotesk-Light.ttf"),
+                    font_size: 26.0,
+                    ..default()
+                },
+                TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                TextShadow {
+                    offset: Vec2::splat(2.0),
+                    color: Color::linear_rgba(0., 0., 0., 0.75),
+                },
+            ));
         });
 }
 
