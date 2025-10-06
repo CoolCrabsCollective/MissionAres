@@ -6,7 +6,6 @@ use crate::particle::particle::Particle;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
 use bevy::math::ops::abs;
-use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
@@ -137,27 +136,23 @@ fn setup_action_movements(
 
     let mut new_heading = rover.heading;
 
-    let action_attempted = action.moves.0.clone();
-
     println!("Robot ID: {}", robot_num);
     dbg!(action.moves);
     match action.moves.0 {
         ActionType::MoveUp => {
-            rover.logical_position += I8Vec2::new(0, 1);
-
             new_heading = -PI / 2.0;
+            rover.logical_position += I8Vec2::new(0, 1);
 
             if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                 is_action_valid = false;
             }
         }
         ActionType::MoveDown => {
+            new_heading = PI / 2.0;
             if rover.logical_position.y == 0 {
                 is_action_valid = false;
             } else {
                 rover.logical_position -= I8Vec2::new(0, 1);
-
-                new_heading = PI / 2.0;
 
                 if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                     is_action_valid = false;
@@ -165,12 +160,11 @@ fn setup_action_movements(
             }
         }
         ActionType::MoveLeft => {
+            new_heading = 0.0;
             if rover.logical_position.x == 0 {
                 is_action_valid = false;
             } else {
                 rover.logical_position -= I8Vec2::new(1, 0);
-
-                new_heading = -PI;
 
                 if !is_pos_in_level(level, &rover.logical_position) || rover.battery_level == 0 {
                     is_action_valid = false;
@@ -206,10 +200,10 @@ fn setup_action_movements(
     } else {
         rover.rover_state = RoverStates::Moving;
         rover.is_acting = true;
-        if rover.heading != new_heading {
-            action_execution.action_states[robot_num].is_turning = true;
-            rover.heading = new_heading;
-        }
+    }
+    if rover.heading != new_heading {
+        action_execution.action_states[robot_num].is_turning = true;
+        rover.heading = new_heading;
     }
 }
 
@@ -369,8 +363,6 @@ fn action_execution(
             }
 
             if action_execution.action_states[robot_num].is_turning {
-                let current_rot = &trans.rotation.to_euler(XYZ);
-
                 let diff = trans
                     .rotation
                     .angle_between(Quat::from_rotation_y(rover.heading));
