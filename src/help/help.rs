@@ -141,7 +141,7 @@ fn spawn_help_dialog(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                             flex_direction: FlexDirection::Column,
                             align_items: AlignItems::Center,
                             row_gap: Px_dynamic(15.0),
-                            margin: UiRect::bottom(Px_dynamic(40.0)),
+                            // margin: UiRect::bottom(Px_dynamic(16.0)),
                             ..default()
                         },))
                         .with_children(|parent| {
@@ -159,12 +159,12 @@ fn spawn_help_dialog(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                             // Icon
                             parent.spawn((
                                 ImageNode {
-                                    image: asset_server.load("help_plugin_assets/placeholder.png"),
+                                    image: asset_server.load("mineral_icon.png"),
                                     image_mode: NodeImageMode::Auto,
                                     ..default()
                                 },
                                 Node {
-                                    height: Px_dynamic(80.0),
+                                    height: Px_dynamic(100.0),
                                     ..default()
                                 },
                             ));
