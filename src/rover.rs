@@ -132,8 +132,6 @@ fn setup_action_movements(
 
     let action_attempted = action.moves.0.clone();
 
-    println!("Robot ID: {}", robot_num);
-    dbg!(action.moves);
     match action.moves.0 {
         ActionType::MoveUp => {
             rover.logical_position += I8Vec2::new(0, 1);
@@ -242,8 +240,6 @@ fn start_execution(
             })
         }
 
-        println!("Start execution");
-        dbg!(&action_execution.action_states);
         // Iterate through each robot
         for mut rover in rover_query.iter_mut() {
             let robot_num = rover.identifier as usize;
@@ -365,7 +361,6 @@ fn action_execution(
         }
 
         // If all rovers finished their lists, deactivate execution
-        //dbg!(&action_execution);
         let all_done = action_execution
             .action_states
             .iter()
@@ -410,9 +405,6 @@ fn continue_execution(
             }
             PuzzleResponseEvent::InProgress => {
                 action_execution.is_active = true;
-
-                println!("In Progress!");
-                dbg!(&action_execution.action_states);
 
                 // Iterate through each robot and move them progressively towards the next tile based on action
                 for mut rover in rover_query.iter_mut() {
