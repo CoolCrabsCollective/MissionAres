@@ -3,6 +3,7 @@ use crate::level::GRADVM;
 use crate::level_spawner::ActiveLevel;
 use crate::rover::ActionListExecute;
 use crate::title_screen::GameState;
+use crate::ui::interactive_button::InteractiveButton;
 use bevy::color::palettes::css::ORANGE;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
@@ -235,7 +236,7 @@ fn update_action_list_ui(
                                     width: Val::Percent(100.0),
                                     height: Val::Px(60.0),
                                     min_height: Val::Px(60.0),
-                                    border: UiRect::all(Val::Px(5.0)),
+                                    //border: UiRect::all(Val::Px(5.0)),
                                     // horizontally center child text
                                     justify_content: JustifyContent::Center,
                                     // vertically center child text
@@ -244,7 +245,12 @@ fn update_action_list_ui(
                                     ..default()
                                 },
                                 Transform::default(),
-                                BackgroundColor::from(Color::srgba(0.6627, 0.0745, 0.0745, 1.0)),
+                                BackgroundColor::from(Color::srgba(1.0, 0.2, 0.2, 1.0)),
+                                InteractiveButton::simple(
+                                    Color::srgba(1.0, 0.2, 0.2, 1.0),
+                                    Color::srgba(0.9, 0.9, 0.9, 1.0),
+                                    true,
+                                ),
                             ))
                             .with_children(|parent| {
                                 parent.spawn((
@@ -254,9 +260,11 @@ fn update_action_list_ui(
                                         font_size: 26.0,
                                         ..default()
                                     },
-                                    // \(R=\frac{169}{255}\approx 0.6627\)\(G=\frac{19}{255}\approx 0.0745\)\(B=\frac{19}{255}\approx 0.0745\)
-                                    TextColor(Color::srgba(0.835, 8.835, 0.835, 1.0)),
-                                    // TextShadow::default(),
+                                    TextColor(Color::srgba(0.9, 0.9, 0.9, 1.0)),
+                                    TextShadow {
+                                        offset: Vec2::splat(2.0),
+                                        color: Color::linear_rgba(0., 0., 0., 0.75),
+                                    },
                                 ));
                             });
                     });
@@ -265,33 +273,11 @@ fn update_action_list_ui(
 }
 
 fn execute_button_handler(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &Children),
-        (Changed<Interaction>, With<ExecuteButton>),
-    >,
-    mut text_query: Query<(&Text, &mut TextColor)>,
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ExecuteButton>)>,
     mut events: EventWriter<ActionListExecute>,
     action_list: Res<ActionList>,
 ) {
-    for (interaction, mut bg_color, children) in &mut interaction_query {
-        let color = match *interaction {
-            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
-            Interaction::Hovered => Color::srgb(0.8, 0.8, 0.8),
-            Interaction::None => Color::srgb(0.9, 0.9, 0.9),
-        };
-
-        for child in children {
-            if let Ok(mut text) = text_query.get_mut(*child) {
-                text.1.0 = color;
-            }
-        }
-
-        bg_color.0 = match *interaction {
-            Interaction::Pressed => Color::srgb(0.5, 0.5, 0.5),
-            Interaction::Hovered => Color::srgb(0.8, 0.1, 0.1),
-            Interaction::None => Color::srgba(1.0, 0.2, 0.2, 1.0),
-        };
-
+    for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
             events.write(ActionListExecute {
                 action_list: action_list.actions.clone(),
