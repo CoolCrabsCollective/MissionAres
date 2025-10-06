@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Copy)]
 pub enum ActionType {
     MoveUp,
     MoveDown,
