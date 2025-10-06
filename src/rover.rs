@@ -1,17 +1,17 @@
 use crate::game_control::actions::{Action, ActionType};
 use crate::hentai_anime::Animation;
-use crate::level::{GRADVM, is_pos_in_level};
+use crate::level::{is_pos_in_level, GRADVM};
 use crate::level_spawner::{ActiveLevel, TILE_SIZE};
 use crate::mesh_loader::MeshLoader;
 use crate::puzzle_evaluation::{PuzzleEvaluationRequestEvent, PuzzleResponseEvent};
 use crate::title_screen::GameState;
+use bevy::math::ops::abs;
 use bevy::math::EulerRot::XYZ;
 use bevy::math::I8Vec2;
-use bevy::math::ops::abs;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
-const SPEED: f32 = 5.0;
+const SPEED: f32 = 7.5;
 const WAIT_ACTION_TIME: f32 = 1.0;
 const TURN_SPEED: f32 = 2.5;
 
@@ -145,7 +145,8 @@ fn setup_action_movements(
         "Active Action Idx {}",
         action_execution.action_states[robot_num].active_action_idx
     );
-    let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx) else {
+    let Some(action) = actions.get(action_execution.action_states[robot_num].active_action_idx)
+    else {
         return;
     };
 
