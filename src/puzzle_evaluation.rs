@@ -132,13 +132,12 @@ fn on_puzzle_evaluation_request(
             break;
         }
 
-        let rover_executions = action_execution.active_action_idx.clone();
+        let rover_executions = action_execution.action_states.clone();
         dbg!(&rover_executions);
-        if let Some(_rover) = rovers
-            .iter()
-            .enumerate()
-            .find(|(idx, rover)| rover_executions[*idx] == action_execution.action_list[*idx].len())
-        {
+        if let Some(_rover) = rovers.iter().enumerate().find(|(idx, rover)| {
+            rover_executions[*idx].active_action_idx
+                == action_execution.action_states[*idx].action_list.len()
+        }) {
             puzzle_response_event_writer.write(PuzzleResponseEvent::Failed);
             break;
         }
