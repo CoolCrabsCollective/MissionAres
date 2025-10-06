@@ -60,9 +60,18 @@ pub struct RoverPlugin;
 
 impl Plugin for RoverPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, start_execution.run_if(in_state(GameState::Game)));
-        app.add_systems(Update, action_execution.run_if(in_state(GameState::Game)));
-        app.add_systems(Update, continue_execution.run_if(in_state(GameState::Game)));
+        app.add_systems(
+            Update,
+            start_execution.run_if(not(in_state(GameState::TitleScreen))),
+        );
+        app.add_systems(
+            Update,
+            action_execution.run_if(not(in_state(GameState::TitleScreen))),
+        );
+        app.add_systems(
+            Update,
+            continue_execution.run_if(not(in_state(GameState::TitleScreen))),
+        );
         app.insert_resource(ActionExecution {
             is_active: false,
             action_states: vec![],
@@ -229,7 +238,8 @@ fn start_execution(
     time: Res<Time>,
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
-    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), With<RoverEntity>>,
+    mut player_query: Query<&mut AnimationPlayer>,
+    mut animation: Query<&Animation, With<RoverEntity>>,
 ) {
     for event in events.read() {
         if action_execution.is_active {
@@ -237,9 +247,12 @@ fn start_execution(
         }
 
         // Start animations
-        for (mut player, animation) in player_query.iter_mut() {
-            for hentai in &animation.animation_list {
-                player.play(hentai.clone()).repeat();
+        for animation in animation.iter_mut() {
+            if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
+                for hentai in &animation.animation_list {
+                    player.play(hentai.clone()).repeat();
+                    println!("Start rover anime");
+                }
             }
         }
 
@@ -280,7 +293,8 @@ fn action_execution(
     levels: Res<Assets<GRADVM>>,
     mut action_execution: ResMut<ActionExecution>,
     time: Res<Time>,
-    mut player_query: Query<(&mut AnimationPlayer, &mut Animation), With<RoverEntity>>,
+    mut player_query: Query<&mut AnimationPlayer>,
+    mut animation: Query<&Animation, With<RoverEntity>>,
 ) {
     if action_execution.is_active {
         let Some(level_handle) = &active_level.0 else {
@@ -390,8 +404,13 @@ fn action_execution(
             action_execution.is_active = false;
 
             // Stop animations
-            for (mut player, _) in player_query.iter_mut() {
-                player.stop_all();
+            for animation in animation.iter_mut() {
+                if let Ok(mut player) = player_query.get_mut(animation.player_entity.unwrap()) {
+                    for hentai in &animation.animation_list {
+                        player.stop_all();
+                        println!("Stop rover anime");
+                    }
+                }
             }
         }
     }
@@ -404,15 +423,18 @@ fn continue_execution(
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
     time: Res<Time>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     for event in events.read() {
         match event {
             PuzzleResponseEvent::Solved => {
                 events.clear();
+                next_state.set(GameState::Programming);
                 break;
             }
             PuzzleResponseEvent::Failed => {
                 events.clear();
+                next_state.set(GameState::Programming);
                 break;
             }
             PuzzleResponseEvent::InProgress => {

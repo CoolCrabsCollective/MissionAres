@@ -21,7 +21,7 @@ pub struct ControlUI;
 pub struct ExecuteButton;
 
 #[derive(Resource)]
-pub struct RoverColors(Vec<Color>);
+pub struct RoverColors(pub Vec<Color>);
 
 #[derive(Component)]
 pub struct CommandButton(pub ActionType);
@@ -40,10 +40,10 @@ impl Plugin for ControlUIPlugin {
         app.add_systems(
             Update,
             (
-                rebuild_control_ui.run_if(in_state(GameState::Game)),
-                command_button_handler,
-                robot_button_handler,
-                delete_action_handler,
+                rebuild_control_ui.run_if(not(in_state(GameState::TitleScreen))),
+                command_button_handler.run_if(in_state(GameState::Programming)),
+                robot_button_handler.run_if(in_state(GameState::Programming)),
+                delete_action_handler.run_if(in_state(GameState::Programming)),
             ),
         );
         app.add_systems(Update, execute_handler);
@@ -514,10 +514,12 @@ fn build_control_panel(
 fn execute_handler(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ExecuteButton>)>,
     mut events: EventWriter<ActionListExecute>,
+    mut next_state: ResMut<NextState<GameState>>,
     action_list: Res<ActionList>,
 ) {
     for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
+            next_state.set(GameState::Execution);
             events.write(ActionListExecute {
                 action_list: action_list.actions.clone(),
             });

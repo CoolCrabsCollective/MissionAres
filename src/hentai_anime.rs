@@ -1,81 +1,57 @@
 use crate::level_spawner::LevelElement;
 use crate::mesh_loader::MeshLoader;
 use bevy::prelude::*;
+use bevy::scene::{SceneInstance, SceneInstanceReady};
 use std::time::Duration;
 
 #[derive(Component, Reflect, Clone, Default)]
 pub struct Animation {
     pub animation_list: Vec<AnimationNodeIndex>,
     pub graph: Handle<AnimationGraph>,
-    pub group_is_playing: bool,
+    pub player_entity: Option<Entity>,
 }
 
-pub struct HentaiAnimePlugin;
-
-impl Plugin for HentaiAnimePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, setup_hentai_anime_anime_level);
-        // app.add_systems(Update, debug_print_animation_playing);
-    }
-}
-
-pub fn setup_hentai_anime_anime_level(
+pub fn setup_anime_when_ready(
+    trigger: Trigger<SceneInstanceReady>,
     mut commands: Commands,
-    mut anime_query: Query<(&mut Animation), With<LevelElement>>,
-    mut players: Query<(Entity, &mut AnimationPlayer), Added<AnimationPlayer>>,
+    children: Query<&Children>,
+    mut animations_to_play: Query<&mut Animation>,
+    mut players: Query<&mut AnimationPlayer>,
 ) {
-    for mut animation in anime_query.iter_mut() {
-        for (entity, mut player) in &mut players {
-            if !animation.group_is_playing {
-                let mut transitions = AnimationTransitions::new();
+    if let Ok(mut animation) = animations_to_play.get_mut(trigger.target()) {
+        for child in children.iter_descendants(trigger.target()) {
+            if let Ok(player) = players.get_mut(child) {
+                // Player found, add to entity for use later
+                commands
+                    .entity(child)
+                    .insert(AnimationGraphHandle(animation.clone().graph));
 
-                if animation.animation_list.len() >= 1 {
-                    transitions
-                        .play(&mut player, animation.animation_list[0], Duration::ZERO)
-                        .repeat();
-
-                    commands
-                        .entity(entity)
-                        .insert(AnimationGraphHandle(animation.graph.clone()))
-                        .insert(transitions);
-
-                    animation.group_is_playing = true;
-                }
+                animation.player_entity = Option::from(child);
+                println!("Attached player to level entity");
             }
         }
     }
 }
 
-pub fn setup_anime(
-    num_anime: usize,
-    asset_path: String,
-    asset_server: &Res<AssetServer>,
-    mut graphs: &mut ResMut<Assets<AnimationGraph>>,
-) -> Animation {
-    let mut hentai = Vec::new();
-    for idx in 0..num_anime {
-        hentai
-            .push(asset_server.load(GltfAssetLabel::Animation(idx).from_asset(asset_path.clone())));
-    }
+pub fn play_all_animations_when_ready(
+    trigger: Trigger<SceneInstanceReady>,
+    mut commands: Commands,
+    children: Query<&Children>,
+    animations_to_play: Query<&Animation>,
+    mut players: Query<&mut AnimationPlayer>,
+) {
+    if let Ok(animation) = animations_to_play.get(trigger.target()) {
+        for child in children.iter_descendants(trigger.target()) {
+            if let Ok(mut player) = players.get_mut(child) {
+                for hentai in animation.animation_list.iter() {
+                    player.play(*hentai).repeat();
+                }
 
-    let (graph, hentai_list) = AnimationGraph::from_clips(hentai);
-    let graph_handle = graphs.add(graph);
-
-    Animation {
-        animation_list: hentai_list,
-        graph: graph_handle,
-        group_is_playing: false,
-    }
-}
-
-pub fn debug_print_animation_playing(mut player_query: Query<(&mut AnimationPlayer)>) {
-    for (mut player) in player_query.iter_mut() {
-        dbg!(
-            &player
-                .playing_animations()
-                .into_iter()
-                .enumerate()
-                .collect::<Vec<_>>()
-        );
+                commands
+                    .entity(child)
+                    .insert(AnimationGraphHandle(animation.graph.clone()))
+                    .insert(player.clone());
+            }
+        }
     }
 }

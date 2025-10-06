@@ -13,7 +13,8 @@ pub struct TitleScreenUI;
 pub enum GameState {
     #[default]
     TitleScreen,
-    Game,
+    Programming,
+    Execution,
 }
 
 impl Plugin for TitleScreenPlugin {
@@ -124,13 +125,13 @@ fn start_game_click_handler(
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
-            next_state.set(GameState::Game);
+            next_state.set(GameState::Programming);
         }
     }
 
     for gamepad in &gamepads {
         if gamepad.pressed(GamepadButton::Start) {
-            next_state.set(GameState::Game);
+            next_state.set(GameState::Programming);
         }
     }
 }
