@@ -26,9 +26,9 @@ use bevy::pbr::{
     ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
 };
 use bevy::prelude::{
-    default, in_state, AnimationGraph, Camera, Camera3d, ClearColor, ClearColorConfig,
-    ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa, OnEnter,
-    PerspectiveProjection, PointLight, Projection, Reflect, Resource, Without,
+    default, in_state, not, AnimationGraph, Camera, Camera3d, ClearColor,
+    ClearColorConfig, ColorMaterial, DetectChanges, GlobalTransform, Gltf, IntoScheduleConfigs, Msaa,
+    OnEnter, OnExit, PerspectiveProjection, PointLight, Projection, Reflect, Resource, Without,
 };
 use bevy::render::camera::TemporalJitter;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -96,10 +96,13 @@ impl Plugin for LevelSpawnerPlugin {
         app.add_event::<AfterLevelSpawnEvent>();
         app.add_systems(
             Update,
-            choose_level_by_num_keys.run_if(in_state(GameState::Game)),
+            choose_level_by_num_keys.run_if(not(in_state(GameState::TitleScreen))),
         );
-        app.add_systems(Update, load_level.run_if(in_state(GameState::Game)));
-        app.add_systems(OnEnter(GameState::Game), debug_add_fake_level_load_event);
+        app.add_systems(
+            Update,
+            load_level.run_if(not(in_state(GameState::TitleScreen))),
+        );
+        app.add_systems(OnExit(GameState::TitleScreen), spawn_initial_level);
         app.add_systems(Startup, setup_scene);
         app.add_systems(Update, handle_puzzle_solved_event);
         app.add_systems(Update, handle_puzzle_failed_event);
@@ -192,7 +195,7 @@ fn setup_scene(mut commands: Commands, mut asset_server: ResMut<AssetServer>) {
     camera_bundle.insert((TemporalAntiAliasing::default(), TemporalJitter::default()));
 }
 
-fn debug_add_fake_level_load_event(
+fn spawn_initial_level(
     mut events: EventWriter<LevelSpawnRequestEvent>,
     levels: Res<GRADVM_ONVSTVS>,
 ) {

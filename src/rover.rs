@@ -60,9 +60,18 @@ pub struct RoverPlugin;
 
 impl Plugin for RoverPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, start_execution.run_if(in_state(GameState::Game)));
-        app.add_systems(Update, action_execution.run_if(in_state(GameState::Game)));
-        app.add_systems(Update, continue_execution.run_if(in_state(GameState::Game)));
+        app.add_systems(
+            Update,
+            start_execution.run_if(not(in_state(GameState::TitleScreen))),
+        );
+        app.add_systems(
+            Update,
+            action_execution.run_if(not(in_state(GameState::TitleScreen))),
+        );
+        app.add_systems(
+            Update,
+            continue_execution.run_if(not(in_state(GameState::TitleScreen))),
+        );
         app.insert_resource(ActionExecution {
             is_active: false,
             action_states: vec![],
@@ -404,15 +413,18 @@ fn continue_execution(
     active_level: Res<ActiveLevel>,
     levels: Res<Assets<GRADVM>>,
     time: Res<Time>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     for event in events.read() {
         match event {
             PuzzleResponseEvent::Solved => {
                 events.clear();
+                next_state.set(GameState::Programming);
                 break;
             }
             PuzzleResponseEvent::Failed => {
                 events.clear();
+                next_state.set(GameState::Programming);
                 break;
             }
             PuzzleResponseEvent::InProgress => {

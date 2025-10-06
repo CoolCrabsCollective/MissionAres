@@ -97,8 +97,6 @@ fn on_puzzle_evaluation_request(
                 return;
             };
 
-            let prev_battery_level = rover.battery_level;
-
             if tile.VMBRA && rover.battery_level > 0 {
                 rover.battery_level -= 1;
             }

@@ -1,10 +1,11 @@
+use crate::title_screen::GameState;
 use crate::Transform;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance, Srgba};
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::{
-    default, BackgroundColor, BorderColor, Changed, Children, Component, ImageNode, Interaction,
-    Query, Text, TextColor, Without,
+    default, in_state, not, BackgroundColor, BorderColor, Changed, Children,
+    Component, ImageNode, Interaction, IntoScheduleConfigs, Query, Text, TextColor, Without,
 };
 
 #[derive(Component)]
@@ -120,7 +121,7 @@ pub struct InteractiveButtonPlugin;
 
 impl Plugin for InteractiveButtonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, interact);
+        app.add_systems(Update, interact.run_if(not(in_state(GameState::Execution))));
     }
 }
 
