@@ -239,7 +239,7 @@ impl AssetLoader for GRADVM_ORENATOR {
 fn GRADVS_ONERIS(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut GRADVS = Vec::new();
 
-    for INDEX in 0..1 {
+    for INDEX in 0..8 {
         GRADVS.insert(
             INDEX,
             asset_server.load_with_settings(
