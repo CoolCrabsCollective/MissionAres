@@ -1,11 +1,12 @@
 use crate::game_control::actions::{Action, ActionList, ActionType};
+use crate::help::help::{HelpButton, HelpDialog, show_help_for_empty_actions};
 use crate::level::GRADVM;
 use crate::level_spawner::{ActiveLevel, LevelElement};
 use crate::mesh_loader::DebugLogEntityRequest;
 use crate::rover::{ActionListExecute, RoverEntity};
 use crate::title_screen::GameState;
-use crate::ui::interactive_button::InteractiveButton;
 use crate::ui::Px_dynamic;
+use crate::ui::interactive_button::InteractiveButton;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::pbr::SpotLight;
@@ -40,6 +41,9 @@ pub struct ActionDeleteButton {
 }
 
 #[derive(Component)]
+pub struct ClearAllButton;
+
+#[derive(Component)]
 pub struct RobotButton(pub i32);
 
 #[derive(Component)]
@@ -54,6 +58,7 @@ impl Plugin for ControlUIPlugin {
                 command_button_handler.run_if(in_state(GameState::Programming)),
                 robot_button_handler.run_if(in_state(GameState::Programming)),
                 delete_action_handler.run_if(in_state(GameState::Programming)),
+                clear_all_handler.run_if(in_state(GameState::Programming)),
             ),
         );
         app.add_systems(Update, execute_handler);
@@ -158,12 +163,57 @@ fn rebuild_control_ui(
                                         ..default()
                                     },
                                     border: UiRect::all(Px_dynamic(2.0)),
+                                    position_type: PositionType::Relative,
                                     ..default()
                                 },
                                 BackgroundColor(CONTROL_UI_SECONDARY_BACKGROUND_COLOR),
                                 BorderColor(ACTION_SECTIONS_BORDER_COLOR),
                             ))
                             .with_children(|parent| {
+                                // Clear all button - absolutely positioned in bottom right
+                                // Only show if there are any commands
+                                let has_commands =
+                                    event.actions.iter().any(|actions| !actions.is_empty());
+
+                                if has_commands {
+                                    let clear_icon = asset_server.load("fail_particle.png");
+                                    parent
+                                        .spawn((
+                                            Button,
+                                            ClearAllButton,
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                bottom: Px_dynamic(6.0),
+                                                right: Px_dynamic(6.0),
+                                                width: Px_dynamic(40.0),
+                                                height: Px_dynamic(40.0),
+                                                justify_content: JustifyContent::Center,
+                                                align_items: AlignItems::Center,
+                                                ..default()
+                                            },
+                                            InteractiveButton::simple(
+                                                Color::srgba(0.8, 0.2, 0.2, 0.0),
+                                                Color::srgba(1.0, 0.3, 0.3, 0.0),
+                                                true,
+                                            ),
+                                            ZIndex(10),
+                                        ))
+                                        .with_children(|parent| {
+                                            parent.spawn((
+                                                ImageNode {
+                                                    image: clear_icon.clone(),
+                                                    image_mode: NodeImageMode::Auto,
+                                                    ..default()
+                                                },
+                                                Node {
+                                                    width: Px_dynamic(26.0),
+                                                    height: Px_dynamic(26.0),
+                                                    ..default()
+                                                },
+                                            ));
+                                        });
+                                }
+
                                 parent
                                     .spawn((Node {
                                         display: Display::Flex,
@@ -707,29 +757,48 @@ fn build_execute_button(
 // handlers
 
 fn execute_handler(
+    mut commands: Commands,
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ExecuteButton>)>,
     mut events: EventWriter<ActionListExecute>,
     mut next_state: ResMut<NextState<GameState>>,
     action_list: Res<ActionList>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     game_state: Res<State<GameState>>,
+    asset_server: Res<AssetServer>,
+    mut help_button_query: Query<&mut HelpButton>,
+    dialog_query: Query<Entity, With<HelpDialog>>,
 ) {
-    if action_list.actions.iter().all(|v| v.is_empty()) {
-        return;
-    }
+    let has_no_actions = action_list.actions.iter().all(|v| v.is_empty());
 
     let mut should_execute = false;
+    let mut tried_to_execute = false;
 
     // Check button press
     for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
-            should_execute = true;
+            tried_to_execute = true;
+            if !has_no_actions {
+                should_execute = true;
+            }
         }
     }
 
     // Check space key press (only in Programming state)
     if *game_state.get() == GameState::Programming && keyboard_input.just_pressed(KeyCode::Space) {
-        should_execute = true;
+        tried_to_execute = true;
+        if !has_no_actions {
+            should_execute = true;
+        }
+    }
+
+    if tried_to_execute && has_no_actions {
+        show_help_for_empty_actions(
+            &mut commands,
+            &asset_server,
+            &mut help_button_query,
+            &dialog_query,
+        );
+        return;
     }
 
     if should_execute {
@@ -856,6 +925,30 @@ fn delete_action_handler(
                     .get_mut(button.rover_index)
                     .unwrap()
                     .remove(button.action_index);
+                has_to_update = true;
+            }
+            Interaction::Hovered => {}
+            Interaction::None => {}
+        }
+    }
+
+    if has_to_update {
+        action_writer.write(action_list.clone());
+    }
+}
+
+fn clear_all_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ClearAllButton>)>,
+    mut action_list: ResMut<ActionList>,
+    mut action_writer: EventWriter<ActionList>,
+) {
+    let mut has_to_update: bool = false;
+    for interaction in interaction_query.iter_mut() {
+        match *interaction {
+            Interaction::Pressed => {
+                for actions in action_list.actions.iter_mut() {
+                    actions.clear();
+                }
                 has_to_update = true;
             }
             Interaction::Hovered => {}
