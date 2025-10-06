@@ -23,21 +23,23 @@ use crate::mesh_loader::MeshLoaderPlugin;
 use crate::particle::dust::DustPlugin;
 use crate::particle::fail_particle::FailParticlePlugin;
 use crate::particle::particle::ParticlePlugin;
+use crate::particle::wait_particle::WaitParticlePlugin;
 use crate::puzzle_evaluation::PuzzleEvaluationPlugin;
 use crate::title_screen::{GameState, TitleScreenPlugin};
 use crate::ui::battery_ui::BatteryUIPlugin;
 use crate::ui::interactive_button::{InteractiveButton, InteractiveButtonPlugin};
 use crate::ui::win_screen::WinScreenPlugin;
+use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, PluginGroup};
 use bevy::asset::AssetMetaCheck;
 use bevy::ecs::error::{BevyError, ErrorContext, GLOBAL_ERROR_HANDLER};
 use bevy::ecs::query::QueryEntityError;
 use bevy::ecs::world::error::EntityMutableFetchError;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
+use bevy::picking::DefaultPickingPlugins;
 use bevy::prelude::*;
 use bevy::render::render_resource::{AddressMode, FilterMode};
 use bevy::window::{CursorGrabMode, CursorOptions};
-use bevy::DefaultPlugins;
 use ui::control_ui::ControlUIPlugin;
 
 fn main() {
@@ -84,6 +86,7 @@ fn main() {
                 ..default()
             }),
     );
+    app.add_plugins(MeshPickingPlugin);
     app.add_plugins(InteractiveButtonPlugin);
     app.add_plugins(MeshLoaderPlugin);
     app.add_plugins(ActionController);
@@ -99,6 +102,7 @@ fn main() {
     app.add_plugins(DustPlugin);
     app.add_plugins(ParticlePlugin);
     app.add_plugins(FailParticlePlugin);
+    app.add_plugins(WaitParticlePlugin);
     app.insert_state(GameState::TitleScreen);
     app.add_systems(Update, quit_on_escape);
 
